@@ -43,5 +43,52 @@
     "gols_adversario": [
       "Davi"
     ]
+  },
+  {
+    "data": "05/08/2025",
+    "adversario": "Atletico-MG",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      "Pablo Vegeti",
+      "Paulo Henrique"
+    ],
+    "gols_adversario": [
+      "Paulinho",
+      "Hulk"
+    ]
+  },
+  {
+    "data": "07/08/2025",
+    "adversario": "Bahia",
+    "local": "casa",
+    "placar": {
+      "vasco": 5,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegeti",
+        "gols": 2
+      },
+      {
+        "nome": "Coutinho",
+        "gols": 2
+      },
+      {
+        "nome": "Ryan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Everton Ribeiro",
+        "clube": "Bahia",
+        "gols": 2
+      }
+    ]
   }
 ]

@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 import json
 import os
+from collections import Counter
 
 ARQUIVO_JOGOS = "jogos_vasco.json"
 ARQUIVO_LISTAS = "listas_auxiliares.json"
@@ -74,6 +75,7 @@ class App:
         self.entry_gol_vasco.grid(row=4, column=1, sticky="ew")
         self.lista_gols_vasco = tk.Listbox(self.frame, height=4)
         self.lista_gols_vasco.grid(row=5, column=1, sticky="ew")
+        self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
 
         # Gols adversário
         ttk.Label(self.frame, text="Gols do Adversário:").grid(row=6, column=0, sticky="nw")
@@ -83,27 +85,64 @@ class App:
         self.entry_gol_contra.grid(row=6, column=1, sticky="ew")
         self.lista_gols_contra = tk.Listbox(self.frame, height=4)
         self.lista_gols_contra.grid(row=7, column=1, sticky="ew")
+        self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
 
         self.btn_salvar = ttk.Button(self.frame, text="Salvar Partida", command=self.salvar_partida)
         self.btn_salvar.grid(row=8, column=0, columnspan=2, pady=10)
 
     def adicionar_gol_vasco(self, event):
         jogador = self.entry_gol_vasco.get().strip()
-        if jogador:
-            self.lista_gols_vasco.insert(tk.END, jogador)
-            if jogador not in self.listas["jogadores_vasco"]:
-                self.listas["jogadores_vasco"].append(jogador)
-                self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
-            self.entry_gol_vasco.delete(0, tk.END)
+        if not jogador:
+            return
+
+        limite = self._obter_limite_gols("vasco")
+        if self.lista_gols_vasco.size() >= limite:
+            messagebox.showwarning("Limite Atingido", f"O Vasco só fez {limite} gol(s).")
+            return
+
+        self.lista_gols_vasco.insert(tk.END, jogador)
+        if jogador not in self.listas["jogadores_vasco"]:
+            self.listas["jogadores_vasco"].append(jogador)
+            self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
+        self.entry_gol_vasco.delete(0, tk.END)
 
     def adicionar_gol_contra(self, event):
         jogador = self.entry_gol_contra.get().strip()
-        if jogador:
-            self.lista_gols_contra.insert(tk.END, jogador)
-            if jogador not in self.listas["jogadores_contra"]:
-                self.listas["jogadores_contra"].append(jogador)
-                self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
-            self.entry_gol_contra.delete(0, tk.END)
+        if not jogador:
+            return
+
+        limite = self._obter_limite_gols("adversario")
+        if self.lista_gols_contra.size() >= limite:
+            messagebox.showwarning("Limite Atingido", f"O adversário só fez {limite} gol(s).")
+            return
+
+        self.lista_gols_contra.insert(tk.END, jogador)
+        if jogador not in self.listas["jogadores_contra"]:
+            self.listas["jogadores_contra"].append(jogador)
+            self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
+        self.entry_gol_contra.delete(0, tk.END)
+
+    def _obter_limite_gols(self, time):
+        try:
+            if time == "vasco":
+                return int(self.placar_vasco.get())
+            elif time == "adversario":
+                return int(self.placar_adversario.get())
+        except ValueError:
+            return 0
+    
+    def remover_gol_vasco(self, event):
+        sel = self.lista_gols_vasco.curselection()
+        if sel:
+            self.lista_gols_vasco.delete(sel[0])
+
+    def remover_gol_contra(self, event):
+        sel = self.lista_gols_contra.curselection()
+        if sel:
+            self.lista_gols_contra.delete(sel[0])
+
+
+
 
     def salvar_partida(self):
         data = self.data_entry.get()
@@ -111,8 +150,15 @@ class App:
         placar_vasco = self.placar_vasco.get().strip()
         placar_adv = self.placar_adversario.get().strip()
         local = self.local_var.get()
-        gols_vasco = list(self.lista_gols_vasco.get(0, tk.END))
-        gols_contra = list(self.lista_gols_contra.get(0, tk.END))
+        # Gols Vasco com contagem
+        nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
+        contagem_vasco = Counter(nomes_vasco)
+        gols_vasco = [{"nome": nome, "gols": qtd} for nome, qtd in contagem_vasco.items()]
+        # Gols Adversário com contagem
+        nomes_contra = list(self.lista_gols_contra.get(0, tk.END))
+        contagem_contra = Counter(nomes_contra)
+        gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
+
 
         if not (data and adversario and placar_vasco and placar_adv):
             messagebox.showerror("Erro", "Preencha todos os campos obrigatórios.")
