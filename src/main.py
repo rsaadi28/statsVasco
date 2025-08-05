@@ -1,137 +1,156 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from collections import defaultdict
+from tkcalendar import DateEntry
 import json
 import os
 
-ARQUIVO_DADOS = "jogos_vasco.json"
+ARQUIVO_JOGOS = "jogos_vasco.json"
+ARQUIVO_LISTAS = "listas_auxiliares.json"
 
-def carregar_dados():
-    if os.path.exists(ARQUIVO_DADOS):
-        with open(ARQUIVO_DADOS, "r", encoding="utf-8") as f:
+def carregar_listas():
+    if os.path.exists(ARQUIVO_LISTAS):
+        with open(ARQUIVO_LISTAS, "r", encoding="utf-8") as f:
             return json.load(f)
-    return []
-
-def salvar_dados(jogos):
-    with open(ARQUIVO_DADOS, "w", encoding="utf-8") as f:
-        json.dump(jogos, f, ensure_ascii=False, indent=2)
-
-def calcular_estatisticas(jogos):
-    stats = {
-        "gols_pro": 0, "gols_contra": 0,
-        "vitorias": 0, "empates": 0, "derrotas": 0,
-        "vitorias_casa": 0, "empates_casa": 0, "derrotas_casa": 0,
-        "vitorias_fora": 0, "empates_fora": 0, "derrotas_fora": 0,
-        "artilheiros": defaultdict(int),
-        "goleadores_contra": defaultdict(int),
+    return {
+        "clubes_adversarios": [],
+        "jogadores_vasco": [],
+        "jogadores_contra": []
     }
-    for jogo in jogos:
-        casa = jogo["casa"]
-        gols_vasco = int(jogo["gols_vasco"])
-        gols_adv = int(jogo["gols_adv"])
-        stats["gols_pro"] += gols_vasco
-        stats["gols_contra"] += gols_adv
-        if gols_vasco > gols_adv:
-            stats["vitorias"] += 1
-            stats["vitorias_casa" if casa else "vitorias_fora"] += 1
-        elif gols_vasco == gols_adv:
-            stats["empates"] += 1
-            stats["empates_casa" if casa else "empates_fora"] += 1
-        else:
-            stats["derrotas"] += 1
-            stats["derrotas_casa" if casa else "derrotas_fora"] += 1
-        for nome in jogo["gols_vasco_jogadores"]:
-            stats["artilheiros"][nome] += 1
-        for nome in jogo["gols_adv_jogadores"]:
-            stats["goleadores_contra"][nome] += 1
-    total_jogos = len(jogos)
-    stats["aproveitamento"] = round((stats["vitorias"] * 3 + stats["empates"]) / (total_jogos * 3) * 100, 2) if total_jogos else 0
-    return stats
 
-class AppEstatisticasVasco:
+def salvar_listas(data):
+    with open(ARQUIVO_LISTAS, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def salvar_jogo(jogo):
+    if os.path.exists(ARQUIVO_JOGOS):
+        with open(ARQUIVO_JOGOS, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+    else:
+        dados = []
+    dados.append(jogo)
+    with open(ARQUIVO_JOGOS, "w", encoding="utf-8") as f:
+        json.dump(dados, f, ensure_ascii=False, indent=2)
+
+class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("Estatísticas do Vasco da Gama")
-        self.jogos = carregar_dados()
+        self.root.title("Estatísticas do Vasco - Registro de Partidas")
 
-        self.notebook = ttk.Notebook(root)
-        self.frame_registro = ttk.Frame(self.notebook)
-        self.frame_estatisticas = ttk.Frame(self.notebook)
+        self.listas = carregar_listas()
 
-        self.notebook.add(self.frame_registro, text="Registrar Jogo")
-        self.notebook.add(self.frame_estatisticas, text="Estatísticas")
-        self.notebook.pack(fill="both", expand=True)
+        self.frame = ttk.Frame(root, padding=10)
+        self.frame.pack()
 
-        self.criar_aba_registro()
-        self.criar_aba_estatisticas()
+        self._criar_formulario()
 
-    def criar_aba_registro(self):
-        ttk.Label(self.frame_registro, text="Data:").grid(row=0, column=0)
-        self.entry_data = ttk.Entry(self.frame_registro)
-        self.entry_data.grid(row=0, column=1)
+    def _criar_formulario(self):
+        ttk.Label(self.frame, text="Data da Partida:").grid(row=0, column=0, sticky="w")
+        self.data_entry = DateEntry(self.frame, width=12, date_pattern='dd/mm/yyyy')
+        self.data_entry.grid(row=0, column=1)
 
-        ttk.Label(self.frame_registro, text="Adversário:").grid(row=1, column=0)
-        self.entry_adversario = ttk.Entry(self.frame_registro)
-        self.entry_adversario.grid(row=1, column=1)
+        ttk.Label(self.frame, text="Adversário:").grid(row=1, column=0, sticky="w")
+        self.adversario_var = tk.StringVar()
+        self.adversario_entry = ttk.Combobox(self.frame, textvariable=self.adversario_var)
+        self.adversario_entry['values'] = self.listas["clubes_adversarios"]
+        self.adversario_entry.grid(row=1, column=1)
 
-        ttk.Label(self.frame_registro, text="Gols Vasco:").grid(row=2, column=0)
-        self.entry_gols_vasco = ttk.Entry(self.frame_registro)
-        self.entry_gols_vasco.grid(row=2, column=1)
+        ttk.Label(self.frame, text="Placar (Vasco x Adversário):").grid(row=2, column=0, sticky="w")
+        self.placar_vasco = ttk.Entry(self.frame, width=5)
+        self.placar_adversario = ttk.Entry(self.frame, width=5)
+        self.placar_vasco.grid(row=2, column=1, sticky="w")
+        ttk.Label(self.frame, text="x").grid(row=2, column=1)
+        self.placar_adversario.grid(row=2, column=1, sticky="e")
 
-        ttk.Label(self.frame_registro, text="Gols Adversário:").grid(row=3, column=0)
-        self.entry_gols_adv = ttk.Entry(self.frame_registro)
-        self.entry_gols_adv.grid(row=3, column=1)
+        ttk.Label(self.frame, text="Local:").grid(row=3, column=0, sticky="w")
+        self.local_var = tk.StringVar(value="casa")
+        ttk.Radiobutton(self.frame, text="Casa", variable=self.local_var, value="casa").grid(row=3, column=1, sticky="w")
+        ttk.Radiobutton(self.frame, text="Fora", variable=self.local_var, value="fora").grid(row=3, column=1, sticky="e")
 
-        ttk.Label(self.frame_registro, text="Jogadores que fizeram gols pelo Vasco (separados por vírgula):").grid(row=4, column=0, columnspan=2)
-        self.entry_gols_vasco_jogadores = ttk.Entry(self.frame_registro, width=50)
-        self.entry_gols_vasco_jogadores.grid(row=5, column=0, columnspan=2)
+        # Gols Vasco
+        ttk.Label(self.frame, text="Gols do Vasco:").grid(row=4, column=0, sticky="nw")
+        self.entry_gol_vasco = ttk.Combobox(self.frame)
+        self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
+        self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
+        self.entry_gol_vasco.grid(row=4, column=1, sticky="ew")
+        self.lista_gols_vasco = tk.Listbox(self.frame, height=4)
+        self.lista_gols_vasco.grid(row=5, column=1, sticky="ew")
 
-        ttk.Label(self.frame_registro, text="Jogadores que fizeram gols contra o Vasco (separados por vírgula):").grid(row=6, column=0, columnspan=2)
-        self.entry_gols_adv_jogadores = ttk.Entry(self.frame_registro, width=50)
-        self.entry_gols_adv_jogadores.grid(row=7, column=0, columnspan=2)
+        # Gols adversário
+        ttk.Label(self.frame, text="Gols do Adversário:").grid(row=6, column=0, sticky="nw")
+        self.entry_gol_contra = ttk.Combobox(self.frame)
+        self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
+        self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
+        self.entry_gol_contra.grid(row=6, column=1, sticky="ew")
+        self.lista_gols_contra = tk.Listbox(self.frame, height=4)
+        self.lista_gols_contra.grid(row=7, column=1, sticky="ew")
 
-        self.var_casa = tk.BooleanVar()
-        ttk.Checkbutton(self.frame_registro, text="Jogo em casa", variable=self.var_casa).grid(row=8, column=0, columnspan=2)
+        self.btn_salvar = ttk.Button(self.frame, text="Salvar Partida", command=self.salvar_partida)
+        self.btn_salvar.grid(row=8, column=0, columnspan=2, pady=10)
 
-        ttk.Button(self.frame_registro, text="Salvar Jogo", command=self.salvar_jogo).grid(row=9, column=0, columnspan=2, pady=10)
+    def adicionar_gol_vasco(self, event):
+        jogador = self.entry_gol_vasco.get().strip()
+        if jogador:
+            self.lista_gols_vasco.insert(tk.END, jogador)
+            if jogador not in self.listas["jogadores_vasco"]:
+                self.listas["jogadores_vasco"].append(jogador)
+                self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
+            self.entry_gol_vasco.delete(0, tk.END)
 
-    def salvar_jogo(self):
+    def adicionar_gol_contra(self, event):
+        jogador = self.entry_gol_contra.get().strip()
+        if jogador:
+            self.lista_gols_contra.insert(tk.END, jogador)
+            if jogador not in self.listas["jogadores_contra"]:
+                self.listas["jogadores_contra"].append(jogador)
+                self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
+            self.entry_gol_contra.delete(0, tk.END)
+
+    def salvar_partida(self):
+        data = self.data_entry.get()
+        adversario = self.adversario_var.get().strip()
+        placar_vasco = self.placar_vasco.get().strip()
+        placar_adv = self.placar_adversario.get().strip()
+        local = self.local_var.get()
+        gols_vasco = list(self.lista_gols_vasco.get(0, tk.END))
+        gols_contra = list(self.lista_gols_contra.get(0, tk.END))
+
+        if not (data and adversario and placar_vasco and placar_adv):
+            messagebox.showerror("Erro", "Preencha todos os campos obrigatórios.")
+            return
+
+        if adversario not in self.listas["clubes_adversarios"]:
+            self.listas["clubes_adversarios"].append(adversario)
+            self.adversario_entry['values'] = self.listas["clubes_adversarios"]
+
+        salvar_listas(self.listas)
+
         jogo = {
-            "data": self.entry_data.get(),
-            "adversario": self.entry_adversario.get(),
-            "gols_vasco": self.entry_gols_vasco.get(),
-            "gols_adv": self.entry_gols_adv.get(),
-            "gols_vasco_jogadores": [j.strip() for j in self.entry_gols_vasco_jogadores.get().split(",") if j.strip()],
-            "gols_adv_jogadores": [j.strip() for j in self.entry_gols_adv_jogadores.get().split(",") if j.strip()],
-            "casa": self.var_casa.get()
+            "data": data,
+            "adversario": adversario,
+            "local": local,
+            "placar": {
+                "vasco": int(placar_vasco),
+                "adversario": int(placar_adv)
+            },
+            "gols_vasco": gols_vasco,
+            "gols_adversario": gols_contra
         }
-        self.jogos.append(jogo)
-        salvar_dados(self.jogos)
-        messagebox.showinfo("Sucesso", "Jogo salvo com sucesso!")
-        self.atualizar_estatisticas()
 
-    def criar_aba_estatisticas(self):
-        self.text_estatisticas = tk.Text(self.frame_estatisticas, wrap="word")
-        self.text_estatisticas.pack(fill="both", expand=True)
-        self.atualizar_estatisticas()
+        salvar_jogo(jogo)
+        messagebox.showinfo("Sucesso", "Partida registrada com sucesso!")
+        self._limpar_formulario()
 
-    def atualizar_estatisticas(self):
-        stats = calcular_estatisticas(self.jogos)
-        self.text_estatisticas.delete("1.0", tk.END)
-        self.text_estatisticas.insert(tk.END, f"Gols Pró: {stats['gols_pro']}\n")
-        self.text_estatisticas.insert(tk.END, f"Gols Contra: {stats['gols_contra']}\n")
-        self.text_estatisticas.insert(tk.END, f"Vitórias: {stats['vitorias']} (Casa: {stats['vitorias_casa']} / Fora: {stats['vitorias_fora']})\n")
-        self.text_estatisticas.insert(tk.END, f"Empates: {stats['empates']} (Casa: {stats['empates_casa']} / Fora: {stats['empates_fora']})\n")
-        self.text_estatisticas.insert(tk.END, f"Derrotas: {stats['derrotas']} (Casa: {stats['derrotas_casa']} / Fora: {stats['derrotas_fora']})\n")
-        self.text_estatisticas.insert(tk.END, f"Aproveitamento: {stats['aproveitamento']}%\n\n")
-        self.text_estatisticas.insert(tk.END, "Artilheiros do Vasco:\n")
-        for nome, gols in sorted(stats["artilheiros"].items(), key=lambda x: -x[1]):
-            self.text_estatisticas.insert(tk.END, f"  {nome}: {gols} gol(s)\n")
-        self.text_estatisticas.insert(tk.END, "\nJogadores que fizeram gol contra o Vasco:\n")
-        for nome, gols in sorted(stats["goleadores_contra"].items(), key=lambda x: -x[1]):
-            self.text_estatisticas.insert(tk.END, f"  {nome}: {gols} gol(s)\n")
+    def _limpar_formulario(self):
+        self.adversario_var.set("")
+        self.placar_vasco.delete(0, tk.END)
+        self.placar_adversario.delete(0, tk.END)
+        self.lista_gols_vasco.delete(0, tk.END)
+        self.lista_gols_contra.delete(0, tk.END)
+        self.entry_gol_vasco.delete(0, tk.END)
+        self.entry_gol_contra.delete(0, tk.END)
+        self.local_var.set("casa")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = AppEstatisticasVasco(root)
+    app = App(root)
     root.mainloop()

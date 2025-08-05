@@ -1,13 +1,12 @@
 [
   {
-    "data": "07/08/2025",
+    "data": "08/08/2025",
     "adversario": "CRB",
-    "gols_vasco": "3",
+    "gols_vasco": "2",
     "gols_adv": "1",
     "gols_vasco_jogadores": [
       "Pablo Vegeti",
-      "Piton",
-      "Coutinho"
+      "Lucas Piton"
     ],
     "gols_adv_jogadores": [
       "Davi"
@@ -15,15 +14,34 @@
     "casa": true
   },
   {
-    "data": "20/08/2025",
-    "adversario": "Botafogo",
-    "gols_vasco": "0",
-    "gols_adv": "2",
-    "gols_vasco_jogadores": [],
-    "gols_adv_jogadores": [
-      "Savarino",
-      "Arthur"
+    "data": "11/08/2025",
+    "adversario": "Atletico-MG",
+    "gols_vasco": "1",
+    "gols_adv": "1",
+    "gols_vasco_jogadores": [
+      "Pablo Vegeti"
     ],
-    "casa": false
+    "gols_adv_jogadores": [
+      "Hulk"
+    ],
+    "casa": true
+  },
+  {
+    "data": "07/08/2025",
+    "adversario": "CRB",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      "Pablo Vegeti",
+      "Pablo Vegeti",
+      "Lucas Piton",
+      "Pablo Vegeti"
+    ],
+    "gols_adversario": [
+      "Davi"
+    ]
   }
 ]
