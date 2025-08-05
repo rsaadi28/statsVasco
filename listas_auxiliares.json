@@ -1,18 +1,13 @@
 {
   "clubes_adversarios": [
     "CRB",
-    "Atletico-MG",
-    "Bahia"
+    "Atletico-MG"
   ],
   "jogadores_vasco": [
-    "Pablo Vegeti",
-    "Lucas Piton",
-    "Coutinho"
+    "Puma",
+    "Vegeti"
   ],
   "jogadores_contra": [
-    "Davi",
-    "Hulk",
-    "Paulinho",
-    "Everton Ribeiro"
+    "Hulk"
   ]
 }
