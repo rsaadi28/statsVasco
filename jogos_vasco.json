@@ -90,5 +90,21 @@
         "gols": 2
       }
     ]
+  },
+  {
+    "data": "05/08/2025",
+    "adversario": "Bahia",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegeti",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": []
   }
 ]
