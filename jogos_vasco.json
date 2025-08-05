@@ -56,5 +56,94 @@
       }
     ],
     "gols_adversario": []
+  },
+  {
+    "data": "31/07/2025",
+    "adversario": "CRB",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": []
+  },
+  {
+    "data": "05/08/2025",
+    "adversario": "Juventude",
+    "competicao": "Brasileirão Serie A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ryan",
+        "gols": 1
+      },
+      {
+        "nome": "GB",
+        "gols": 1
+      },
+      {
+        "nome": "Vegeti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Nene",
+        "clube": "Juventude",
+        "gols": 1
+      }
+    ]
+  },
+  {
+    "data": "28/07/2025",
+    "adversario": "Sport-RE",
+    "competicao": "Brasileirão Serie A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Vegeti",
+        "gols": 1
+      },
+      {
+        "nome": "Puma",
+        "gols": 1
+      },
+      {
+        "nome": "Ryan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Andre Lima",
+        "clube": "Sport-RE",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [
+        {
+          "nome": "Hugo Moura",
+          "gols": 1
+        }
+      ],
+      "adversario": [
+        {
+          "nome": "Marquinhos",
+          "clube": "Sport-RE",
+          "gols": 1
+        }
+      ]
+    }
   }
 ]
