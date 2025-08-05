@@ -25,7 +25,7 @@ def carregar_listas():
         "clubes_adversarios": [],
         "jogadores_vasco": [],
         "jogadores_contra": [],
-        "competicoes": []  # <- Adicione isso
+        "competicoes": []
     }
 
 def salvar_listas(data):
@@ -258,6 +258,10 @@ class App:
         salvar_jogo(jogo)
         messagebox.showinfo("Sucesso", "Partida registrada com sucesso!")
         self._limpar_formulario()
+        
+        # Atualiza as abas
+        self._carregar_temporadas()
+        self._carregar_geral()
 
     def _limpar_formulario(self):
         self.adversario_var.set("")
@@ -319,6 +323,9 @@ class App:
     
     def _carregar_temporadas(self):
         # Criar canvas com scrollbar para frame_temporadas
+        for widget in self.frame_temporadas.winfo_children():
+            widget.destroy()
+
         canvas = tk.Canvas(self.frame_temporadas)
         scrollbar = ttk.Scrollbar(self.frame_temporadas, orient="vertical", command=canvas.yview)
         scroll_frame = ttk.Frame(canvas)
@@ -429,6 +436,9 @@ class App:
 
     
     def _carregar_geral(self):
+        for widget in self.frame_geral.winfo_children():
+            widget.destroy()
+
         jogos = carregar_dados_jogos()
         total = len(jogos)
         vitorias = empates = derrotas = 0
