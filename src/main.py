@@ -5,6 +5,8 @@ from collections import defaultdict, Counter
 import json
 import os
 from tkcalendar import DateEntry
+import tkinter.font as tkFont  # certifique-se de importar isso no topo do arquivo
+
 
 ARQUIVO_JOGOS = "jogos_vasco.json"
 ARQUIVO_LISTAS = "listas_auxiliares.json"
@@ -296,6 +298,30 @@ class App:
             self.entry_anulado_contra.delete(0, tk.END)
     
     def _carregar_temporadas(self):
+        # Criar canvas com scrollbar para frame_temporadas
+        canvas = tk.Canvas(self.frame_temporadas)
+        scrollbar = ttk.Scrollbar(self.frame_temporadas, orient="vertical", command=canvas.yview)
+        scroll_frame = ttk.Frame(canvas)
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Habilita scroll com a roda do mouse
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+
+        # A partir daqui usa scroll_frame no lugar de self.frame_temporadas
         jogos = carregar_dados_jogos()
         temporadas = defaultdict(list)
 
@@ -304,15 +330,82 @@ class App:
             temporadas[ano].append(jogo)
 
         for ano in sorted(temporadas.keys(), reverse=True):
-            frame_ano = ttk.LabelFrame(self.frame_temporadas, text=f"Temporada {ano}", padding=10)
+            cor_fundo = "#DFDFDF" if int(ano) % 2 != 0 else "#C0C0C0"  # cor clara para ímpar
+            fonte_titulo = tkFont.Font(weight="bold")  # cria uma fonte com peso negrito
+            frame_ano = tk.LabelFrame(
+                scroll_frame,
+                text=f"Temporada {ano}",
+                bg=cor_fundo,
+                font=fonte_titulo,
+                padx=10,
+                pady=10
+            )
+
             frame_ano.pack(fill="x", padx=10, pady=5)
 
-            for jogo in temporadas[ano]:
+            jogos_ano = temporadas[ano]
+            vitorias = empates = derrotas = 0
+            gols_pro = gols_contra = 0
+            anulados_vasco = anulados_contra = 0
+            artilheiros = Counter()
+            carrascos = Counter()
+
+            for jogo in jogos_ano:
                 local = jogo.get("local", "desconhecido").capitalize()
                 placar = jogo.get("placar", {"vasco": "?", "adversario": "?"})
-                linha = f"{jogo['data']} - {local} vs {jogo['adversario']}: Vasco {placar['vasco']} x {placar['adversario']} {jogo['adversario']}"
+                linha = f"{jogo['data']} - {local} : {jogo['adversario']}: Vasco {placar['vasco']} x {placar['adversario']} {jogo['adversario']}"
+                ttk.Label(frame_ano, text=linha, background=cor_fundo).pack(anchor="w")
 
-                ttk.Label(frame_ano, text=linha).pack(anchor="w")
+                if placar["vasco"] > placar["adversario"]:
+                    vitorias += 1
+                elif placar["vasco"] < placar["adversario"]:
+                    derrotas += 1
+                else:
+                    empates += 1
+
+                gols_pro += placar.get("vasco", 0)
+                gols_contra += placar.get("adversario", 0)
+
+                for g in jogo.get("gols_vasco", []):
+                    if isinstance(g, dict):
+                        artilheiros[g["nome"]] += g["gols"]
+
+                for g in jogo.get("gols_adversario", []):
+                    if isinstance(g, dict):
+                        carrascos[g["nome"]] += g["gols"]
+
+                for g in jogo.get("gols_anulados", {}).get("vasco", []):
+                    anulados_vasco += g["gols"]
+                for g in jogo.get("gols_anulados", {}).get("adversario", []):
+                    anulados_contra += g["gols"]
+
+            ttk.Separator(frame_ano, orient="horizontal").pack(fill="x", pady=5)
+
+            resumo = f"""
+    Total de jogos: {len(jogos_ano)}
+    Vitórias: {vitorias}
+    Empates: {empates}
+    Derrotas: {derrotas}
+    Gols Pró: {gols_pro}
+    Gols Contra: {gols_contra}
+    Gols Anulados do Vasco: {anulados_vasco}
+    Gols Anulados Contra: {anulados_contra}
+            """.strip()
+
+            for linha in resumo.splitlines():
+                ttk.Label(frame_ano, text=linha,background=cor_fundo).pack(anchor="w")
+
+            if artilheiros:
+                ttk.Label(frame_ano, text="Artilheiros do Vasco:",background=cor_fundo).pack(anchor="w", pady=(5, 0))
+                for nome, qtd in artilheiros.most_common():
+                    ttk.Label(frame_ano, text=f" - {nome}: {qtd} gol(s)",background=cor_fundo).pack(anchor="w")
+
+            if carrascos:
+                ttk.Label(frame_ano, text="Carrascos (Gols contra o Vasco):",background=cor_fundo).pack(anchor="w", pady=(5, 0))
+                for nome, qtd in carrascos.most_common():
+                    ttk.Label(frame_ano, text=f" - {nome}: {qtd} gol(s)",background=cor_fundo).pack(anchor="w")
+
+
     
     def _carregar_geral(self):
         jogos = carregar_dados_jogos()

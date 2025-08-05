@@ -1,11 +1,13 @@
 {
   "clubes_adversarios": [
     "CRB",
-    "Atletico-MG"
+    "Atletico-MG",
+    "Cruzeiro"
   ],
   "jogadores_vasco": [
     "Puma",
-    "Vegeti"
+    "Vegeti",
+    "Payet"
   ],
   "jogadores_contra": [
     "Hulk"
