@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from collections import defaultdict, Counter
 import json
 import os
@@ -56,7 +55,7 @@ def salvar_jogo(jogo):
 
 
 def _parse_data_ptbr(s: str) -> datetime:
-    # aceita dd/mm/aaaa
+    # dd/mm/aaaa
     return datetime.strptime(s, "%d/%m/%Y")
 
 
@@ -82,15 +81,13 @@ class Tooltip:
         self.hide()
         if not text:
             return
-        self.tip = tw = tk.Toplevel(self.master)
+        tw = tk.Toplevel(self.master)
         tw.wm_overrideredirect(True)
         tw.attributes("-topmost", True)
-        # posição ligeiramente deslocada do cursor
         tw.wm_geometry(f"+{x_root + 18}+{y_root + 16}")
-        # usar ttk.Label para herdar tema
-        lbl = ttk.Label(tw, text=text, justify="left",
-                        relief="solid", borderwidth=1, padding=(8, 6))
-        lbl.pack()
+        ttk.Label(tw, text=text, justify="left",
+                  relief="solid", borderwidth=1, padding=(8, 6)).pack()
+        self.tip = tw
 
     def hide(self):
         if self.tip is not None:
@@ -101,6 +98,7 @@ class Tooltip:
             self.tip = None
 
 
+# ===================== APP =====================
 class App:
     def __init__(self, root):
         self.root = root
@@ -127,7 +125,6 @@ class App:
         style.configure("TLabelframe.Label", font=("Segoe UI", 11, "bold"))
         style.configure("Card.TLabelframe", padding=8)
         style.configure("CardValue.TLabel", font=("Segoe UI", 18, "bold"))
-        style.configure("CardTitle.TLabel", foreground="#444")
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
 
         self.listas = carregar_listas()
@@ -150,7 +147,7 @@ class App:
         self._carregar_geral()
         self._carregar_graficos()
 
-    # --------------------- UI: Formulário ---------------------
+    # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
@@ -187,7 +184,8 @@ class App:
         self.competicao_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4)
         self.competicao_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "competicoes"))
 
-        ttk.Label(frame, text="Gols do Vasco:").grid(row=5, column=0, sticky="nw", pady=(10, 4))
+        # Gols do Vasco
+        ttk.Label(frame, text="Gols do Vasco (pressione Enter para adicionar):").grid(row=5, column=0, sticky="nw", pady=(10, 4))
         col_vasco = ttk.Frame(frame)
         col_vasco.grid(row=5, column=1, columnspan=3, sticky="ew", pady=(10, 4))
         self.entry_gol_vasco = ttk.Combobox(col_vasco)
@@ -199,7 +197,8 @@ class App:
         self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="ew")
         self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
 
-        ttk.Label(frame, text="Gols do Adversário:").grid(row=7, column=0, sticky="nw", pady=(10, 4))
+        # Gols do Adversário
+        ttk.Label(frame, text="Gols do Adversário (pressione Enter para adicionar):").grid(row=7, column=0, sticky="nw", pady=(10, 4))
         col_contra = ttk.Frame(frame)
         col_contra.grid(row=7, column=1, columnspan=3, sticky="ew", pady=(10, 4))
         self.entry_gol_contra = ttk.Combobox(col_contra)
@@ -211,35 +210,16 @@ class App:
         self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="ew")
         self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
 
-        ttk.Label(frame, text="Gols do Vasco Anulados (VAR):").grid(row=9, column=0, sticky="nw", pady=(10, 4))
-        self.entry_anulado_vasco = ttk.Combobox(frame)
-        self.entry_anulado_vasco['values'] = self.listas["jogadores_vasco"]
-        self.entry_anulado_vasco.bind("<Return>", self.adicionar_anulado_vasco)
-        self.entry_anulado_vasco.grid(row=9, column=1, columnspan=3, sticky="ew", pady=(10, 4))
-        self.lista_anulados_vasco = tk.Listbox(frame, height=3)
-        self.lista_anulados_vasco.grid(row=10, column=1, columnspan=3, sticky="ew")
-        self.lista_anulados_vasco.bind("<Delete>", lambda e: self._del_sel(self.lista_anulados_vasco))
+        # Observações
+        ttk.Label(frame, text="Observações da Partida:").grid(row=9, column=0, sticky="nw", pady=(10, 4))
+        self.obs_text = tk.Text(frame, height=4, wrap="word")
+        self.obs_text.grid(row=9, column=1, columnspan=3, sticky="ew", pady=(10, 4))
 
-        ttk.Label(frame, text="Gols do Adversário Anulados (VAR):").grid(row=11, column=0, sticky="nw", pady=(10, 4))
-        self.entry_anulado_contra = ttk.Combobox(frame)
-        self.entry_anulado_contra['values'] = self.listas["jogadores_contra"]
-        self.entry_anulado_contra.bind("<Return>", self.adicionar_anulado_contra)
-        self.entry_anulado_contra.grid(row=11, column=1, columnspan=3, sticky="ew", pady=(10, 4))
-        self.lista_anulados_contra = tk.Listbox(frame, height=3)
-        self.lista_anulados_contra.grid(row=12, column=1, columnspan=3, sticky="ew")
-        self.lista_anulados_contra.bind("<Delete>", lambda e: self._del_sel(self.lista_anulados_contra))
-
+        # Botões
         botoes = ttk.Frame(frame)
-        botoes.grid(row=13, column=0, columnspan=4, pady=12)
-        self.btn_salvar = ttk.Button(botoes, text="Salvar Partida", command=self.salvar_partida)
-        self.btn_salvar.pack(side="left", padx=6)
-        self.btn_atualizar = ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas)
-        self.btn_atualizar.pack(side="left", padx=6)
-
-    def _del_sel(self, listbox):
-        sel = listbox.curselection()
-        if sel:
-            listbox.delete(sel[0])
+        botoes.grid(row=10, column=0, columnspan=4, pady=12)
+        ttk.Button(botoes, text="Salvar Partida", command=self.salvar_partida).pack(side="left", padx=6)
+        ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
 
     # --------------------- Handlers de Gols ---------------------
     def adicionar_gol_vasco(self, event):
@@ -290,7 +270,7 @@ class App:
         if sel:
             self.lista_gols_contra.delete(sel[0])
 
-    # --------------------- Salvar / Menu contexto ---------------------
+    # --------------------- Salvar ---------------------
     def salvar_partida(self):
         data = self.data_entry.get()
         adversario = self.adversario_var.get().strip()
@@ -298,7 +278,9 @@ class App:
         placar_vasco = self.placar_vasco.get().strip()
         placar_adv = self.placar_adversario.get().strip()
         local = self.local_var.get()
+        observacao = self.obs_text.get("1.0", "end").strip()
 
+        # Gols (contados)
         nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
         contagem_vasco = Counter(nomes_vasco)
         gols_vasco = [{"nome": nome, "gols": qtd} for nome, qtd in contagem_vasco.items()]
@@ -321,27 +303,15 @@ class App:
 
         salvar_listas(self.listas)
 
-        contagem_anulados_vasco = Counter(self.lista_anulados_vasco.get(0, tk.END))
-        gols_anulados_vasco = [{"nome": nome, "gols": qtd} for nome, qtd in contagem_anulados_vasco.items()]
-
-        contagem_anulados_contra = Counter(self.lista_anulados_contra.get(0, tk.END))
-        gols_anulados_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_anulados_contra.items()]
-
         jogo = {
             "data": data,
             "adversario": adversario,
             "competicao": competicao,
-            "local": local,
-            "placar": {
-                "vasco": int(placar_vasco),
-                "adversario": int(placar_adv)
-            },
+            "local": local,  # 'casa' | 'fora'
+            "placar": {"vasco": int(placar_vasco), "adversario": int(placar_adv)},
             "gols_vasco": gols_vasco,
             "gols_adversario": gols_contra,
-            "gols_anulados": {
-                "vasco": gols_anulados_vasco,
-                "adversario": gols_anulados_contra
-            }
+            "observacao": observacao,  # <<< novo campo
         }
 
         salvar_jogo(jogo)
@@ -358,8 +328,7 @@ class App:
         self.lista_gols_contra.delete(0, tk.END)
         self.entry_gol_vasco.delete(0, tk.END)
         self.entry_gol_contra.delete(0, tk.END)
-        self.lista_anulados_vasco.delete(0, tk.END)
-        self.lista_anulados_contra.delete(0, tk.END)
+        self.obs_text.delete("1.0", "end")
         self.local_var.set("casa")
 
     def _atualizar_abas(self):
@@ -367,6 +336,7 @@ class App:
         self._carregar_geral()
         self._carregar_graficos()
 
+    # --------------------- Menu de contexto ---------------------
     def mostrar_menu_contexto(self, event, tipo):
         widget = event.widget
         selecionado = widget.get().strip()
@@ -374,7 +344,8 @@ class App:
             return
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label=f"Excluir '{selecionado}'", command=lambda: self.excluir_nome(selecionado, tipo, widget))
+        menu.add_command(label=f"Excluir '{selecionado}'",
+                         command=lambda: self.excluir_nome(selecionado, tipo, widget))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
@@ -383,21 +354,17 @@ class App:
     def excluir_nome(self, nome, tipo, widget):
         alterou = False
         if tipo == "vasco" and nome in self.listas["jogadores_vasco"]:
-            self.listas["jogadores_vasco"].remove(nome)
+            self.listas["jogadores_vasco"].remove(nome); alterou = True
             widget['values'] = self.listas["jogadores_vasco"]
-            alterou = True
         elif tipo == "contra" and nome in self.listas["jogadores_contra"]:
-            self.listas["jogadores_contra"].remove(nome)
+            self.listas["jogadores_contra"].remove(nome); alterou = True
             widget['values'] = self.listas["jogadores_contra"]
-            alterou = True
         elif tipo == "clubes" and nome in self.listas["clubes_adversarios"]:
-            self.listas["clubes_adversarios"].remove(nome)
+            self.listas["clubes_adversarios"].remove(nome); alterou = True
             widget['values'] = self.listas["clubes_adversarios"]
-            alterou = True
         elif tipo == "competicoes" and nome in self.listas.get("competicoes", []):
-            self.listas["competicoes"].remove(nome)
+            self.listas["competicoes"].remove(nome); alterou = True
             widget['values'] = self.listas.get("competicoes", [])
-            alterou = True
 
         if alterou:
             salvar_listas(self.listas)
@@ -405,25 +372,32 @@ class App:
         else:
             messagebox.showwarning("Não encontrado", f"'{nome}' não está na lista.")
 
-    def adicionar_anulado_vasco(self, event):
-        jogador = self.entry_anulado_vasco.get().strip()
-        if jogador:
-            self.lista_anulados_vasco.insert(tk.END, jogador)
-            if jogador not in self.listas["jogadores_vasco"]:
-                self.listas["jogadores_vasco"].append(jogador)
-                self.entry_anulado_vasco['values'] = self.listas["jogadores_vasco"]
-            self.entry_anulado_vasco.delete(0, tk.END)
+    # --------------------- Helper: tooltips no Treeview ---------------------
+    def _bind_treeview_tooltips(self, tree: ttk.Treeview, tooltip_map: dict):
+        """Mostra tooltip com texto de tooltip_map[iid] ao passar o mouse nas linhas do Treeview."""
+        tooltip = Tooltip(self.root, delay=400)
+        state = {"current": None}
 
-    def adicionar_anulado_contra(self, event):
-        jogador = self.entry_anulado_contra.get().strip()
-        if jogador:
-            self.lista_anulados_contra.insert(tk.END, jogador)
-            if jogador not in self.listas["jogadores_contra"]:
-                self.listas["jogadores_contra"].append(jogador)
-                self.entry_anulado_contra['values'] = self.listas["jogadores_contra"]
-            self.entry_anulado_contra.delete(0, tk.END)
+        def on_motion(e):
+            item = tree.identify_row(e.y)
+            if item != state["current"]:
+                tooltip.cancel()
+                state["current"] = item
+                if item and item in tooltip_map:
+                    text = tooltip_map[item]
+                    tooltip.schedule(lambda t=text, xr=e.x_root, yr=e.y_root: tooltip.show(t, xr, yr))
 
-    # --------------------- Temporadas (UI bonita + tooltip) ---------------------
+        def on_leave(_):
+            tooltip.cancel()
+
+        def on_destroy(_):
+            tooltip.cancel()
+
+        tree.bind("<Motion>", on_motion)
+        tree.bind("<Leave>", on_leave)
+        tree.bind("<Destroy>", on_destroy)
+
+    # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
         for widget in self.frame_temporadas.winfo_children():
             widget.destroy()
@@ -456,11 +430,9 @@ class App:
             jogos_ano = temporadas[ano]
             vitorias = empates = derrotas = 0
             gols_pro = gols_contra = 0
-            anulados_vasco = anulados_contra = 0
             artilheiros = Counter()
             carrascos = Counter()
 
-            # ---- monta resumos e também prepara linhas da tabela
             rows = []
             for jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j["data"])):
                 local = jogo.get("local", "desconhecido").capitalize()
@@ -468,9 +440,7 @@ class App:
                 competicao = jogo.get("competicao", "Competição Desconhecida")
                 data = jogo["data"]
                 adversario = jogo["adversario"]
-                placar_txt = f"{placar['vasco']} x {placar['adversario']}"
 
-                # atualiza resumos
                 if placar["vasco"] > placar["adversario"]:
                     vitorias += 1
                 elif placar["vasco"] < placar["adversario"]:
@@ -481,7 +451,6 @@ class App:
                 gols_pro += placar.get("vasco", 0)
                 gols_contra += placar.get("adversario", 0)
 
-                # artilheiros/carrascos por temporada
                 for g in jogo.get("gols_vasco", []):
                     if isinstance(g, dict):
                         artilheiros[g["nome"]] += g["gols"]
@@ -489,18 +458,12 @@ class App:
                     if isinstance(g, dict):
                         carrascos[g["nome"]] += g["gols"]
 
-                for g in jogo.get("gols_anulados", {}).get("vasco", []):
-                    anulados_vasco += g["gols"]
-                for g in jogo.get("gols_anulados", {}).get("adversario", []):
-                    anulados_contra += g["gols"]
-
-                # guarda linha para a tabela e tooltip
                 rows.append({
                     "data": data, "local": local, "competicao": competicao,
-                    "adversario": adversario, "placar": placar_txt, "raw": jogo
+                    "adversario": adversario, "raw": jogo
                 })
 
-            # ----- Cards de resumo da temporada
+            # Cards
             saldo = gols_pro - gols_contra
             cards = ttk.Frame(frame_ano)
             cards.pack(fill="x", pady=(0, 8))
@@ -515,11 +478,9 @@ class App:
             make_card(cards, "Vitórias", vitorias).grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Empates", empates).grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Derrotas", derrotas).grid(row=0, column=3, sticky="nsew", padx=4, pady=4)
-
             make_card(cards, "Gols Pró", gols_pro).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Anulados (Vasco/Contra)", f"{anulados_vasco}/{anulados_contra}").grid(row=1, column=3, sticky="nsew", padx=4, pady=4)
 
             # ----- Tabela de partidas da temporada
             table_wrap = ttk.Frame(frame_ano)
@@ -527,33 +488,31 @@ class App:
 
             cols = ("data", "local", "competicao", "adversario", "placar")
             tv = ttk.Treeview(table_wrap, columns=cols, show="headings",
-                            height=min(12, max(6, len(rows))))
-            for c, w in zip(cols, (90, 80, 240, 220, 320)):  # placar mais largo
+                              height=min(12, max(6, len(rows))))
+            # larguras para caber placar estendido
+            for c, w in zip(cols, (90, 80, 240, 220, 320)):
                 tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
                 tv.column(c, anchor="w", width=w, stretch=True)
 
-            # Scrollbar horizontal se precisar
             sx = ttk.Scrollbar(table_wrap, orient="horizontal", command=tv.xview)
             tv.configure(xscrollcommand=sx.set)
             tv.pack(fill="x", expand=True)
             if len(rows) > 12:
                 sx.pack(fill="x")
 
-            # zebra
             tv.tag_configure("odd", background="#f6f6f6")
 
-            # mapeia id -> texto do tooltip
             tooltip_map = {}
+            obs_map = {}
+
             for i, r in enumerate(rows, start=1):
-                # --- monta o placar formatado conforme o mando:
                 jogo_raw = r["raw"]
                 placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
                 vasco_g = placar.get("vasco", 0)
                 adv_g = placar.get("adversario", 0)
                 adversario = jogo_raw.get("adversario", "Adversário")
-
-                local_raw = jogo_raw.get("local", "casa")           # 'casa' ou 'fora'
-                local_disp = local_raw.capitalize()                  # para exibir na tabela
+                local_raw = jogo_raw.get("local", "casa")
+                local_disp = local_raw.capitalize()
 
                 if local_raw == "casa":
                     placar_fmt = f"Vasco {vasco_g} x {adv_g} {adversario}"
@@ -566,12 +525,34 @@ class App:
                     tags=("odd" if i % 2 else "",),
                 )
                 tooltip_map[iid] = self._tooltip_gols_text(jogo_raw)
+                obs_map[iid] = jogo_raw.get("observacao", "").strip()
 
-            # Tooltip manager para a tabela
+            # Tooltip nos gols (mouse hover)
             self._bind_treeview_tooltips(tv, tooltip_map)
 
+            # ----- Área de Observações (aparece só se houver texto)
+            obs_frame = ttk.Frame(frame_ano)
+            obs_title = ttk.Label(obs_frame, text="Observações:", font=("Segoe UI", 11, "bold"))
+            obs_label = ttk.Label(obs_frame, text="", wraplength=980, justify="left")
 
-            # ----- Listas curtas (top artilheiros/carrascos da temporada)
+            def on_select(_):
+                sel = tv.selection()
+                if not sel:
+                    obs_frame.pack_forget()
+                    return
+                iid = sel[0]
+                txt = obs_map.get(iid, "")
+                if txt:
+                    obs_title.pack(anchor="w", pady=(8, 2))
+                    obs_label.configure(text=txt)
+                    obs_label.pack(anchor="w", pady=(0, 4))
+                    obs_frame.pack(fill="x", padx=2, pady=(6, 0))
+                else:
+                    obs_frame.pack_forget()
+
+            tv.bind("<<TreeviewSelect>>", on_select)
+
+            # ----- Resumos curtos (top artilheiros/carrascos da temporada)
             bottom = ttk.Frame(frame_ano)
             bottom.pack(fill="x", pady=(8, 0))
             left = ttk.Labelframe(bottom, text="Artilheiros do Vasco (na temporada)", padding=6)
@@ -585,12 +566,12 @@ class App:
                 else:
                     txt = "—"
                 ttk.Label(frame, text=txt, justify="left").pack(anchor="w")
+
             fill_label_list(left, artilheiros)
             fill_label_list(right, carrascos)
 
     def _tooltip_gols_text(self, jogo):
-        # monta texto amigável com os gols
-        def fmt_lista(lst, is_vasco=True):
+        def fmt_lista(lst):
             if not lst:
                 return "—"
             partes = []
@@ -604,30 +585,11 @@ class App:
             return ", ".join(partes)
 
         gols_vasco = fmt_lista(jogo.get("gols_vasco", []))
-        gols_adv = fmt_lista(jogo.get("gols_adversario", []), is_vasco=False)
+        gols_adv = fmt_lista(jogo.get("gols_adversario", []))
         return (f"Gols do Vasco: {gols_vasco}\n"
                 f"Gols do {jogo.get('adversario','Adversário')}: {gols_adv}")
 
-    def _bind_treeview_tooltips(self, tree: ttk.Treeview, tooltip_map: dict):
-        tooltip = Tooltip(self.root, delay=400)
-        state = {"current": None}
-
-        def on_motion(e):
-            item = tree.identify_row(e.y)
-            if item != state["current"]:
-                tooltip.cancel()
-                state["current"] = item
-                if item and item in tooltip_map:
-                    text = tooltip_map[item]
-                    x_root, y_root = e.x_root, e.y_root
-                    tooltip.schedule(lambda t=text, xr=x_root, yr=y_root: tooltip.show(t, xr, yr))
-        def on_leave(_):
-            tooltip.cancel()
-
-        tree.bind("<Motion>", on_motion)
-        tree.bind("<Leave>", on_leave)
-
-    # --------------------- Geral (UI melhorada) ---------------------
+    # --------------------- Geral ---------------------
     def _carregar_geral(self):
         for widget in self.frame_geral.winfo_children():
             widget.destroy()
@@ -636,7 +598,6 @@ class App:
         total = len(jogos)
         vitorias = empates = derrotas = 0
         gols_pro = gols_contra = 0
-        anulados_vasco = anulados_contra = 0
         artilheiros = Counter()
         carrascos = Counter()
 
@@ -658,15 +619,9 @@ class App:
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
                     artilheiros[g["nome"]] += g["gols"]
-
             for g in jogo.get("gols_adversario", []):
                 if isinstance(g, dict):
                     carrascos[g["nome"]] += g["gols"]
-
-            for g in jogo.get("gols_anulados", {}).get("vasco", []):
-                anulados_vasco += g["gols"]
-            for g in jogo.get("gols_anulados", {}).get("adversario", []):
-                anulados_contra += g["gols"]
 
         saldo = gols_pro - gols_contra
         aproveitamento = round(((vitorias * 3 + empates) / (total * 3)) * 100, 1) if total else 0.0
@@ -693,10 +648,8 @@ class App:
         make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=6, pady=6)
 
         make_card(cards, "Invicto (%)", f"{invicto}").grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
-        make_card(cards, "Anulados (Vasco)", anulados_vasco).grid(row=2, column=1, sticky="nsew", padx=6, pady=6)
-        make_card(cards, "Anulados (Contra)", anulados_contra).grid(row=2, column=2, sticky="nsew", padx=6, pady=6)
 
-        # Tabelas artilheiros/carrascos
+        # Tabelas
         tables = ttk.Frame(self.frame_geral)
         tables.pack(fill="both", expand=True)
 
@@ -720,9 +673,9 @@ class App:
         tv_carr.tag_configure("odd", background="#f3f3f3")
         tv_carr.pack(fill="both", expand=True)
 
-        for i, (nome, qtd) in enumerate(Counter(artilheiros).most_common() if isinstance(artilheiros, Counter) else artilheiros, start=1):
+        for i, (nome, qtd) in enumerate(artilheiros.most_common(), start=1):
             tv_art.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
-        for i, (nome, qtd) in enumerate(Counter(carrascos).most_common() if isinstance(carrascos, Counter) else carrascos, start=1):
+        for i, (nome, qtd) in enumerate(carrascos.most_common(), start=1):
             tv_carr.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
 
     # --------------------- Gráficos ---------------------
@@ -739,17 +692,16 @@ class App:
             ttk.Label(self.frame_graficos, text="Sem dados para exibir gráficos.").pack(anchor="w")
             return
 
-        # Contagem dos artilheiros (gols válidos)
         artilheiros = self._contar_artilheiros()
         nb = ttk.Notebook(self.frame_graficos)
         nb.pack(fill="both", expand=True)
 
-        # 1) Artilheiros (barras horizontais) — decrescente (maior no topo)
+        # 1) Artilheiros (barras horizontais) — decrescente
         f1 = ttk.Frame(nb, padding=8)
         nb.add(f1, text="Artilheiros")
         if artilheiros:
-            top = artilheiros.most_common(15)  # já decrescente
-            labels = [n for n, _ in top]
+            top = artilheiros.most_common(15)
+            labels = [n for n, _ in top]   # já em ordem decrescente
             values = [q for _, q in top]
             self._plot_barras_h(f1, labels, values, "Artilheiros (Gols válidos)", "Gols", top_to_bottom=True)
         else:
@@ -758,15 +710,18 @@ class App:
         # 2) Gols Pró x Contra (Acum.) - linhas
         f2 = ttk.Frame(nb, padding=8)
         nb.add(f2, text="Gols (Acum.)")
-        self._plot_linhas(f2, series["x"], [series["gols_pro_acum"], series["gols_contra_acum"]],
-                          ["Gols pró (acum.)", "Gols contra (acum.)"], "Gols Acumulados", "Jogo", "Gols")
+        self._plot_linhas(f2, series["x"],
+                          [series["gols_pro_acum"], series["gols_contra_acum"]],
+                          ["Gols pró (acum.)", "Gols contra (acum.)"],
+                          "Gols Acumulados", "Jogo", "Gols")
 
         # 3) Saldo de gols (Acum.) - linhas
         f3 = ttk.Frame(nb, padding=8)
         nb.add(f3, text="Saldo")
-        self._plot_linhas(f3, series["x"], [series["saldo_acum"]], ["Saldo (acum.)"], "Saldo de Gols (Acum.)", "Jogo", "Saldo")
+        self._plot_linhas(f3, series["x"], [series["saldo_acum"]],
+                          ["Saldo (acum.)"], "Saldo de Gols (Acum.)", "Jogo", "Saldo")
 
-        # 4) V/E/D (Totais) - barras com cores: verde, amarelo, vermelho
+        # 4) V/E/D (Totais) - barras coloridas
         f4 = ttk.Frame(nb, padding=8)
         nb.add(f4, text="VED (Totais)")
         v_total = series["vit_acum"][-1] if series["vit_acum"] else 0
@@ -779,7 +734,6 @@ class App:
         ttk.Button(self.frame_graficos, text="Recarregar Gráficos", command=self._carregar_graficos).pack(pady=8)
 
     def _contar_artilheiros(self) -> Counter:
-        """Conta gols válidos dos jogadores do Vasco ao longo de todos os jogos."""
         jogos = carregar_dados_jogos()
         c = Counter()
         for jogo in jogos:
@@ -791,12 +745,6 @@ class App:
         return c
 
     def _montar_series_evolucao(self):
-        """
-        Séries ordenadas por data:
-        - x: 1..N
-        - gols_pro_acum, gols_contra_acum, saldo_acum
-        - vit_acum, emp_acum, der_acum
-        """
         jogos = carregar_dados_jogos()
         if not jogos:
             return {"x": []}
@@ -863,38 +811,31 @@ class App:
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
     def _plot_barras_h(self, container, labels, values, titulo, xlabel, top_to_bottom=True):
-        """Barras HORIZONTAIS. Se top_to_bottom=True, primeiro item aparece no topo."""
         fig = Figure(figsize=(9.2, 6.0), dpi=100)
         ax = fig.add_subplot(111)
-
         y_pos = range(len(labels))
         bars = ax.barh(y_pos, values)
-
         ax.set_yticks(y_pos)
         ax.set_yticklabels(labels)
         if top_to_bottom:
             ax.invert_yaxis()  # primeiro item no topo
-
         ax.set_title(titulo)
         ax.set_xlabel(xlabel)
         ax.grid(axis="x", linestyle="--", alpha=0.3)
-
         maxv = max(values) if values else 0
         for rect, val in zip(bars, values):
             ax.text(rect.get_width() + (0.01 * maxv if maxv else 0.2),
                     rect.get_y() + rect.get_height()/2,
                     str(val), va="center")
-
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
     def _plot_barras_v(self, container, labels, values, titulo, xlabel, ylabel, colors=None):
-        """Barras VERTICAIS (usada para V/E/D com cores solicitadas)."""
         fig = Figure(figsize=(8.5, 5.0), dpi=100)
         ax = fig.add_subplot(111)
         x_pos = range(len(labels))
-        bars = ax.bar(x_pos, values, color=colors)
+        ax.bar(x_pos, values, color=colors)
         ax.set_xticks(list(x_pos))
         ax.set_xticklabels(labels)
         ax.set_title(titulo)
