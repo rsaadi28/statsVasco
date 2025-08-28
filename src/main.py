@@ -64,11 +64,10 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Estatísticas do Vasco")
-        # Janela mais espaçosa
         self.root.geometry("1100x780")
         self.root.minsize(980, 680)
 
-        # Aumenta fontes padrão (TTK)
+        # Fontes maiores
         default_font = tkFont.nametofont("TkDefaultFont")
         text_font = tkFont.nametofont("TkTextFont")
         fixed_font = tkFont.nametofont("TkFixedFont")
@@ -77,7 +76,6 @@ class App:
 
         # Estilo TTK
         style = ttk.Style()
-        # Em alguns temas, "clam" dá um visual consistente
         try:
             style.theme_use("clam")
         except Exception:
@@ -112,12 +110,10 @@ class App:
         for i in range(4):
             frame.columnconfigure(i, weight=1)
 
-        # Linha 0
         ttk.Label(frame, text="Data da Partida:").grid(row=0, column=0, sticky="w", pady=4)
         self.data_entry = DateEntry(frame, width=12, date_pattern='dd/mm/yyyy')
         self.data_entry.grid(row=0, column=1, sticky="w", pady=4)
 
-        # Linha 1
         ttk.Label(frame, text="Adversário:").grid(row=1, column=0, sticky="w", pady=4)
         self.adversario_var = tk.StringVar()
         self.adversario_entry = ttk.Combobox(frame, textvariable=self.adversario_var)
@@ -125,7 +121,6 @@ class App:
         self.adversario_entry.grid(row=1, column=1, columnspan=3, sticky="ew", pady=4)
         self.adversario_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "clubes"))
 
-        # Linha 2: Placar
         ttk.Label(frame, text="Placar (Vasco x Adversário):").grid(row=2, column=0, sticky="w", pady=4)
         self.placar_vasco = ttk.Entry(frame, width=6)
         self.placar_vasco.grid(row=2, column=1, sticky="w", pady=4)
@@ -133,7 +128,6 @@ class App:
         self.placar_adversario = ttk.Entry(frame, width=6)
         self.placar_adversario.grid(row=2, column=3, sticky="w", pady=4)
 
-        # Linha 3: Local
         ttk.Label(frame, text="Local:").grid(row=3, column=0, sticky="w", pady=4)
         self.local_var = tk.StringVar(value="casa")
         local_wrap = ttk.Frame(frame)
@@ -141,7 +135,6 @@ class App:
         ttk.Radiobutton(local_wrap, text="Casa", variable=self.local_var, value="casa").pack(side="left", padx=(0, 12))
         ttk.Radiobutton(local_wrap, text="Fora", variable=self.local_var, value="fora").pack(side="left")
 
-        # Linha 4: Competição
         ttk.Label(frame, text="Competição:").grid(row=4, column=0, sticky="w", pady=4)
         self.competicao_var = tk.StringVar()
         self.competicao_entry = ttk.Combobox(frame, textvariable=self.competicao_var)
@@ -149,7 +142,6 @@ class App:
         self.competicao_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4)
         self.competicao_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "competicoes"))
 
-        # Linha 5-6: Gols do Vasco
         ttk.Label(frame, text="Gols do Vasco:").grid(row=5, column=0, sticky="nw", pady=(10, 4))
         col_vasco = ttk.Frame(frame)
         col_vasco.grid(row=5, column=1, columnspan=3, sticky="ew", pady=(10, 4))
@@ -162,7 +154,6 @@ class App:
         self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="ew")
         self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
 
-        # Linha 7-8: Gols do Adversário
         ttk.Label(frame, text="Gols do Adversário:").grid(row=7, column=0, sticky="nw", pady=(10, 4))
         col_contra = ttk.Frame(frame)
         col_contra.grid(row=7, column=1, columnspan=3, sticky="ew", pady=(10, 4))
@@ -175,7 +166,6 @@ class App:
         self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="ew")
         self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
 
-        # Linha 9-10: Anulados Vasco
         ttk.Label(frame, text="Gols do Vasco Anulados (VAR):").grid(row=9, column=0, sticky="nw", pady=(10, 4))
         self.entry_anulado_vasco = ttk.Combobox(frame)
         self.entry_anulado_vasco['values'] = self.listas["jogadores_vasco"]
@@ -185,7 +175,6 @@ class App:
         self.lista_anulados_vasco.grid(row=10, column=1, columnspan=3, sticky="ew")
         self.lista_anulados_vasco.bind("<Delete>", lambda e: self._del_sel(self.lista_anulados_vasco))
 
-        # Linha 11-12: Anulados Adversário
         ttk.Label(frame, text="Gols do Adversário Anulados (VAR):").grid(row=11, column=0, sticky="nw", pady=(10, 4))
         self.entry_anulado_contra = ttk.Combobox(frame)
         self.entry_anulado_contra['values'] = self.listas["jogadores_contra"]
@@ -195,7 +184,6 @@ class App:
         self.lista_anulados_contra.grid(row=12, column=1, columnspan=3, sticky="ew")
         self.lista_anulados_contra.bind("<Delete>", lambda e: self._del_sel(self.lista_anulados_contra))
 
-        # Botões
         botoes = ttk.Frame(frame)
         botoes.grid(row=13, column=0, columnspan=4, pady=12)
         self.btn_salvar = ttk.Button(botoes, text="Salvar Partida", command=self.salvar_partida)
@@ -266,7 +254,6 @@ class App:
         placar_adv = self.placar_adversario.get().strip()
         local = self.local_var.get()
 
-        # Gols (contados)
         nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
         contagem_vasco = Counter(nomes_vasco)
         gols_vasco = [{"nome": nome, "gols": qtd} for nome, qtd in contagem_vasco.items()]
@@ -561,41 +548,62 @@ Gols Anulados Contra: {anulados_contra}"""
             ttk.Label(self.frame_graficos, text="Sem dados para exibir gráficos.").pack(anchor="w")
             return
 
+        # Contagem dos artilheiros (gols válidos)
+        artilheiros = self._contar_artilheiros()
         nb = ttk.Notebook(self.frame_graficos)
         nb.pack(fill="both", expand=True)
 
-        # 1) Pontos acumulados
+        # 1) Artilheiros do Vasco (BARRAS) - substitui a antiga aba "Pontos"
         f1 = ttk.Frame(nb, padding=8)
-        nb.add(f1, text="Pontos")
-        self._plot_linhas(f1, series["x"], [series["pontos_acum"]], ["Pontos acumulados"], "Evolução de Pontos", "Jogo", "Pontos")
+        nb.add(f1, text="Artilheiros")
+        if artilheiros:
+            top = artilheiros.most_common(12)  # top 12
+            labels = [n for n, _ in top][::-1]   # invertido para barh (melhor leitura)
+            values = [q for _, q in top][::-1]
+            self._plot_barras_h(f1, labels, values, "Artilheiros (Gols válidos)", "Gols")
+        else:
+            ttk.Label(f1, text="Ainda não há artilheiros registrados.").pack(anchor="w")
 
-        # 2) Gols Pró x Contra (acum.)
+        # 2) Gols Pró x Contra (Acum.) - linhas
         f2 = ttk.Frame(nb, padding=8)
         nb.add(f2, text="Gols (Acum.)")
         self._plot_linhas(f2, series["x"], [series["gols_pro_acum"], series["gols_contra_acum"]],
                           ["Gols pró (acum.)", "Gols contra (acum.)"], "Gols Acumulados", "Jogo", "Gols")
 
-        # 3) Saldo de gols acumulado
+        # 3) Saldo de gols (Acum.) - linhas
         f3 = ttk.Frame(nb, padding=8)
         nb.add(f3, text="Saldo")
         self._plot_linhas(f3, series["x"], [series["saldo_acum"]], ["Saldo (acum.)"], "Saldo de Gols (Acum.)", "Jogo", "Saldo")
 
-        # 4) Vitórias/Empates/Derrotas acumulados
+        # 4) V/E/D (TOTAIS) - BARRAS COM CORES PEDIDAS (verde, amarelo, vermelho)
         f4 = ttk.Frame(nb, padding=8)
-        nb.add(f4, text="VED (Acum.)")
-        self._plot_linhas(f4, series["x"],
-                          [series["vit_acum"], series["emp_acum"], series["der_acum"]],
-                          ["Vitórias (acum.)", "Empates (acum.)", "Derrotas (acum.)"],
-                          "Vitórias/Empates/Derrotas (Acum.)", "Jogo", "Quantidade")
+        nb.add(f4, text="VED (Totais)")
+        v_total = series["vit_acum"][-1] if series["vit_acum"] else 0
+        e_total = series["emp_acum"][-1] if series["emp_acum"] else 0
+        d_total = series["der_acum"][-1] if series["der_acum"] else 0
+        self._plot_barras_v(f4, ["Vitórias", "Empates", "Derrotas"], [v_total, e_total, d_total],
+                            "Totais de Resultados", "Categoria", "Quantidade",
+                            colors=["green", "yellow", "red"])
 
-        # Botão manual para atualizar
         ttk.Button(self.frame_graficos, text="Recarregar Gráficos", command=self._carregar_graficos).pack(pady=8)
+
+    def _contar_artilheiros(self) -> Counter:
+        """Conta gols válidos dos jogadores do Vasco ao longo de todos os jogos."""
+        jogos = carregar_dados_jogos()
+        c = Counter()
+        for jogo in jogos:
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    c[g.get("nome", "Desconhecido")] += int(g.get("gols", 0))
+                elif isinstance(g, str):
+                    # fallback: caso algum registro antigo esteja só com string
+                    c[g] += 1
+        return c
 
     def _montar_series_evolucao(self):
         """
-        Monta séries ordenadas por data:
+        Séries ordenadas por data:
         - x: 1..N
-        - pontos_acum: 3 por vitória, 1 por empate
         - gols_pro_acum, gols_contra_acum, saldo_acum
         - vit_acum, emp_acum, der_acum
         """
@@ -603,11 +611,9 @@ Gols Anulados Contra: {anulados_contra}"""
         if not jogos:
             return {"x": []}
 
-        # Ordena por data (dd/mm/aaaa)
         jogos_ordenados = sorted(jogos, key=lambda j: _parse_data_ptbr(j["data"]))
 
         x = []
-        pontos_acum = []
         gols_pro_acum = []
         gols_contra_acum = []
         saldo_acum = []
@@ -615,7 +621,7 @@ Gols Anulados Contra: {anulados_contra}"""
         emp_acum = []
         der_acum = []
 
-        p = gp = gc = s = v = e = d = 0
+        gp = gc = s = v = e = d = 0
 
         for i, jogo in enumerate(jogos_ordenados, start=1):
             placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -627,16 +633,13 @@ Gols Anulados Contra: {anulados_contra}"""
             s = gp - gc
 
             if vasco > adv:
-                p += 3
                 v += 1
             elif vasco == adv:
-                p += 1
                 e += 1
             else:
                 d += 1
 
             x.append(i)
-            pontos_acum.append(p)
             gols_pro_acum.append(gp)
             gols_contra_acum.append(gc)
             saldo_acum.append(s)
@@ -646,7 +649,6 @@ Gols Anulados Contra: {anulados_contra}"""
 
         return {
             "x": x,
-            "pontos_acum": pontos_acum,
             "gols_pro_acum": gols_pro_acum,
             "gols_contra_acum": gols_contra_acum,
             "saldo_acum": saldo_acum,
@@ -655,26 +657,59 @@ Gols Anulados Contra: {anulados_contra}"""
             "der_acum": der_acum,
         }
 
+    # --------- Helpers de plot ---------
     def _plot_linhas(self, container, x, series_list, labels, titulo, xlabel, ylabel):
         fig = Figure(figsize=(8.5, 5.0), dpi=100)
         ax = fig.add_subplot(111)
-
         for serie, label in zip(series_list, labels):
             ax.plot(x, serie, label=label, linewidth=2)
-
         ax.set_title(titulo)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.grid(True, linestyle="--", alpha=0.4)
         ax.legend(loc="best")
-
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
-        widget = canvas.get_tk_widget()
-        widget.pack(fill="both", expand=True)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    # --------------------- Main ---------------------
-    # (Nada aqui)
+    def _plot_barras_h(self, container, labels, values, titulo, xlabel):
+        """Barras HORIZONTAIS (ótimas para nomes longos)."""
+        fig = Figure(figsize=(8.5, 5.5), dpi=100)
+        ax = fig.add_subplot(111)
+        y_pos = range(len(labels))
+        bars = ax.barh(y_pos, values)
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(labels)
+        ax.invert_yaxis()  # maior no topo
+        ax.set_title(titulo)
+        ax.set_xlabel(xlabel)
+        ax.grid(axis="x", linestyle="--", alpha=0.3)
+        # anota valores nas barras
+        for rect, val in zip(bars, values):
+            ax.text(rect.get_width() + max(values)*0.01 if values else 0.1,
+                    rect.get_y() + rect.get_height()/2,
+                    str(val), va="center")
+        canvas = FigureCanvasTkAgg(fig, master=container)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def _plot_barras_v(self, container, labels, values, titulo, xlabel, ylabel, colors=None):
+        """Barras VERTICAIS (usada para V/E/D com cores solicitadas)."""
+        fig = Figure(figsize=(8.5, 5.0), dpi=100)
+        ax = fig.add_subplot(111)
+        x_pos = range(len(labels))
+        bars = ax.bar(x_pos, values, color=colors)
+        ax.set_xticks(list(x_pos))
+        ax.set_xticklabels(labels)
+        ax.set_title(titulo)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.grid(axis="y", linestyle="--", alpha=0.3)
+        for i, v in enumerate(values):
+            ax.text(i, v + (max(values)*0.02 if max(values) > 0 else 0.1), str(v), ha="center", va="bottom")
+        canvas = FigureCanvasTkAgg(fig, master=container)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
 
 
 if __name__ == "__main__":
