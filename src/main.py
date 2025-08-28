@@ -399,23 +399,38 @@ class App:
 
     # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
+        # limpa a aba
         for widget in self.frame_temporadas.winfo_children():
             widget.destroy()
 
+        # Canvas + Scrollbar
         canvas = tk.Canvas(self.frame_temporadas, highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.frame_temporadas, orient="vertical", command=canvas.yview)
-        scroll_frame = ttk.Frame(canvas, padding=(5, 5))
-
-        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        # Frame interno que contém tudo
+        scroll_frame = ttk.Frame(canvas, padding=(8, 8))
+        # cria a janela e guarda o id
+        window_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+
+        # 1) sempre atualiza a scrollregion
+        def on_frame_configure(_):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        scroll_frame.bind("<Configure>", on_frame_configure)
+
+        # 2) força o frame a ter a MESMA largura do canvas (ocupa toda a largura!)
+        def on_canvas_configure(e):
+            canvas.itemconfigure(window_id, width=e.width)
+        canvas.bind("<Configure>", on_canvas_configure)
+
+        # scroll com a roda do mouse
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
 
         jogos = carregar_dados_jogos()
         temporadas = defaultdict(list)
@@ -425,7 +440,7 @@ class App:
 
         for ano in sorted(temporadas.keys(), reverse=True):
             frame_ano = ttk.LabelFrame(scroll_frame, text=f"Temporada {ano}", padding=10)
-            frame_ano.pack(fill="x", padx=6, pady=8)
+            frame_ano.pack(fill="x", padx=8, pady=14)  # mais espaçamento vertical
 
             jogos_ano = temporadas[ano]
             vitorias = empates = derrotas = 0
@@ -496,7 +511,8 @@ class App:
 
             sx = ttk.Scrollbar(table_wrap, orient="horizontal", command=tv.xview)
             tv.configure(xscrollcommand=sx.set)
-            tv.pack(fill="x", expand=True)
+            tv.pack(fill="both", expand=True)   # em vez de apenas fill="x"
+
             if len(rows) > 12:
                 sx.pack(fill="x")
 
@@ -530,27 +546,51 @@ class App:
             # Tooltip nos gols (mouse hover)
             self._bind_treeview_tooltips(tv, tooltip_map)
 
-            # ----- Área de Observações (aparece só se houver texto)
+            # ----- Área de Observações (aparece só se houver texto) -----
             obs_frame = ttk.Frame(frame_ano)
-            obs_title = ttk.Label(obs_frame, text="Observações:", font=("Segoe UI", 11, "bold"))
+
+            # header com título à esquerda e botão X à direita
+            obs_header = ttk.Frame(obs_frame)
+            obs_title = ttk.Label(obs_header, text="Observações:", font=("Segoe UI", 11, "bold"))
+            obs_title.pack(side="left", pady=(8, 2))
+
+            # botão fechar (✕) no canto direito
+            btn_close = ttk.Button(
+                obs_header,
+                text="✕",
+                width=3,
+                command=lambda f=obs_frame: f.pack_forget()  # captura este obs_frame
+            )
+            btn_close.pack(side="right")
+            # (não empacotar obs_frame ainda — só quando houver texto)
             obs_label = ttk.Label(obs_frame, text="", wraplength=980, justify="left")
 
-            def on_select(_):
-                sel = tv.selection()
-                if not sel:
-                    obs_frame.pack_forget()
-                    return
-                iid = sel[0]
-                txt = obs_map.get(iid, "")
-                if txt:
-                    obs_title.pack(anchor="w", pady=(8, 2))
-                    obs_label.configure(text=txt)
-                    obs_label.pack(anchor="w", pady=(0, 4))
-                    obs_frame.pack(fill="x", padx=2, pady=(6, 0))
-                else:
-                    obs_frame.pack_forget()
+            def on_select_factory(tv_ref, obs_frame_ref, obs_header_ref, obs_label_ref, obs_map_ref):
+                def on_select(_):
+                    sel = tv_ref.selection()
+                    if not sel:
+                        obs_frame_ref.pack_forget()
+                        return
 
-            tv.bind("<<TreeviewSelect>>", on_select)
+                    iid = sel[0]
+                    txt = obs_map_ref.get(iid, "").strip()
+
+                    if txt:
+                        # monta só quando necessário (evita piscada)
+                        if not obs_frame_ref.winfo_ismapped():
+                            obs_frame_ref.pack(fill="x", padx=2, pady=(6, 0))
+                            obs_header_ref.pack(fill="x")
+                            obs_label_ref.pack(anchor="w", pady=(0, 6))
+                        obs_label_ref.configure(text=txt)
+                    else:
+                        obs_frame_ref.pack_forget()
+                return on_select
+
+            # bind usando factory para não “colar” no último tv do loop
+            tv.bind("<<TreeviewSelect>>",
+                    on_select_factory(tv, obs_frame, obs_header, obs_label, obs_map))
+
+
 
             # ----- Resumos curtos (top artilheiros/carrascos da temporada)
             bottom = ttk.Frame(frame_ano)
@@ -569,6 +609,11 @@ class App:
 
             fill_label_list(left, artilheiros)
             fill_label_list(right, carrascos)
+
+            # separador entre temporadas
+            sep = ttk.Separator(scroll_frame, orient="horizontal")
+            sep.pack(fill="x", padx=4, pady=(6, 2))
+
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):
