@@ -564,6 +564,12 @@ class App:
             btn_close.pack(side="right")
             # (não empacotar obs_frame ainda — só quando houver texto)
             obs_label = ttk.Label(obs_frame, text="", wraplength=980, justify="left")
+            
+            def _upd_wrap(_e=None, lbl=None, container=None):
+                if lbl and container and container.winfo_width() > 40:
+                    lbl.configure(wraplength=container.winfo_width() - 40)
+
+            frame_ano.bind("<Configure>", lambda e, lbl=obs_label, container=frame_ano: _upd_wrap(e, lbl, container))
 
             def on_select_factory(tv_ref, obs_frame_ref, obs_header_ref, obs_label_ref, obs_map_ref):
                 def on_select(_):
