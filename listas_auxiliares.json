@@ -1,0 +1,30 @@
+{
+  "clubes_adversarios": [
+    "Santos",
+    "Juventude",
+    "Corinthians",
+    "Botafogo"
+  ],
+  "jogadores_vasco": [
+    "Philipe Coutinho",
+    "Lucas Piton",
+    "Rayan",
+    "Tche Tche",
+    "Pablo Vegetti (P)",
+    "Jair",
+    "Penalti claro não visto pelo var"
+  ],
+  "jogadores_contra": [
+    "Guilherme",
+    "Nenê",
+    "Gabriel Pereira Taliari",
+    "Maycon",
+    "Guilherme William",
+    "Gustavo Henrique Vernes",
+    "Arthur Cabral"
+  ],
+  "competicoes": [
+    "Brasileirão Série A",
+    "Copa do Brasil"
+  ]
+}

@@ -1,0 +1,141 @@
+[
+  {
+    "data": "17/08/2025",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 6,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 2
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Tche Tche",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": [
+        {
+          "nome": "Guilherme",
+          "clube": "Santos",
+          "gols": 1
+        }
+      ]
+    }
+  },
+  {
+    "data": "20/08/2025",
+    "adversario": "Juventude",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Nenê",
+        "clube": "Juventude",
+        "gols": 1
+      },
+      {
+        "nome": "Gabriel Pereira Taliari",
+        "clube": "Juventude",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "24/08/2025",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Maycon",
+        "clube": "Corinthians",
+        "gols": 1
+      },
+      {
+        "nome": "Guilherme William",
+        "clube": "Corinthians",
+        "gols": 1
+      },
+      {
+        "nome": "Gustavo Henrique Vernes",
+        "clube": "Corinthians",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "27/08/2025",
+    "adversario": "Botafogo",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Jair",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Arthur Cabral",
+        "clube": "Botafogo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [
+        {
+          "nome": "Penalti claro não visto pelo var",
+          "gols": 1
+        }
+      ],
+      "adversario": []
+    }
+  }
+]
