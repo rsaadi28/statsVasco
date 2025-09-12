@@ -137,5 +137,66 @@
       ],
       "adversario": []
     }
+  },
+  {
+    "data": "31/08/2025",
+    "adversario": "Sport Recife",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      },
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Lucas Lima",
+        "clube": "Sport Recife",
+        "gols": 1
+      },
+      {
+        "nome": "Ramon Menezes",
+        "clube": "Sport Recife",
+        "gols": 1
+      }
+    ],
+    "observacao": "O arbitro da partida, Rafael Klaus aptou a partida sem criterio nenhum, não dava \"faltinha\" boba, mas deu um penalti contra o Vasco em que há controversia de sequer o Zagueiro do Vasco tenha tocado no jogador do Sport. Também nesse jogo teve uma falta violenta no Jair, jogador do Vasco em que o jogador se machucou feio no lance, e nem falta o juiz da partida deu no lance. Outro lance bizarro foi um empurrão do jogador do Sport no jogador Lucas Freitas do Vasco cuminando com a saida de bola pela linha de fundo, e o juiz deu escanteio para o time do sport. Tentara de tudo roubar o Vasco, mas mesmo assim, saimos vitoriosos dessa partida."
+  },
+  {
+    "data": "11/09/2025",
+    "adversario": "Botafogo",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Alex Telles",
+        "clube": "Botafogo",
+        "gols": 1
+      }
+    ],
+    "observacao": "jogo de volta válido pela copa do Brasil, onde o Vasco passou nos penaltis: 5 - 3, Leo Jardim pegou um penalti"
   }
 ]

@@ -15,40 +15,60 @@ try:
 except Exception:
     MATPLOTLIB_OK = False
 
-ARQUIVO_JOGOS = "jogos_vasco.json"
-ARQUIVO_LISTAS = "listas_auxiliares.json"
+# Diretórios e arquivos (robusto ao diretório atual de execução)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ARQUIVO_JOGOS = os.path.join(PROJECT_ROOT, "jogos_vasco.json")
+ARQUIVO_LISTAS = os.path.join(PROJECT_ROOT, "listas_auxiliares.json")
+
+
+def _ordenar_listas(dados: dict) -> dict:
+    """Ordena, alfabeticamente (case-insensitive), as listas auxiliares."""
+    if not isinstance(dados, dict):
+        return dados
+    chaves = ("clubes_adversarios", "jogadores_vasco", "jogadores_contra", "competicoes")
+    for k in chaves:
+        lista = dados.get(k)
+        if isinstance(lista, list):
+            dados[k] = sorted(lista, key=lambda s: s.casefold())
+    return dados
+
+
+def _load_json_safe(path, default):
+    """Carrega JSON com segurança, retornando default se ausente/corrompido."""
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content:
+                return default
+            return json.loads(content)
+    except Exception:
+        return default
 
 
 def carregar_dados_jogos():
-    if os.path.exists(ARQUIVO_JOGOS):
-        with open(ARQUIVO_JOGOS, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+    return _load_json_safe(ARQUIVO_JOGOS, [])
 
 
 def carregar_listas():
-    if os.path.exists(ARQUIVO_LISTAS):
-        with open(ARQUIVO_LISTAS, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {
+    dados = _load_json_safe(ARQUIVO_LISTAS, {
         "clubes_adversarios": [],
         "jogadores_vasco": [],
         "jogadores_contra": [],
         "competicoes": []
-    }
+    })
+    return _ordenar_listas(dados)
 
 
 def salvar_listas(data):
+    data = _ordenar_listas(data)
     with open(ARQUIVO_LISTAS, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def salvar_jogo(jogo):
-    if os.path.exists(ARQUIVO_JOGOS):
-        with open(ARQUIVO_JOGOS, "r", encoding="utf-8") as f:
-            dados = json.load(f)
-    else:
-        dados = []
+    dados = carregar_dados_jogos()
     dados.append(jogo)
     with open(ARQUIVO_JOGOS, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
@@ -105,7 +125,7 @@ class App:
         self.root.title("Estatísticas do Vasco")
         self.root.geometry("1150x800")
         self.root.minsize(1000, 700)
-
+        
         # Fontes maiores
         default_font = tkFont.nametofont("TkDefaultFont")
         text_font = tkFont.nametofont("TkTextFont")
@@ -233,6 +253,7 @@ class App:
         self.lista_gols_vasco.insert(tk.END, jogador)
         if jogador not in self.listas["jogadores_vasco"]:
             self.listas["jogadores_vasco"].append(jogador)
+            self.listas["jogadores_vasco"] = sorted(self.listas["jogadores_vasco"], key=lambda s: s.casefold())
             self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
         self.entry_gol_vasco.delete(0, tk.END)
 
@@ -247,6 +268,7 @@ class App:
         self.lista_gols_contra.insert(tk.END, jogador)
         if jogador not in self.listas["jogadores_contra"]:
             self.listas["jogadores_contra"].append(jogador)
+            self.listas["jogadores_contra"] = sorted(self.listas["jogadores_contra"], key=lambda s: s.casefold())
             self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
         self.entry_gol_contra.delete(0, tk.END)
 
@@ -295,10 +317,12 @@ class App:
 
         if adversario not in self.listas["clubes_adversarios"]:
             self.listas["clubes_adversarios"].append(adversario)
+            self.listas["clubes_adversarios"] = sorted(self.listas["clubes_adversarios"], key=lambda s: s.casefold())
             self.adversario_entry['values'] = self.listas["clubes_adversarios"]
 
         if competicao not in self.listas.get("competicoes", []):
             self.listas.setdefault("competicoes", []).append(competicao)
+            self.listas["competicoes"] = sorted(self.listas["competicoes"], key=lambda s: s.casefold())
             self.competicao_entry['values'] = self.listas["competicoes"]
 
         salvar_listas(self.listas)

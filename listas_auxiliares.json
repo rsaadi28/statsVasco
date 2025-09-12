@@ -3,7 +3,8 @@
     "Santos",
     "Juventude",
     "Corinthians",
-    "Botafogo"
+    "Botafogo",
+    "Sport Recife"
   ],
   "jogadores_vasco": [
     "Philipe Coutinho",
@@ -12,7 +13,8 @@
     "Tche Tche",
     "Pablo Vegetti",
     "Jair",
-    "Penalti claro não visto pelo var"
+    "Penalti claro não visto pelo var",
+    "Nuno Moreira"
   ],
   "jogadores_contra": [
     "Guilherme",
@@ -21,7 +23,10 @@
     "Maycon",
     "Guilherme William",
     "Gustavo Henrique Vernes",
-    "Arthur Cabral"
+    "Arthur Cabral",
+    "Lucas Lima",
+    "Ramon Menezes",
+    "Alex Telles"
   ],
   "competicoes": [
     "Brasileirão Série A",
