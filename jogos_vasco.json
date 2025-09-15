@@ -198,5 +198,38 @@
       }
     ],
     "observacao": "jogo de volta válido pela copa do Brasil, onde o Vasco passou nos penaltis: 5 - 3, Leo Jardim pegou um penalti"
+  },
+  {
+    "data": "14/09/2025",
+    "adversario": "Ceará SC",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Carlos Cuesta",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Galeano",
+        "clube": "Ceará SC",
+        "gols": 1
+      },
+      {
+        "nome": "Pedro Henrique Konzen",
+        "clube": "Ceará SC",
+        "gols": 1
+      }
+    ],
+    "observacao": "Apos a expulsão do jogador Rodrioquinho o Vasco conseguiu ficar na frente do placar de novo, mas cedeu o empate na prorrogação do segundo tempo."
   }
 ]

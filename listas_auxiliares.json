@@ -1,32 +1,36 @@
 {
   "clubes_adversarios": [
-    "Santos",
-    "Juventude",
-    "Corinthians",
     "Botafogo",
+    "Ceará SC",
+    "Corinthians",
+    "Juventude",
+    "Santos",
     "Sport Recife"
   ],
   "jogadores_vasco": [
-    "Philipe Coutinho",
-    "Lucas Piton",
-    "Rayan",
-    "Tche Tche",
-    "Pablo Vegetti",
+    "Carlos Cuesta",
     "Jair",
+    "Lucas Piton",
+    "Nuno Moreira",
+    "Pablo Vegetti",
     "Penalti claro não visto pelo var",
-    "Nuno Moreira"
+    "Philipe Coutinho",
+    "Rayan",
+    "Tche Tche"
   ],
   "jogadores_contra": [
-    "Guilherme",
-    "Nenê",
+    "Alex Telles",
+    "Arthur Cabral",
     "Gabriel Pereira Taliari",
-    "Maycon",
+    "Galeano",
+    "Guilherme",
     "Guilherme William",
     "Gustavo Henrique Vernes",
-    "Arthur Cabral",
     "Lucas Lima",
-    "Ramon Menezes",
-    "Alex Telles"
+    "Maycon",
+    "Nenê",
+    "Pedro Henrique Konzen",
+    "Ramon Menezes"
   ],
   "competicoes": [
     "Brasileirão Série A",

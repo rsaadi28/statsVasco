@@ -147,6 +147,40 @@ class App:
         style.configure("CardValue.TLabel", font=("Segoe UI", 18, "bold"))
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
 
+        # Tema escuro de alto contraste (melhor visibilidade do mouse)
+        self.colors = {
+            "bg": "#0f172a",           # fundo principal
+            "bg2": "#111827",          # fundo secundário
+            "fg": "#e5e7eb",           # texto
+            "accent": "#2563eb",       # destaque
+            "row_alt_bg": "#0b1220",   # zebra
+            "tree_bg": "#0f172a",
+            "tree_fg": "#e5e7eb",
+            "tree_head_bg": "#1f2937",
+            "tree_head_fg": "#e5e7eb",
+            "entry_bg": "#0b1220",
+            "entry_fg": "#e5e7eb",
+            "select_bg": "#2563eb",
+            "select_fg": "#ffffff",
+        }
+
+        # Aplicar às principais classes ttk/tk
+        self.root.configure(bg=self.colors["bg"])  # fundo da janela
+        style.configure(".", background=self.colors["bg"], foreground=self.colors["fg"])
+        style.configure("TFrame", background=self.colors["bg"]) 
+        style.configure("TLabelframe", background=self.colors["bg"]) 
+        style.configure("TLabelframe.Label", background=self.colors["bg"], foreground=self.colors["fg"]) 
+        style.configure("TLabel", background=self.colors["bg"], foreground=self.colors["fg"]) 
+        style.configure("TNotebook", background=self.colors["bg"]) 
+        style.configure("TNotebook.Tab", background=self.colors["bg"], foreground=self.colors["fg"]) 
+        style.map("TNotebook.Tab", background=[("selected", self.colors["bg2"])])
+        style.configure("TButton", background=self.colors["bg2"], foreground=self.colors["fg"]) 
+        style.map("TButton", background=[("active", self.colors["tree_head_bg"])])
+        style.configure("TEntry", fieldbackground=self.colors["entry_bg"], foreground=self.colors["entry_fg"]) 
+        style.configure("TCombobox", fieldbackground=self.colors["entry_bg"], foreground=self.colors["entry_fg"], background=self.colors["entry_bg"]) 
+        style.configure("Treeview", background=self.colors["tree_bg"], fieldbackground=self.colors["tree_bg"], foreground=self.colors["tree_fg"], bordercolor=self.colors["bg"], lightcolor=self.colors["bg"], darkcolor=self.colors["bg"]) 
+        style.configure("Treeview.Heading", background=self.colors["tree_head_bg"], foreground=self.colors["tree_head_fg"]) 
+
         self.listas = carregar_listas()
 
         self.notebook = ttk.Notebook(root)
@@ -213,7 +247,11 @@ class App:
         self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.pack(fill="x")
-        self.lista_gols_vasco = tk.Listbox(frame, height=5)
+        self.lista_gols_vasco = tk.Listbox(
+            frame, height=5,
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
+        )
         self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="ew")
         self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
 
@@ -226,13 +264,21 @@ class App:
         self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.pack(fill="x")
-        self.lista_gols_contra = tk.Listbox(frame, height=5)
+        self.lista_gols_contra = tk.Listbox(
+            frame, height=5,
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
+        )
         self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="ew")
         self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
 
         # Observações
         ttk.Label(frame, text="Observações da Partida:").grid(row=9, column=0, sticky="nw", pady=(10, 4))
-        self.obs_text = tk.Text(frame, height=4, wrap="word")
+        self.obs_text = tk.Text(
+            frame, height=4, wrap="word",
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            insertbackground=self.colors["fg"]
+        )
         self.obs_text.grid(row=9, column=1, columnspan=3, sticky="ew", pady=(10, 4))
 
         # Botões
@@ -428,7 +474,7 @@ class App:
             widget.destroy()
 
         # Canvas + Scrollbar
-        canvas = tk.Canvas(self.frame_temporadas, highlightthickness=0)
+        canvas = tk.Canvas(self.frame_temporadas, highlightthickness=0, bg=self.colors["bg"])
         scrollbar = ttk.Scrollbar(self.frame_temporadas, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
 
@@ -540,7 +586,7 @@ class App:
             if len(rows) > 12:
                 sx.pack(fill="x")
 
-            tv.tag_configure("odd", background="#f6f6f6")
+            tv.tag_configure("odd", background=self.colors["row_alt_bg"])
 
             tooltip_map = {}
             obs_map = {}
@@ -735,7 +781,7 @@ class App:
         tv_art.heading("gols", text="Gols")
         tv_art.column("jogador", anchor="w", width=240)
         tv_art.column("gols", anchor="center", width=80)
-        tv_art.tag_configure("odd", background="#f3f3f3")
+        tv_art.tag_configure("odd", background=self.colors["row_alt_bg"]) 
         tv_art.pack(fill="both", expand=True)
 
         frame_carr = ttk.Labelframe(tables, text="Carrascos (Gols contra o Vasco)", padding=8)
@@ -745,7 +791,7 @@ class App:
         tv_carr.heading("gols", text="Gols")
         tv_carr.column("jogador", anchor="w", width=260)
         tv_carr.column("gols", anchor="center", width=80)
-        tv_carr.tag_configure("odd", background="#f3f3f3")
+        tv_carr.tag_configure("odd", background=self.colors["row_alt_bg"]) 
         tv_carr.pack(fill="both", expand=True)
 
         for i, (nome, qtd) in enumerate(artilheiros.most_common(), start=1):
