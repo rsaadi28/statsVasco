@@ -231,5 +231,29 @@
       }
     ],
     "observacao": "Apos a expulsão do jogador Rodrioquinho o Vasco conseguiu ficar na frente do placar de novo, mas cedeu o empate na prorrogação do segundo tempo."
+  },
+  {
+    "data": "21/09/2025",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Jorge Carrascal",
+        "clube": "Flamengo",
+        "gols": 1
+      }
+    ],
+    "observacao": ""
   }
 ]

@@ -149,17 +149,17 @@ class App:
 
         # Tema escuro de alto contraste (melhor visibilidade do mouse)
         self.colors = {
-            "bg": "#0f172a",           # fundo principal
-            "bg2": "#111827",          # fundo secundário
-            "fg": "#e5e7eb",           # texto
-            "accent": "#2563eb",       # destaque
-            "row_alt_bg": "#0b1220",   # zebra
-            "tree_bg": "#0f172a",
-            "tree_fg": "#e5e7eb",
-            "tree_head_bg": "#1f2937",
-            "tree_head_fg": "#e5e7eb",
-            "entry_bg": "#0b1220",
-            "entry_fg": "#e5e7eb",
+            "bg": "#6b6b6b",           # fundo principal
+            "bg2": "#505050",          # fundo secundário
+            "fg": "#ffffff",           # texto
+            "accent": "#0a0b0e",       # destaque
+            "row_alt_bg": "#98bbff",   # zebra
+            "tree_bg": "#fff",
+            "tree_fg": "#000",
+            "tree_head_bg": "#fff",
+            "tree_head_fg": "#293f6b",
+            "entry_bg": "#fff",
+            "entry_fg": "#000",
             "select_bg": "#2563eb",
             "select_fg": "#ffffff",
         }
