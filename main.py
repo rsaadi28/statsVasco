@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 from collections import defaultdict, Counter
 import json
 import os
+import shutil
+import sys
 from tkcalendar import DateEntry
 import tkinter.font as tkFont
 from datetime import datetime
@@ -16,9 +18,41 @@ except Exception:
     MATPLOTLIB_OK = False
 
 # Diretórios e arquivos (robusto ao diretório atual de execução)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-ARQUIVO_JOGOS = os.path.join(PROJECT_ROOT, "jogos_vasco.json")
-ARQUIVO_LISTAS = os.path.join(PROJECT_ROOT, "listas_auxiliares.json")
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+APP_NAME = "StatsVasco"
+APP_SUPPORT_DIR = os.path.join(
+    os.path.expanduser("~/Library/Application Support"),
+    APP_NAME
+)
+
+
+def _definir_diretorio_dados():
+    """Usa Application Support quando empacotado (PyInstaller)."""
+    if sys.platform == "darwin" and getattr(sys, "frozen", False):
+        os.makedirs(APP_SUPPORT_DIR, exist_ok=True)
+        return APP_SUPPORT_DIR
+    return PROJECT_ROOT
+
+
+DATA_DIR = _definir_diretorio_dados()
+ARQUIVO_JOGOS = os.path.join(DATA_DIR, "jogos_vasco.json")
+ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
+
+
+def _bootstrap_jsons():
+    """Copia JSONs originais para Application Support no primeiro uso."""
+    if DATA_DIR == PROJECT_ROOT:
+        return
+    for nome in ("jogos_vasco.json", "listas_auxiliares.json"):
+        destino = os.path.join(DATA_DIR, nome)
+        if os.path.exists(destino):
+            continue
+        origem = os.path.join(PROJECT_ROOT, nome)
+        if os.path.exists(origem):
+            shutil.copy2(origem, destino)
+
+
+_bootstrap_jsons()
 
 
 def _ordenar_listas(dados: dict) -> dict:
