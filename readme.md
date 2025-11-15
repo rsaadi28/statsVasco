@@ -33,11 +33,11 @@ iconutil -c icns MinhaGrana.iconset -o app.icns
 rm -r MinhaGrana.iconset
 
 
-3) pyinstaller MinhasDividas.spec
-ou pyinstaller --name MinhasDividas --windowed --icon app.icns main.py
+3) pyinstaller StatsVasco.spec
+ou pyinstaller --name StatsVasco --windowed --icon app.icns main.py
 
-4) Resultado fica em dist/MinhasDividas/ (ou .app se usar --windowed).
-Execute para testar: ./dist/MinhasDividas/MinhasDividas (ou abra dist/MinhasDividas.app).
+4) Resultado fica em dist/StatsVasco/ (ou .app se usar --windowed).
+Execute para testar: ./dist/StatsVasco/StatsVasco (ou abra dist/StatsVasco.app).
 
 Quando terminar, saia do venv com deactivate.
 
