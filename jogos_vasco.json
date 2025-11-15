@@ -255,5 +255,249 @@
       }
     ],
     "observacao": ""
+  },
+  {
+    "data": "24/09/2025",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Puma Rodrigurez",
+        "gols": 1
+      },
+      {
+        "nome": "Luciano Juba (Contra)",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Mateo Sanabria",
+        "clube": "Bahia",
+        "gols": 1
+      }
+    ],
+    "observacao": "Juiz fraco, era para expulsar 3 do Bahia e só expulsou 1."
+  },
+  {
+    "data": "28/09/2025",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": ""
+  },
+  {
+    "data": "01/10/2025",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Flaco López",
+        "clube": "Palmeiras",
+        "gols": 2
+      },
+      {
+        "nome": "Vitor Roque",
+        "clube": "Palmeiras",
+        "gols": 1
+      }
+    ],
+    "observacao": "Teve um penalti no Rayan que o var nem chamou e o juiz não fez nada"
+  },
+  {
+    "data": "05/10/2025",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 2
+      },
+      {
+        "nome": "Gabriel Silva (GB)",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Aitor Cantalapiedra",
+        "clube": "Vitória",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Halter",
+        "clube": "Vitória",
+        "gols": 1
+      },
+      {
+        "nome": "Raúl Cáceres",
+        "clube": "Vitória",
+        "gols": 1
+      }
+    ],
+    "observacao": "O Vitória reclamou da arbitragem, da expulsão do zagueiro Lucas Halter pelo empurrão que ele deu no jogador do Vasco, Paulo Henrique, o jogador expulso já tinha cartão amarelo, então levou outro amarelo e acabou sendo expulso.\nOutro lance que não é de hoje é o Léo Jardim querer catimbar o jogo de forma errada e acaba prejudicando o time, ele saiu em uma bola e fico no chão achando que o jogo ia parar, mas o jogo não parou, o Vasco ficou sem goleiro e o Vitória marcou o gol de empate de novo (3 x 3)."
+  },
+  {
+    "data": "15/10/2025",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "Hugo Moura foi expulso de forma descutivel"
+  },
+  {
+    "data": "20/10/2025",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": ""
+  },
+  {
+    "data": "26/10/2025",
+    "adversario": "RedBull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Gabriel Silva (GB)",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "Maquina chamada Vasco da Gama... que continue assim!"
+  },
+  {
+    "data": "02/11/2025",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Lucas Moura",
+        "clube": "São Paulo",
+        "gols": 1
+      },
+      {
+        "nome": "Luiz Gustavo",
+        "clube": "São Paulo",
+        "gols": 1
+      }
+    ],
+    "observacao": "Penaltizinho mandraque marcado contra o Vasco no final do primeiro tempo."
+  },
+  {
+    "data": "08/11/2025",
+    "adversario": "Juventude",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 13,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Nenê",
+        "clube": "Juventude",
+        "gols": 1
+      },
+      {
+        "nome": "Marcelo Hermes",
+        "clube": "Juventude",
+        "gols": 1
+      },
+      {
+        "nome": "Ewerthon",
+        "clube": "Juventude",
+        "gols": 1
+      }
+    ],
+    "observacao": ""
   }
 ]
