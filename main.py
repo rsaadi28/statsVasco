@@ -104,6 +104,10 @@ def salvar_listas(data):
 def salvar_jogo(jogo):
     dados = carregar_dados_jogos()
     dados.append(jogo)
+    salvar_lista_jogos(dados)
+
+
+def salvar_lista_jogos(dados):
     with open(ARQUIVO_JOGOS, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
 
@@ -181,23 +185,24 @@ class App:
         style.configure("CardValue.TLabel", font=("Segoe UI", 18, "bold"))
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
 
-        # Tema escuro de alto contraste (melhor visibilidade do mouse)
+        # Paleta clara inspirada no macOS (mais suave ao olhar)
         self.colors = {
-            "bg": "#6b6b6b",           # fundo principal
-            "bg2": "#505050",          # fundo secundário
-            "fg": "#ffffff",           # texto
-            "accent": "#0a0b0e",       # destaque
-            "row_alt_bg": "#98bbff",   # zebra
-            "tree_bg": "#fff",
-            "tree_fg": "#000",
-            "tree_head_bg": "#fff",
-            "tree_head_fg": "#293f6b",
-            "entry_bg": "#fff",
-            "entry_fg": "#000",
-            "select_bg": "#2563eb",
+            "bg": "#f2f3f5",           # fundo principal
+            "bg2": "#e1e3e8",          # fundo secundário
+            "fg": "#1f1f1f",           # texto
+            "accent": "#0a84ff",       # destaque azul macOS
+            "row_alt_bg": "#e8edf8",   # zebra discreta
+            "tree_bg": "#ffffff",
+            "tree_fg": "#1c1c1e",
+            "tree_head_bg": "#edf0f7",
+            "tree_head_fg": "#2f2f30",
+            "entry_bg": "#ffffff",
+            "entry_fg": "#111111",
+            "select_bg": "#0a84ff",
             "select_fg": "#ffffff",
         }
 
+        self.editing_index = None
         # Aplicar às principais classes ttk/tk
         self.root.configure(bg=self.colors["bg"])  # fundo da janela
         style.configure(".", background=self.colors["bg"], foreground=self.colors["fg"])
@@ -320,11 +325,22 @@ class App:
         )
         self.obs_text.grid(row=9, column=1, columnspan=3, sticky="ew", pady=(10, 4))
 
-        # Botões
+        # Botões e status de edição
+        self.salvar_btn_label = tk.StringVar(value="Salvar Partida")
+        self.modo_edicao_var = tk.StringVar(value="")
         botoes = ttk.Frame(frame)
         botoes.grid(row=10, column=0, columnspan=4, pady=12)
-        ttk.Button(botoes, text="Salvar Partida", command=self.salvar_partida).pack(side="left", padx=6)
+        ttk.Label(botoes, textvariable=self.modo_edicao_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 12))
+        self.btn_salvar = ttk.Button(botoes, textvariable=self.salvar_btn_label, command=self.salvar_partida)
+        self.btn_salvar.pack(side="left", padx=6)
+        self.btn_cancelar_edicao = ttk.Button(botoes, text="Cancelar Edição", command=self._cancelar_edicao)
+        self.btn_cancelar_edicao.pack(side="left", padx=6)
+        self.btn_cancelar_edicao.state(["disabled"])
         ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
+
+    def _cancelar_edicao(self):
+        if self.editing_index is not None:
+            self._limpar_formulario()
 
     def _abrir_calendario_popup(self):
         popup = getattr(self, "_calendar_popup", None)
@@ -492,12 +508,32 @@ class App:
             "observacao": observacao,  # <<< novo campo
         }
 
-        salvar_jogo(jogo)
-        messagebox.showinfo("Sucesso", "Partida registrada com sucesso!")
+        jogos = carregar_dados_jogos()
+        if self.editing_index is not None:
+            if 0 <= self.editing_index < len(jogos):
+                jogos[self.editing_index] = jogo
+                salvar_lista_jogos(jogos)
+                msg = "Partida atualizada com sucesso!"
+            else:
+                messagebox.showerror("Erro", "Não foi possível localizar o jogo selecionado para edição.")
+                return
+        else:
+            jogos.append(jogo)
+            salvar_lista_jogos(jogos)
+            msg = "Partida registrada com sucesso!"
+
+        messagebox.showinfo("Sucesso", msg)
         self._limpar_formulario()
         self._atualizar_abas()
 
     def _limpar_formulario(self):
+        self.editing_index = None
+        if hasattr(self, "salvar_btn_label"):
+            self.salvar_btn_label.set("Salvar Partida")
+        if hasattr(self, "modo_edicao_var"):
+            self.modo_edicao_var.set("")
+        if hasattr(self, "btn_cancelar_edicao"):
+            self.btn_cancelar_edicao.state(["disabled"])
         self.data_var.set(datetime.now().strftime("%d/%m/%Y"))
         self._fechar_calendario_popup()
         self.adversario_var.set("")
@@ -510,6 +546,62 @@ class App:
         self.entry_gol_contra.delete(0, tk.END)
         self.obs_text.delete("1.0", "end")
         self.local_var.set("casa")
+
+    def _preencher_listbox_gols(self, listbox, dados):
+        listbox.delete(0, tk.END)
+        for item in dados:
+            if isinstance(item, dict):
+                nome = item.get("nome", "")
+                qtd = int(item.get("gols", 0))
+                for _ in range(max(1, qtd)):
+                    if nome:
+                        listbox.insert(tk.END, nome)
+            elif isinstance(item, str) and item:
+                listbox.insert(tk.END, item)
+
+    def _carregar_jogo_para_edicao(self, jogo_idx):
+        jogos = carregar_dados_jogos()
+        if not (0 <= jogo_idx < len(jogos)):
+            messagebox.showerror("Erro", "Não foi possível carregar o jogo selecionado.")
+            return
+
+        jogo = jogos[jogo_idx]
+        self.notebook.select(self.frame_registro)
+        self.editing_index = jogo_idx
+        adversario = jogo.get("adversario", "")
+        data = jogo.get("data", "")
+        self.salvar_btn_label.set("Salvar Alterações")
+        self.modo_edicao_var.set(f"Editando: {adversario} ({data})")
+        self.btn_cancelar_edicao.state(["!disabled"])
+
+        self.data_var.set(data)
+        self.adversario_var.set(adversario)
+        self.competicao_var.set(jogo.get("competicao", ""))
+        self.local_var.set(jogo.get("local", "casa"))
+
+        placar = jogo.get("placar", {})
+        self.placar_vasco.delete(0, tk.END)
+        self.placar_vasco.insert(0, str(placar.get("vasco", "")))
+        self.placar_adversario.delete(0, tk.END)
+        self.placar_adversario.insert(0, str(placar.get("adversario", "")))
+
+        self._preencher_listbox_gols(self.lista_gols_vasco, jogo.get("gols_vasco", []))
+        self._preencher_listbox_gols(self.lista_gols_contra, jogo.get("gols_adversario", []))
+
+        self.obs_text.delete("1.0", "end")
+        self.obs_text.insert("1.0", jogo.get("observacao", ""))
+
+    def _on_tree_double_click(self, event):
+        tree = event.widget
+        iid = tree.identify_row(event.y)
+        if not iid:
+            return
+        mapping = getattr(tree, "_item_to_idx", {})
+        jogo_idx = mapping.get(iid)
+        if jogo_idx is None:
+            return
+        tree.selection_set(iid)
+        self._carregar_jogo_para_edicao(jogo_idx)
 
     def _atualizar_abas(self):
         self._carregar_temporadas()
@@ -614,9 +706,9 @@ class App:
 
         jogos = carregar_dados_jogos()
         temporadas = defaultdict(list)
-        for jogo in jogos:
+        for idx, jogo in enumerate(jogos):
             ano = jogo["data"][-4:]  # dd/mm/aaaa
-            temporadas[ano].append(jogo)
+            temporadas[ano].append((idx, jogo))
 
         for ano in sorted(temporadas.keys(), reverse=True):
             frame_ano = ttk.LabelFrame(scroll_frame, text=f"Temporada {ano}", padding=10)
@@ -629,7 +721,7 @@ class App:
             carrascos = Counter()
 
             rows = []
-            for jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j["data"])):
+            for idx_global, jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j[1]["data"])):
                 local = jogo.get("local", "desconhecido").capitalize()
                 placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
                 competicao = jogo.get("competicao", "Competição Desconhecida")
@@ -655,7 +747,7 @@ class App:
 
                 rows.append({
                     "data": data, "local": local, "competicao": competicao,
-                    "adversario": adversario, "raw": jogo
+                    "adversario": adversario, "raw": jogo, "idx": idx_global
                 })
 
             # Cards
@@ -700,6 +792,7 @@ class App:
 
             tooltip_map = {}
             obs_map = {}
+            item_to_idx = {}
 
             for i, r in enumerate(rows, start=1):
                 jogo_raw = r["raw"]
@@ -722,9 +815,12 @@ class App:
                 )
                 tooltip_map[iid] = self._tooltip_gols_text(jogo_raw)
                 obs_map[iid] = jogo_raw.get("observacao", "").strip()
+                item_to_idx[iid] = r["idx"]
 
             # Tooltip nos gols (mouse hover)
             self._bind_treeview_tooltips(tv, tooltip_map)
+            tv._item_to_idx = item_to_idx
+            tv.bind("<Double-1>", self._on_tree_double_click)
 
             # ----- Área de Observações (aparece só se houver texto) -----
             obs_frame = ttk.Frame(frame_ano)
