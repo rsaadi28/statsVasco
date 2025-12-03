@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 import sys
-from tkcalendar import DateEntry
+from tkcalendar import Calendar
 import tkinter.font as tkFont
 from datetime import datetime
 
