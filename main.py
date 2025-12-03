@@ -300,13 +300,19 @@ class App:
         self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.pack(fill="x")
+        lista_vasco_wrap = ttk.Frame(frame)
+        lista_vasco_wrap.grid(row=6, column=1, columnspan=3, sticky="nsew")
+        lista_vasco_wrap.rowconfigure(0, weight=1)
+        lista_vasco_wrap.columnconfigure(0, weight=1)
         self.lista_gols_vasco = tk.Listbox(
-            frame, height=5,
+            lista_vasco_wrap, height=5,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
-        self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="nsew")
+        self.lista_gols_vasco.grid(row=0, column=0, sticky="nsew")
         self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
+        ttk.Button(lista_vasco_wrap, text="Remover Selecionado",
+                   command=self.remover_gol_vasco).grid(row=1, column=0, sticky="e", pady=(6, 0))
 
         # Gols do Adversário
         ttk.Label(frame, text="Gols do Adversário (pressione Enter para adicionar):").grid(row=7, column=0, sticky="nw", pady=(10, 4))
@@ -317,13 +323,19 @@ class App:
         self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.pack(fill="x")
+        lista_contra_wrap = ttk.Frame(frame)
+        lista_contra_wrap.grid(row=8, column=1, columnspan=3, sticky="nsew")
+        lista_contra_wrap.rowconfigure(0, weight=1)
+        lista_contra_wrap.columnconfigure(0, weight=1)
         self.lista_gols_contra = tk.Listbox(
-            frame, height=5,
+            lista_contra_wrap, height=5,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
-        self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="nsew")
+        self.lista_gols_contra.grid(row=0, column=0, sticky="nsew")
         self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
+        ttk.Button(lista_contra_wrap, text="Remover Selecionado",
+                   command=self.remover_gol_contra).grid(row=1, column=0, sticky="e", pady=(6, 0))
 
         # Observações
         ttk.Label(frame, text="Observações da Partida:").grid(row=9, column=0, sticky="nw", pady=(10, 4))
@@ -482,12 +494,12 @@ class App:
             return 0
         return 0
 
-    def remover_gol_vasco(self, event):
+    def remover_gol_vasco(self, event=None):
         sel = self.lista_gols_vasco.curselection()
         if sel:
             self.lista_gols_vasco.delete(sel[0])
 
-    def remover_gol_contra(self, event):
+    def remover_gol_contra(self, event=None):
         sel = self.lista_gols_contra.curselection()
         if sel:
             self.lista_gols_contra.delete(sel[0])
