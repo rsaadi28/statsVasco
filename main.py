@@ -216,6 +216,7 @@ class App:
         style.configure("Treeview.Heading", background=self.colors["tree_head_bg"], foreground=self.colors["tree_head_fg"]) 
 
         self.listas = carregar_listas()
+        self._calendar_popup = None
 
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True)
@@ -241,8 +242,12 @@ class App:
             frame.columnconfigure(i, weight=1)
 
         ttk.Label(frame, text="Data da Partida:").grid(row=0, column=0, sticky="w", pady=4)
-        self.data_entry = DateEntry(frame, width=12, date_pattern='dd/mm/yyyy')
-        self.data_entry.grid(row=0, column=1, sticky="w", pady=4)
+        data_picker = ttk.Frame(frame)
+        data_picker.grid(row=0, column=1, columnspan=2, sticky="w", pady=4)
+        self.data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
+        self.data_entry = ttk.Entry(data_picker, width=12, textvariable=self.data_var)
+        self.data_entry.pack(side="left")
+        ttk.Button(data_picker, text="Calendário", command=self._abrir_calendario_popup).pack(side="left", padx=(8, 0))
 
         ttk.Label(frame, text="Adversário:").grid(row=1, column=0, sticky="w", pady=4)
         self.adversario_var = tk.StringVar()
@@ -320,6 +325,75 @@ class App:
         botoes.grid(row=10, column=0, columnspan=4, pady=12)
         ttk.Button(botoes, text="Salvar Partida", command=self.salvar_partida).pack(side="left", padx=6)
         ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
+
+    def _abrir_calendario_popup(self):
+        popup = getattr(self, "_calendar_popup", None)
+        if popup and popup.winfo_exists():
+            popup.lift()
+            popup.focus_force()
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Selecionar data")
+        top.transient(self.root)
+        top.grab_set()
+        top.lift()
+        top.attributes("-topmost", True)
+        self._calendar_popup = top
+
+        try:
+            data_atual = _parse_data_ptbr(self.data_var.get().strip())
+        except Exception:
+            data_atual = datetime.now()
+
+        cal_kwargs = {"selectmode": "day", "date_pattern": "dd/mm/yyyy"}
+        try:
+            cal = Calendar(top, locale="pt_BR", **cal_kwargs)
+        except Exception:
+            cal = Calendar(top, **cal_kwargs)
+
+        cal.selection_set(data_atual)
+        cal.pack(padx=12, pady=12)
+
+        buttons = ttk.Frame(top)
+        buttons.pack(fill="x", pady=(0, 12), padx=12)
+        ttk.Button(buttons, text="Cancelar", command=self._fechar_calendario_popup).pack(side="right", padx=(4, 0))
+        ttk.Button(buttons, text="Usar data", command=lambda: self._confirmar_data_calendario(cal)).pack(side="right")
+
+        top.protocol("WM_DELETE_WINDOW", self._fechar_calendario_popup)
+        top.update_idletasks()
+        try:
+            root_x = self.root.winfo_rootx()
+            root_y = self.root.winfo_rooty()
+            root_w = self.root.winfo_width()
+            root_h = self.root.winfo_height()
+            win_w = top.winfo_width()
+            win_h = top.winfo_height()
+            pos_x = root_x + (root_w - win_w) // 2
+            pos_y = root_y + (root_h - win_h) // 2
+            top.geometry(f"+{pos_x}+{pos_y}")
+        except Exception:
+            pass
+
+    def _confirmar_data_calendario(self, calendario):
+        if calendario:
+            try:
+                selecionada = calendario.selection_get()
+            except Exception:
+                selecionada = None
+            if selecionada:
+                self.data_var.set(selecionada.strftime("%d/%m/%Y"))
+        self._fechar_calendario_popup()
+
+    def _fechar_calendario_popup(self):
+        popup = getattr(self, "_calendar_popup", None)
+        if popup and popup.winfo_exists():
+            try:
+                popup.grab_release()
+            except Exception:
+                pass
+            popup.destroy()
+        self._calendar_popup = None
 
     # --------------------- Handlers de Gols ---------------------
     def adicionar_gol_vasco(self, event):
@@ -424,6 +498,8 @@ class App:
         self._atualizar_abas()
 
     def _limpar_formulario(self):
+        self.data_var.set(datetime.now().strftime("%d/%m/%Y"))
+        self._fechar_calendario_popup()
         self.adversario_var.set("")
         self.competicao_var.set("")
         self.placar_vasco.delete(0, tk.END)
