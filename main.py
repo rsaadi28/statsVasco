@@ -211,6 +211,12 @@ class App:
         self.editing_index = None
         # Aplicar às principais classes ttk/tk
         self.root.configure(bg=self.colors["bg"])  # fundo da janela
+        # garante cursor de digitação visível nas entradas
+        self.root.option_add("*insertWidth", 2)
+        self.root.option_add("*Entry.insertBackground", self.colors["accent"])
+        self.root.option_add("*TEntry.insertBackground", self.colors["accent"])
+        self.root.option_add("*TCombobox*insertBackground", self.colors["accent"])
+        self.root.option_add("*Text.insertBackground", self.colors["accent"])
         style.configure(".", background=self.colors["bg"], foreground=self.colors["fg"])
         style.configure("TFrame", background=self.colors["bg"]) 
         style.configure("TLabelframe", background=self.colors["bg"]) 
@@ -225,6 +231,12 @@ class App:
         style.configure("TCombobox", fieldbackground=self.colors["entry_bg"], foreground=self.colors["entry_fg"], background=self.colors["entry_bg"]) 
         style.configure("Treeview", background=self.colors["tree_bg"], fieldbackground=self.colors["tree_bg"], foreground=self.colors["tree_fg"], bordercolor=self.colors["bg"], lightcolor=self.colors["bg"], darkcolor=self.colors["bg"]) 
         style.configure("Treeview.Heading", background=self.colors["tree_head_bg"], foreground=self.colors["tree_head_fg"]) 
+
+        try:
+            style.configure("TEntry", insertcolor=self.colors["accent"])
+            style.configure("TCombobox", insertcolor=self.colors["accent"])
+        except tk.TclError:
+            pass
 
         self.listas = carregar_listas()
         self._calendar_popup = None
@@ -261,6 +273,7 @@ class App:
         self.data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
         self.data_entry = ttk.Entry(data_picker, width=12, textvariable=self.data_var)
         self.data_entry.pack(side="left")
+        self._forcar_cursor_visivel(self.data_entry)
         ttk.Button(data_picker, text="Calendário", command=self._abrir_calendario_popup).pack(side="left", padx=(8, 0))
 
         ttk.Label(frame, text="Adversário:").grid(row=1, column=0, sticky="w", pady=4)
@@ -269,13 +282,16 @@ class App:
         self.adversario_entry['values'] = self.listas["clubes_adversarios"]
         self.adversario_entry.grid(row=1, column=1, columnspan=3, sticky="ew", pady=4)
         self.adversario_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "clubes"))
+        self._forcar_cursor_visivel(self.adversario_entry)
 
         ttk.Label(frame, text="Placar (Vasco x Adversário):").grid(row=2, column=0, sticky="w", pady=4)
         self.placar_vasco = ttk.Entry(frame, width=6)
         self.placar_vasco.grid(row=2, column=1, sticky="w", pady=4)
+        self._forcar_cursor_visivel(self.placar_vasco)
         ttk.Label(frame, text="x").grid(row=2, column=2, sticky="w", pady=4)
         self.placar_adversario = ttk.Entry(frame, width=6)
         self.placar_adversario.grid(row=2, column=3, sticky="w", pady=4)
+        self._forcar_cursor_visivel(self.placar_adversario)
 
         ttk.Label(frame, text="Local:").grid(row=3, column=0, sticky="w", pady=4)
         self.local_var = tk.StringVar(value="casa")
@@ -290,6 +306,7 @@ class App:
         self.competicao_entry['values'] = self.listas.get("competicoes", [])
         self.competicao_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4)
         self.competicao_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "competicoes"))
+        self._forcar_cursor_visivel(self.competicao_entry)
 
         # Gols do Vasco
         ttk.Label(frame, text="Gols do Vasco (pressione Enter para adicionar):").grid(row=5, column=0, sticky="nw", pady=(10, 4))
@@ -300,6 +317,7 @@ class App:
         self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.pack(fill="x")
+        self._forcar_cursor_visivel(self.entry_gol_vasco)
         lista_vasco_wrap = ttk.Frame(frame)
         lista_vasco_wrap.grid(row=6, column=1, columnspan=3, sticky="nsew")
         lista_vasco_wrap.rowconfigure(0, weight=1)
@@ -323,6 +341,7 @@ class App:
         self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.pack(fill="x")
+        self._forcar_cursor_visivel(self.entry_gol_contra)
         lista_contra_wrap = ttk.Frame(frame)
         lista_contra_wrap.grid(row=8, column=1, columnspan=3, sticky="nsew")
         lista_contra_wrap.rowconfigure(0, weight=1)
@@ -345,6 +364,7 @@ class App:
             insertbackground=self.colors["fg"]
         )
         self.obs_text.grid(row=9, column=1, columnspan=3, sticky="nsew", pady=(10, 4))
+        self._forcar_cursor_visivel(self.obs_text)
 
         # Botões e status de edição
         self.salvar_btn_label = tk.StringVar(value="Salvar Partida")
@@ -710,6 +730,32 @@ class App:
         tree.bind("<Motion>", on_motion)
         tree.bind("<Leave>", on_leave)
         tree.bind("<Destroy>", on_destroy)
+
+    def _forcar_cursor_visivel(self, widget):
+        if widget is None:
+            return
+        def _aplicar():
+            aplicado = False
+            for opt in ("insertbackground", "insertcolor"):
+                try:
+                    widget.configure(**{opt: self.colors["accent"]})
+                    aplicado = True
+                    break
+                except tk.TclError:
+                    continue
+            if not aplicado:
+                try:
+                    widget.tk.call(widget._w, "configure", "-insertbackground", self.colors["accent"])
+                except tk.TclError:
+                    pass
+            try:
+                widget.configure(insertwidth=2)
+            except tk.TclError:
+                pass
+        try:
+            _aplicar()
+        except tk.TclError:
+            self.root.after(30, _aplicar)
 
     # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
