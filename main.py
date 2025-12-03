@@ -5,7 +5,12 @@ import json
 import os
 import shutil
 import sys
-from tkcalendar import Calendar
+try:
+    from tkcalendar import Calendar
+    TKCALENDAR_OK = True
+except Exception:
+    Calendar = None
+    TKCALENDAR_OK = False
 import tkinter.font as tkFont
 from datetime import datetime
 
@@ -163,6 +168,7 @@ class App:
         self.root.title("Estatísticas do Vasco")
         self.root.geometry("1150x800")
         self.root.minsize(1000, 700)
+        self.root.after(10, self._centralizar_janela)
         
         # Fontes maiores
         default_font = tkFont.nametofont("TkDefaultFont")
@@ -245,6 +251,9 @@ class App:
     def _criar_formulario(self, frame):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
+        frame.rowconfigure(6, weight=1)
+        frame.rowconfigure(8, weight=1)
+        frame.rowconfigure(9, weight=1)
 
         ttk.Label(frame, text="Data da Partida:").grid(row=0, column=0, sticky="w", pady=4)
         data_picker = ttk.Frame(frame)
@@ -296,7 +305,7 @@ class App:
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
-        self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="ew")
+        self.lista_gols_vasco.grid(row=6, column=1, columnspan=3, sticky="nsew")
         self.lista_gols_vasco.bind("<Delete>", self.remover_gol_vasco)
 
         # Gols do Adversário
@@ -313,7 +322,7 @@ class App:
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
-        self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="ew")
+        self.lista_gols_contra.grid(row=8, column=1, columnspan=3, sticky="nsew")
         self.lista_gols_contra.bind("<Delete>", self.remover_gol_contra)
 
         # Observações
@@ -323,7 +332,7 @@ class App:
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             insertbackground=self.colors["fg"]
         )
-        self.obs_text.grid(row=9, column=1, columnspan=3, sticky="ew", pady=(10, 4))
+        self.obs_text.grid(row=9, column=1, columnspan=3, sticky="nsew", pady=(10, 4))
 
         # Botões e status de edição
         self.salvar_btn_label = tk.StringVar(value="Salvar Partida")
@@ -338,11 +347,32 @@ class App:
         self.btn_cancelar_edicao.state(["disabled"])
         ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
 
+    def _centralizar_janela(self):
+        try:
+            self.root.update_idletasks()
+            win_w = self.root.winfo_width()
+            win_h = self.root.winfo_height()
+            scr_w = self.root.winfo_screenwidth()
+            scr_h = self.root.winfo_screenheight()
+            pos_x = max(0, (scr_w - win_w) // 2)
+            pos_y = max(0, (scr_h - win_h) // 2)
+            self.root.geometry(f"{win_w}x{win_h}+{pos_x}+{pos_y}")
+        except Exception:
+            pass
+
     def _cancelar_edicao(self):
         if self.editing_index is not None:
             self._limpar_formulario()
 
     def _abrir_calendario_popup(self):
+        if not TKCALENDAR_OK:
+            messagebox.showerror(
+                "Calendário indisponível",
+                "O recurso de calendário precisa do pacote 'tkcalendar'.\n"
+                "Instale com 'pip install tkcalendar' e abra novamente."
+            )
+            return
+
         popup = getattr(self, "_calendar_popup", None)
         if popup and popup.winfo_exists():
             popup.lift()
@@ -771,11 +801,11 @@ class App:
 
             # ----- Tabela de partidas da temporada
             table_wrap = ttk.Frame(frame_ano)
-            table_wrap.pack(fill="x")
+            table_wrap.pack(fill="both", expand=True)
 
             cols = ("data", "local", "competicao", "adversario", "placar")
             tv = ttk.Treeview(table_wrap, columns=cols, show="headings",
-                              height=min(12, max(6, len(rows))))
+                              height=min(16, max(8, len(rows))))
             # larguras para caber placar estendido
             for c, w in zip(cols, (90, 80, 240, 220, 320)):
                 tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
