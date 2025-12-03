@@ -36,7 +36,8 @@
           "gols": 1
         }
       ]
-    }
+    },
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "20/08/2025",
@@ -63,7 +64,8 @@
     "gols_anulados": {
       "vasco": [],
       "adversario": []
-    }
+    },
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "24/08/2025",
@@ -104,7 +106,8 @@
     "gols_anulados": {
       "vasco": [],
       "adversario": []
-    }
+    },
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "27/08/2025",
@@ -136,7 +139,8 @@
         }
       ],
       "adversario": []
-    }
+    },
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "31/08/2025",
@@ -173,7 +177,8 @@
         "gols": 1
       }
     ],
-    "observacao": "O arbitro da partida, Rafael Klaus aptou a partida sem criterio nenhum, não dava \"faltinha\" boba, mas deu um penalti contra o Vasco em que há controversia de sequer o Zagueiro do Vasco tenha tocado no jogador do Sport. Também nesse jogo teve uma falta violenta no Jair, jogador do Vasco em que o jogador se machucou feio no lance, e nem falta o juiz da partida deu no lance. Outro lance bizarro foi um empurrão do jogador do Sport no jogador Lucas Freitas do Vasco cuminando com a saida de bola pela linha de fundo, e o juiz deu escanteio para o time do sport. Tentara de tudo roubar o Vasco, mas mesmo assim, saimos vitoriosos dessa partida."
+    "observacao": "O arbitro da partida, Rafael Klaus aptou a partida sem criterio nenhum, não dava \"faltinha\" boba, mas deu um penalti contra o Vasco em que há controversia de sequer o Zagueiro do Vasco tenha tocado no jogador do Sport. Também nesse jogo teve uma falta violenta no Jair, jogador do Vasco em que o jogador se machucou feio no lance, e nem falta o juiz da partida deu no lance. Outro lance bizarro foi um empurrão do jogador do Sport no jogador Lucas Freitas do Vasco cuminando com a saida de bola pela linha de fundo, e o juiz deu escanteio para o time do sport. Tentara de tudo roubar o Vasco, mas mesmo assim, saimos vitoriosos dessa partida.",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "11/09/2025",
@@ -197,7 +202,8 @@
         "gols": 1
       }
     ],
-    "observacao": "jogo de volta válido pela copa do Brasil, onde o Vasco passou nos penaltis: 5 - 3, Leo Jardim pegou um penalti"
+    "observacao": "jogo de volta válido pela copa do Brasil, onde o Vasco passou nos penaltis: 5 - 3, Leo Jardim pegou um penalti",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "14/09/2025",
@@ -230,7 +236,8 @@
         "gols": 1
       }
     ],
-    "observacao": "Apos a expulsão do jogador Rodrioquinho o Vasco conseguiu ficar na frente do placar de novo, mas cedeu o empate na prorrogação do segundo tempo."
+    "observacao": "Apos a expulsão do jogador Rodrioquinho o Vasco conseguiu ficar na frente do placar de novo, mas cedeu o empate na prorrogação do segundo tempo.",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "21/09/2025",
@@ -254,7 +261,8 @@
         "gols": 1
       }
     ],
-    "observacao": ""
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "24/09/2025",
@@ -286,7 +294,8 @@
         "gols": 1
       }
     ],
-    "observacao": "Juiz fraco, era para expulsar 3 do Bahia e só expulsou 1."
+    "observacao": "Juiz fraco, era para expulsar 3 do Bahia e só expulsou 1.",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "28/09/2025",
@@ -308,7 +317,8 @@
       }
     ],
     "gols_adversario": [],
-    "observacao": ""
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "01/10/2025",
@@ -332,7 +342,8 @@
         "gols": 1
       }
     ],
-    "observacao": "Teve um penalti no Rayan que o var nem chamou e o juiz não fez nada"
+    "observacao": "Teve um penalti no Rayan que o var nem chamou e o juiz não fez nada",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "05/10/2025",
@@ -374,7 +385,8 @@
         "gols": 1
       }
     ],
-    "observacao": "O Vitória reclamou da arbitragem, da expulsão do zagueiro Lucas Halter pelo empurrão que ele deu no jogador do Vasco, Paulo Henrique, o jogador expulso já tinha cartão amarelo, então levou outro amarelo e acabou sendo expulso.\nOutro lance que não é de hoje é o Léo Jardim querer catimbar o jogo de forma errada e acaba prejudicando o time, ele saiu em uma bola e fico no chão achando que o jogo ia parar, mas o jogo não parou, o Vasco ficou sem goleiro e o Vitória marcou o gol de empate de novo (3 x 3)."
+    "observacao": "O Vitória reclamou da arbitragem, da expulsão do zagueiro Lucas Halter pelo empurrão que ele deu no jogador do Vasco, Paulo Henrique, o jogador expulso já tinha cartão amarelo, então levou outro amarelo e acabou sendo expulso.\nOutro lance que não é de hoje é o Léo Jardim querer catimbar o jogo de forma errada e acaba prejudicando o time, ele saiu em uma bola e fico no chão achando que o jogo ia parar, mas o jogo não parou, o Vasco ficou sem goleiro e o Vitória marcou o gol de empate de novo (3 x 3).",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "15/10/2025",
@@ -396,7 +408,8 @@
       }
     ],
     "gols_adversario": [],
-    "observacao": "Hugo Moura foi expulso de forma descutivel"
+    "observacao": "Hugo Moura foi expulso de forma descutivel",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "20/10/2025",
@@ -418,7 +431,8 @@
       }
     ],
     "gols_adversario": [],
-    "observacao": ""
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "26/10/2025",
@@ -440,7 +454,8 @@
       }
     ],
     "gols_adversario": [],
-    "observacao": "Maquina chamada Vasco da Gama... que continue assim!"
+    "observacao": "Maquina chamada Vasco da Gama... que continue assim!",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "02/11/2025",
@@ -464,7 +479,8 @@
         "gols": 1
       }
     ],
-    "observacao": "Penaltizinho mandraque marcado contra o Vasco no final do primeiro tempo."
+    "observacao": "Penaltizinho mandraque marcado contra o Vasco no final do primeiro tempo.",
+    "tecnico": "Fernando Diniz"
   },
   {
     "data": "08/11/2025",
@@ -498,6 +514,7 @@
         "gols": 1
       }
     ],
-    "observacao": ""
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
   }
 ]

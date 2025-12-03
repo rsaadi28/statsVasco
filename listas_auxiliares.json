@@ -19,6 +19,7 @@
   "jogadores_vasco": [
     "Carlos Cuesta",
     "David",
+    "Fernando Diniz",
     "Gabriel Silva (GB)",
     "Jair",
     "Lucas Piton",
@@ -60,5 +61,9 @@
   "competicoes": [
     "Brasileirão Série A",
     "Copa do Brasil"
-  ]
+  ],
+  "tecnicos": [
+    "Fernando Diniz"
+  ],
+  "tecnico_atual": "Fernando Diniz"
 }

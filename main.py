@@ -64,7 +64,7 @@ def _ordenar_listas(dados: dict) -> dict:
     """Ordena, alfabeticamente (case-insensitive), as listas auxiliares."""
     if not isinstance(dados, dict):
         return dados
-    chaves = ("clubes_adversarios", "jogadores_vasco", "jogadores_contra", "competicoes")
+    chaves = ("clubes_adversarios", "jogadores_vasco", "jogadores_contra", "competicoes", "tecnicos")
     for k in chaves:
         lista = dados.get(k)
         if isinstance(lista, list):
@@ -95,9 +95,19 @@ def carregar_listas():
         "clubes_adversarios": [],
         "jogadores_vasco": [],
         "jogadores_contra": [],
-        "competicoes": []
+        "competicoes": [],
+        "tecnicos": ["Fernando Diniz"],
+        "tecnico_atual": "Fernando Diniz",
     })
-    return _ordenar_listas(dados)
+    dados = _ordenar_listas(dados)
+    if not dados.get("tecnicos"):
+        dados["tecnicos"] = ["Fernando Diniz"]
+    if not dados.get("tecnico_atual"):
+        dados["tecnico_atual"] = dados["tecnicos"][0]
+    elif dados["tecnico_atual"] not in dados["tecnicos"]:
+        dados["tecnicos"].append(dados["tecnico_atual"])
+        dados = _ordenar_listas(dados)
+    return dados
 
 
 def salvar_listas(data):
@@ -247,17 +257,20 @@ class App:
         self.frame_registro = ttk.Frame(self.notebook, padding=10)
         self.frame_temporadas = ttk.Frame(self.notebook, padding=10)
         self.frame_geral = ttk.Frame(self.notebook, padding=10)
+        self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
 
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
         self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
+        self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
 
         self._criar_formulario(self.frame_registro)
         self._carregar_temporadas()
         self._carregar_geral()
         self._carregar_graficos()
+        self._carregar_tecnicos()
 
     # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
@@ -271,10 +284,17 @@ class App:
         data_picker = ttk.Frame(frame)
         data_picker.grid(row=0, column=1, columnspan=2, sticky="w", pady=4)
         self.data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
+        self.tecnico_var = tk.StringVar(value=self.listas.get("tecnico_atual", "Fernando Diniz"))
         self.data_entry = ttk.Entry(data_picker, width=12, textvariable=self.data_var)
         self.data_entry.pack(side="left")
         self._forcar_cursor_visivel(self.data_entry)
         ttk.Button(data_picker, text="Calendário", command=self._abrir_calendario_popup).pack(side="left", padx=(8, 0))
+        ttk.Label(data_picker, text="Técnico:").pack(side="left", padx=(12, 4))
+        self.tecnico_entry = ttk.Combobox(data_picker, textvariable=self.tecnico_var, width=22)
+        self.tecnico_entry['values'] = self.listas.get("tecnicos", [])
+        self.tecnico_entry.pack(side="left")
+        self.tecnico_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "tecnicos"))
+        self._forcar_cursor_visivel(self.tecnico_entry)
 
         ttk.Label(frame, text="Adversário:").grid(row=1, column=0, sticky="w", pady=4)
         self.adversario_var = tk.StringVar()
@@ -533,6 +553,7 @@ class App:
         placar_adv = self.placar_adversario.get().strip()
         local = self.local_var.get()
         observacao = self.obs_text.get("1.0", "end").strip()
+        tecnico = self.tecnico_var.get().strip() or self.listas.get("tecnico_atual", "Fernando Diniz")
 
         # Gols (contados)
         nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
@@ -543,7 +564,7 @@ class App:
         contagem_contra = Counter(nomes_contra)
         gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
 
-        if not (data and adversario and placar_vasco and placar_adv and competicao):
+        if not (data and adversario and placar_vasco and placar_adv and competicao and tecnico):
             messagebox.showerror("Erro", "Preencha todos os campos obrigatórios.")
             return
 
@@ -557,6 +578,13 @@ class App:
             self.listas["competicoes"] = sorted(self.listas["competicoes"], key=lambda s: s.casefold())
             self.competicao_entry['values'] = self.listas["competicoes"]
 
+        lista_tecnicos = self.listas.setdefault("tecnicos", [])
+        if tecnico not in lista_tecnicos:
+            lista_tecnicos.append(tecnico)
+            self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
+        self.listas["tecnico_atual"] = tecnico
+        self.tecnico_var.set(tecnico)
+        self._atualizar_combo_tecnicos()
         salvar_listas(self.listas)
 
         jogo = {
@@ -568,6 +596,7 @@ class App:
             "gols_vasco": gols_vasco,
             "gols_adversario": gols_contra,
             "observacao": observacao,  # <<< novo campo
+            "tecnico": tecnico,
         }
 
         jogos = carregar_dados_jogos()
@@ -600,6 +629,8 @@ class App:
         self._fechar_calendario_popup()
         self.adversario_var.set("")
         self.competicao_var.set("")
+        if hasattr(self, "tecnico_var"):
+            self.tecnico_var.set(self.listas.get("tecnico_atual", "Fernando Diniz"))
         self.placar_vasco.delete(0, tk.END)
         self.placar_adversario.delete(0, tk.END)
         self.lista_gols_vasco.delete(0, tk.END)
@@ -640,6 +671,8 @@ class App:
         self.adversario_var.set(adversario)
         self.competicao_var.set(jogo.get("competicao", ""))
         self.local_var.set(jogo.get("local", "casa"))
+        if hasattr(self, "tecnico_var"):
+            self.tecnico_var.set(jogo.get("tecnico", self.listas.get("tecnico_atual", "Fernando Diniz")))
 
         placar = jogo.get("placar", {})
         self.placar_vasco.delete(0, tk.END)
@@ -668,6 +701,7 @@ class App:
     def _atualizar_abas(self):
         self._carregar_temporadas()
         self._carregar_geral()
+        self._carregar_tecnicos()
         self._carregar_graficos()
 
     # --------------------- Menu de contexto ---------------------
@@ -699,6 +733,15 @@ class App:
         elif tipo == "competicoes" and nome in self.listas.get("competicoes", []):
             self.listas["competicoes"].remove(nome); alterou = True
             widget['values'] = self.listas.get("competicoes", [])
+        elif tipo == "tecnicos" and nome in self.listas.get("tecnicos", []):
+            self.listas["tecnicos"].remove(nome); alterou = True
+            widget['values'] = self.listas.get("tecnicos", [])
+            if self.listas.get("tecnico_atual") == nome:
+                novo = self.listas["tecnicos"][0] if self.listas["tecnicos"] else "Fernando Diniz"
+                self.listas["tecnico_atual"] = novo
+                if hasattr(self, "tecnico_var"):
+                    self.tecnico_var.set(novo)
+                self._atualizar_combo_tecnicos()
 
         if alterou:
             salvar_listas(self.listas)
@@ -756,6 +799,10 @@ class App:
             _aplicar()
         except tk.TclError:
             self.root.after(30, _aplicar)
+
+    def _atualizar_combo_tecnicos(self):
+        if hasattr(self, "tecnico_entry"):
+            self.tecnico_entry['values'] = self.listas.get("tecnicos", [])
 
     # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
@@ -1092,6 +1139,123 @@ class App:
             tv_art.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
         for i, (nome, qtd) in enumerate(carrascos.most_common(), start=1):
             tv_carr.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
+
+    # --------------------- Técnicos ---------------------
+    def _carregar_tecnicos(self):
+        for widget in self.frame_tecnicos.winfo_children():
+            widget.destroy()
+
+        jogos = carregar_dados_jogos()
+        if not jogos:
+            ttk.Label(self.frame_tecnicos, text="Ainda não há jogos registrados.").pack(anchor="w")
+            return
+
+        stats = defaultdict(lambda: {
+            "jogos": 0,
+            "casa": 0,
+            "fora": 0,
+            "vitorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "gols_pro": 0,
+            "gols_contra": 0,
+            "artilheiros": Counter(),
+        })
+
+        for jogo in jogos:
+            tecnico = jogo.get("tecnico") or "(Sem Técnico)"
+            info = stats[tecnico]
+            info["jogos"] += 1
+            local = jogo.get("local", "casa")
+            if local == "fora":
+                info["fora"] += 1
+            else:
+                info["casa"] += 1
+
+            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+            gols_vasco = placar.get("vasco", 0)
+            gols_adv = placar.get("adversario", 0)
+            info["gols_pro"] += gols_vasco
+            info["gols_contra"] += gols_adv
+
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    nome = g.get("nome", "Desconhecido")
+                    info["artilheiros"][nome] += int(g.get("gols", 0))
+                elif isinstance(g, str):
+                    info["artilheiros"][g] += 1
+
+            if gols_vasco > gols_adv:
+                info["vitorias"] += 1
+            elif gols_vasco < gols_adv:
+                info["derrotas"] += 1
+            else:
+                info["empates"] += 1
+
+        container = ttk.Frame(self.frame_tecnicos)
+        container.pack(fill="both", expand=True)
+        cols = ("tecnico", "jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo", "artilheiro")
+        tv = ttk.Treeview(container, columns=cols, show="headings", height=min(18, max(6, len(stats))))
+        headings = {
+            "tecnico": "Técnico",
+            "jogos": "Jogos",
+            "casa": "Casa",
+            "fora": "Fora",
+            "vitorias": "Vitórias",
+            "empates": "Empates",
+            "derrotas": "Derrotas",
+            "gols_pro": "Gols Pró",
+            "gols_contra": "Gols Contra",
+            "saldo": "Saldo",
+            "artilheiro": "Maior Goleador",
+        }
+        widths = {
+            "tecnico": 220,
+            "jogos": 60,
+            "casa": 60,
+            "fora": 60,
+            "vitorias": 80,
+            "empates": 80,
+            "derrotas": 80,
+            "gols_pro": 90,
+            "gols_contra": 100,
+            "saldo": 70,
+            "artilheiro": 180,
+        }
+        for col in cols:
+            tv.heading(col, text=headings[col])
+            tv.column(col, width=widths[col], anchor="center" if col != "tecnico" else "w")
+
+        sy = ttk.Scrollbar(container, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sy.set)
+        tv.pack(side="left", fill="both", expand=True)
+        sy.pack(side="right", fill="y")
+
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        for i, (tecnico, info) in enumerate(sorted(stats.items(), key=lambda kv: (-kv[1]["jogos"], kv[0].casefold())), start=1):
+            saldo = info["gols_pro"] - info["gols_contra"]
+            top = info["artilheiros"].most_common(1)
+            artilheiro_txt = "—"
+            if top:
+                nome, gols = top[0]
+                artilheiro_txt = f"{nome} ({gols})"
+            tv.insert(
+                "", "end",
+                values=(
+                    tecnico,
+                    info["jogos"],
+                    info["casa"],
+                    info["fora"],
+                    info["vitorias"],
+                    info["empates"],
+                    info["derrotas"],
+                    info["gols_pro"],
+                    info["gols_contra"],
+                    saldo,
+                    artilheiro_txt,
+                ),
+                tags=("odd" if i % 2 else "",),
+            )
 
     # --------------------- Gráficos ---------------------
     def _carregar_graficos(self):
