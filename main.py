@@ -42,6 +42,7 @@ def _definir_diretorio_dados():
 DATA_DIR = _definir_diretorio_dados()
 ARQUIVO_JOGOS = os.path.join(DATA_DIR, "jogos_vasco.json")
 ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
+COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 
 
 def _bootstrap_jsons():
@@ -257,18 +258,21 @@ class App:
         self.frame_registro = ttk.Frame(self.notebook, padding=10)
         self.frame_temporadas = ttk.Frame(self.notebook, padding=10)
         self.frame_geral = ttk.Frame(self.notebook, padding=10)
+        self.frame_comparativo = ttk.Frame(self.notebook, padding=10)
         self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
 
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
         self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
+        self.notebook.add(self.frame_comparativo, text="Comparativo")
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
 
         self._criar_formulario(self.frame_registro)
         self._carregar_temporadas()
         self._carregar_geral()
+        self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
 
@@ -322,11 +326,21 @@ class App:
 
         ttk.Label(frame, text="Competição:").grid(row=4, column=0, sticky="w", pady=4)
         self.competicao_var = tk.StringVar()
-        self.competicao_entry = ttk.Combobox(frame, textvariable=self.competicao_var)
+        comp_wrap = ttk.Frame(frame)
+        comp_wrap.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4)
+        comp_wrap.columnconfigure(0, weight=1)
+        self.competicao_entry = ttk.Combobox(comp_wrap, textvariable=self.competicao_var)
         self.competicao_entry['values'] = self.listas.get("competicoes", [])
-        self.competicao_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4)
+        self.competicao_entry.grid(row=0, column=0, sticky="ew")
         self.competicao_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "competicoes"))
         self._forcar_cursor_visivel(self.competicao_entry)
+        ttk.Label(comp_wrap, text="Posição na tabela:").grid(row=0, column=1, sticky="w", padx=(10, 4))
+        self.posicao_var = tk.StringVar()
+        self.posicao_entry = ttk.Entry(comp_wrap, width=6, textvariable=self.posicao_var)
+        self.posicao_entry.grid(row=0, column=2, sticky="w")
+        self._forcar_cursor_visivel(self.posicao_entry)
+        self.competicao_var.trace_add("write", lambda *_: self._atualizar_estado_posicao())
+        self._atualizar_estado_posicao()
 
         # Gols do Vasco
         ttk.Label(frame, text="Gols do Vasco (pressione Enter para adicionar):").grid(row=5, column=0, sticky="nw", pady=(10, 4))
@@ -554,6 +568,18 @@ class App:
         local = self.local_var.get()
         observacao = self.obs_text.get("1.0", "end").strip()
         tecnico = self.tecnico_var.get().strip() or self.listas.get("tecnico_atual", "Fernando Diniz")
+        posicao_tabela = None
+        usa_posicao = self._competicao_usa_posicao(competicao)
+        if usa_posicao and hasattr(self, "posicao_var"):
+            posicao_txt = self.posicao_var.get().strip()
+            if posicao_txt:
+                try:
+                    posicao_tabela = int(posicao_txt)
+                except ValueError:
+                    messagebox.showerror("Erro", "Informe apenas números inteiros para a posição na tabela.")
+                    return
+        elif hasattr(self, "posicao_var"):
+            self.posicao_var.set("")
 
         # Gols (contados)
         nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
@@ -597,6 +623,7 @@ class App:
             "gols_adversario": gols_contra,
             "observacao": observacao,  # <<< novo campo
             "tecnico": tecnico,
+            "posicao_tabela": posicao_tabela,
         }
 
         jogos = carregar_dados_jogos()
@@ -629,6 +656,9 @@ class App:
         self._fechar_calendario_popup()
         self.adversario_var.set("")
         self.competicao_var.set("")
+        if hasattr(self, "posicao_var"):
+            self.posicao_var.set("")
+        self._atualizar_estado_posicao()
         if hasattr(self, "tecnico_var"):
             self.tecnico_var.set(self.listas.get("tecnico_atual", "Fernando Diniz"))
         self.placar_vasco.delete(0, tk.END)
@@ -670,6 +700,13 @@ class App:
         self.data_var.set(data)
         self.adversario_var.set(adversario)
         self.competicao_var.set(jogo.get("competicao", ""))
+        self._atualizar_estado_posicao()
+        if hasattr(self, "posicao_var"):
+            posicao = jogo.get("posicao_tabela")
+            if posicao not in (None, "") and self._competicao_usa_posicao(self.competicao_var.get()):
+                self.posicao_var.set(str(posicao))
+            else:
+                self.posicao_var.set("")
         self.local_var.set(jogo.get("local", "casa"))
         if hasattr(self, "tecnico_var"):
             self.tecnico_var.set(jogo.get("tecnico", self.listas.get("tecnico_atual", "Fernando Diniz")))
@@ -701,6 +738,7 @@ class App:
     def _atualizar_abas(self):
         self._carregar_temporadas()
         self._carregar_geral()
+        self._carregar_comparativo()
         self._carregar_tecnicos()
         self._carregar_graficos()
 
@@ -803,6 +841,21 @@ class App:
     def _atualizar_combo_tecnicos(self):
         if hasattr(self, "tecnico_entry"):
             self.tecnico_entry['values'] = self.listas.get("tecnicos", [])
+
+    def _competicao_usa_posicao(self, nome):
+        if not nome:
+            return False
+        return nome.strip().casefold() == COMPETICAO_BRASILEIRAO.casefold()
+
+    def _atualizar_estado_posicao(self):
+        if not hasattr(self, "posicao_entry") or not hasattr(self, "posicao_var"):
+            return
+        comp = self.competicao_var.get().strip() if hasattr(self, "competicao_var") else ""
+        if self._competicao_usa_posicao(comp):
+            self.posicao_entry.state(["!disabled"])
+        else:
+            self.posicao_entry.state(["disabled"])
+            self.posicao_var.set("")
 
     # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
@@ -1140,6 +1193,386 @@ class App:
         for i, (nome, qtd) in enumerate(carrascos.most_common(), start=1):
             tv_carr.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
 
+    # --------------------- Comparativo ---------------------
+    def _carregar_comparativo(self):
+        for widget in self.frame_comparativo.winfo_children():
+            widget.destroy()
+
+        jogos = carregar_dados_jogos()
+        temporadas = self._agrupar_por_temporada(jogos)
+        anos = sorted(temporadas.keys())
+        if len(anos) < 2:
+            ttk.Label(
+                self.frame_comparativo,
+                text="Cadastre pelo menos duas temporadas completas para ver o comparativo."
+            ).pack(anchor="w")
+            return
+
+        ano_atual = anos[-1]
+        ano_anterior = anos[-2]
+        jogos_atual = temporadas.get(ano_atual, [])
+        jogos_anterior = temporadas.get(ano_anterior, [])
+        if not jogos_atual:
+            ttk.Label(
+                self.frame_comparativo,
+                text=f"A temporada {ano_atual} ainda não possui jogos registrados."
+            ).pack(anchor="w")
+            return
+
+        jogos_equivalentes_anterior = jogos_anterior[:len(jogos_atual)]
+        stats_atual = self._resumir_jogos(jogos_atual)
+        stats_anterior = self._resumir_jogos(jogos_equivalentes_anterior)
+
+        nb = ttk.Notebook(self.frame_comparativo)
+        nb.pack(fill="both", expand=True)
+
+        frame_totais = ttk.Frame(nb, padding=10)
+        nb.add(frame_totais, text="Totais")
+        self._render_tab_totais(frame_totais, stats_atual, stats_anterior, ano_atual, ano_anterior, len(jogos_anterior))
+
+        comps_por_ano = self._agrupar_competicoes_por_ano(temporadas)
+        comps_atual = comps_por_ano.get(ano_atual, {})
+        comps_anterior = comps_por_ano.get(ano_anterior, {})
+        todas_competicoes = sorted(set(list(comps_atual.keys()) + list(comps_anterior.keys())),
+                                   key=lambda nome: (0 if self._competicao_usa_posicao(nome) else 1, nome.casefold()))
+
+        if not todas_competicoes:
+            aviso = ttk.Label(
+                frame_totais,
+                text="Nenhuma competição específica encontrada para as temporadas comparadas."
+            )
+            aviso.pack(anchor="w", pady=(10, 0))
+            return
+
+        for nome_comp in todas_competicoes:
+            frame_comp = ttk.Frame(nb, padding=10)
+            nb.add(frame_comp, text=nome_comp)
+            self._render_tab_competicao(frame_comp, nome_comp, comps_por_ano, ano_atual, ano_anterior)
+
+    def _render_tab_totais(self, container, stats_atual, stats_anterior, ano_atual, ano_anterior, total_jogos_anterior):
+        geral_section = ttk.Labelframe(
+            container,
+            text=f"Temporada {ano_atual} x {ano_anterior} (mesmo número de jogos)",
+            padding=10
+        )
+        geral_section.pack(fill="both", expand=True)
+        resumo_lbl = ttk.Label(
+            geral_section,
+            text=f"{stats_atual['jogos']} jogo(s) comparados com os primeiros {stats_anterior['jogos']} jogo(s) de {ano_anterior}."
+        )
+        resumo_lbl.pack(anchor="w", pady=(0, 6))
+        if total_jogos_anterior < stats_atual["jogos"]:
+            ttk.Label(
+                geral_section,
+                text="Aviso: existem menos partidas registradas na temporada anterior; a comparação foi ajustada para a quantidade disponível.",
+                foreground="#b45309",
+                wraplength=900
+            ).pack(anchor="w", pady=(0, 6))
+
+        metricas_gerais = [
+            ("Jogos", "jogos"),
+            ("Vitórias", "vitorias"),
+            ("Empates", "empates"),
+            ("Derrotas", "derrotas"),
+            ("Gols Pró", "gols_pro"),
+            ("Gols Contra", "gols_contra"),
+            ("Saldo", "saldo"),
+            ("Aproveitamento (%)", "aproveitamento"),
+            ("Média Gols Pró", "media_gols_pro"),
+            ("Média Gols Contra", "media_gols_contra"),
+        ]
+        self._montar_tabela_comparativo(
+            geral_section,
+            metricas_gerais,
+            stats_atual,
+            stats_anterior,
+            f"{ano_atual}",
+            f"{ano_anterior}"
+        )
+
+        if MATPLOTLIB_OK:
+            graficos_gerais = ttk.Frame(geral_section)
+            graficos_gerais.pack(fill="x", pady=(12, 0))
+            self._plot_barras_duplas(
+                graficos_gerais,
+                ["Gols Pró", "Gols Contra", "Saldo"],
+                [
+                    stats_anterior["gols_pro"],
+                    stats_anterior["gols_contra"],
+                    stats_anterior["saldo"],
+                ],
+                [
+                    stats_atual["gols_pro"],
+                    stats_atual["gols_contra"],
+                    stats_atual["saldo"],
+                ],
+                [f"{ano_anterior}", f"{ano_atual}"],
+                "Produção geral",
+                "Métrica",
+                "Quantidade"
+            )
+            self._plot_barras_duplas(
+                graficos_gerais,
+                ["Vitórias", "Empates", "Derrotas"],
+                [
+                    stats_anterior["vitorias"],
+                    stats_anterior["empates"],
+                    stats_anterior["derrotas"],
+                ],
+                [
+                    stats_atual["vitorias"],
+                    stats_atual["empates"],
+                    stats_atual["derrotas"],
+                ],
+                [f"{ano_anterior}", f"{ano_atual}"],
+                "Distribuição de resultados",
+                "Resultado",
+                "Quantidade"
+            )
+        else:
+            ttk.Label(
+                geral_section,
+                text="Matplotlib não disponível: os gráficos do comparativo geral estão desativados."
+            ).pack(anchor="w", pady=(8, 0))
+
+    def _render_tab_competicao(self, container, competicao, comps_por_ano, ano_atual, ano_anterior):
+        jogos_atual = list(comps_por_ano.get(ano_atual, {}).get(competicao, []))
+        jogos_anterior = list(comps_por_ano.get(ano_anterior, {}).get(competicao, []))
+
+        if not jogos_atual:
+            ttk.Label(
+                container,
+                text=f"Não há jogos de {competicao} na temporada {ano_atual}."
+            ).pack(anchor="w")
+            return
+
+        jogos_equivalentes_anterior = jogos_anterior[:len(jogos_atual)]
+        stats_atual = self._resumir_jogos(jogos_atual)
+        stats_anterior = self._resumir_jogos(jogos_equivalentes_anterior)
+
+        titulo = ttk.Label(
+            container,
+            text=f"{competicao} — temporada {ano_atual} vs {ano_anterior}",
+            font=("Segoe UI", 12, "bold")
+        )
+        titulo.pack(anchor="w")
+        detalhes = ttk.Label(
+            container,
+            text=(
+                f"Rodada atual registrada: {stats_atual['jogos']} jogo(s) "
+                f"| Temporada anterior usada até o jogo {stats_anterior['jogos']}."
+            )
+        )
+        detalhes.pack(anchor="w", pady=(0, 6))
+        if len(jogos_anterior) < len(jogos_atual):
+            ttk.Label(
+                container,
+                text="Atenção: a temporada anterior possui menos partidas registradas para esta competição.",
+                foreground="#b45309",
+                wraplength=900
+            ).pack(anchor="w", pady=(0, 6))
+
+        mostra_posicao = self._competicao_usa_posicao(competicao)
+        if mostra_posicao:
+            posicoes = ttk.Frame(container)
+            posicoes.pack(fill="x", pady=(0, 8))
+            pos_atual = stats_atual.get("posicao")
+            pos_anterior = stats_anterior.get("posicao")
+            ttk.Label(
+                posicoes,
+                text=f"Posição atual: {pos_atual if pos_atual is not None else '—'}"
+            ).pack(side="left", padx=(0, 18))
+            ttk.Label(
+                posicoes,
+                text=f"Posição na mesma rodada do ano anterior: {pos_anterior if pos_anterior is not None else '—'}"
+            ).pack(side="left")
+
+        metricas_comp = [
+            ("Jogos", "jogos"),
+            ("Vitórias", "vitorias"),
+            ("Empates", "empates"),
+            ("Derrotas", "derrotas"),
+            ("Gols Pró", "gols_pro"),
+            ("Gols Contra", "gols_contra"),
+            ("Saldo", "saldo"),
+            ("Aproveitamento (%)", "aproveitamento"),
+        ]
+        if mostra_posicao:
+            metricas_comp.insert(1, ("Pontos", "pontos"))
+            metricas_comp.append(("Posição", "posicao"))
+        self._montar_tabela_comparativo(
+            container,
+            metricas_comp,
+            stats_atual,
+            stats_anterior,
+            f"{ano_atual}",
+            f"{ano_anterior}"
+        )
+
+        if MATPLOTLIB_OK:
+            graf_frame = ttk.Frame(container)
+            graf_frame.pack(fill="x", pady=(10, 0))
+            labels_totais = ["Gols Pró", "Gols Contra", "Saldo"]
+            valores_dir = [stats_atual["gols_pro"], stats_atual["gols_contra"], stats_atual["saldo"]]
+            valores_esq = [stats_anterior["gols_pro"], stats_anterior["gols_contra"], stats_anterior["saldo"]]
+            if mostra_posicao:
+                labels_totais.insert(0, "Pontos")
+                valores_dir.insert(0, stats_atual["pontos"])
+                valores_esq.insert(0, stats_anterior["pontos"])
+            self._plot_barras_duplas(
+                graf_frame,
+                labels_totais,
+                valores_esq,
+                valores_dir,
+                [f"{ano_anterior}", f"{ano_atual}"],
+                "Indicadores da competição",
+                "Métrica",
+                "Quantidade"
+            )
+            self._plot_barras_duplas(
+                graf_frame,
+                ["Vitórias", "Empates", "Derrotas"],
+                [
+                    stats_anterior["vitorias"],
+                    stats_anterior["empates"],
+                    stats_anterior["derrotas"],
+                ],
+                [
+                    stats_atual["vitorias"],
+                    stats_atual["empates"],
+                    stats_atual["derrotas"],
+                ],
+                [f"{ano_anterior}", f"{ano_atual}"],
+                "Resultados acumulados",
+                "Resultado",
+                "Quantidade"
+            )
+        else:
+            ttk.Label(
+                container,
+                text="Matplotlib não disponível: gráficos da competição desativados."
+            ).pack(anchor="w", pady=(8, 0))
+
+    def _agrupar_por_temporada(self, jogos):
+        temporadas = defaultdict(list)
+        for jogo in jogos:
+            data_txt = jogo.get("data")
+            if not data_txt:
+                continue
+            try:
+                ano = _parse_data_ptbr(data_txt).year
+            except Exception:
+                continue
+            temporadas[ano].append(jogo)
+        for ano in temporadas:
+            temporadas[ano].sort(key=lambda j: _parse_data_ptbr(j["data"]))
+        return dict(sorted(temporadas.items()))
+
+    def _agrupar_competicoes_por_ano(self, temporadas):
+        agrupado = {}
+        for ano, jogos in temporadas.items():
+            comp_dict = defaultdict(list)
+            for jogo in jogos:
+                nome = jogo.get("competicao") or "Competição desconhecida"
+                comp_dict[nome].append(jogo)
+            for nome in comp_dict:
+                comp_dict[nome].sort(key=lambda j: _parse_data_ptbr(j["data"]))
+            agrupado[ano] = comp_dict
+        return agrupado
+
+    def _resumir_jogos(self, jogos):
+        stats = {
+            "jogos": len(jogos),
+            "vitorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "gols_pro": 0,
+            "gols_contra": 0,
+            "pontos": 0,
+            "saldo": 0,
+            "aproveitamento": 0.0,
+            "media_gols_pro": 0.0,
+            "media_gols_contra": 0.0,
+            "posicao": None,
+        }
+        for jogo in jogos:
+            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+            vasco = placar.get("vasco", 0)
+            adv = placar.get("adversario", 0)
+            stats["gols_pro"] += vasco
+            stats["gols_contra"] += adv
+            if vasco > adv:
+                stats["vitorias"] += 1
+            elif vasco == adv:
+                stats["empates"] += 1
+            else:
+                stats["derrotas"] += 1
+        stats["pontos"] = stats["vitorias"] * 3 + stats["empates"]
+        stats["saldo"] = stats["gols_pro"] - stats["gols_contra"]
+        if stats["jogos"]:
+            stats["aproveitamento"] = round((stats["pontos"] / (stats["jogos"] * 3)) * 100, 1)
+            stats["media_gols_pro"] = round(stats["gols_pro"] / stats["jogos"], 2)
+            stats["media_gols_contra"] = round(stats["gols_contra"] / stats["jogos"], 2)
+        stats["posicao"] = self._posicao_mais_recente(jogos)
+        return stats
+
+    def _posicao_mais_recente(self, jogos):
+        posicao = None
+        for jogo in jogos:
+            valor = jogo.get("posicao_tabela")
+            if valor in (None, ""):
+                continue
+            try:
+                posicao = int(valor)
+            except (ValueError, TypeError):
+                continue
+        return posicao
+
+    def _montar_tabela_comparativo(self, parent, metricas, stats_atual, stats_anterior, cabec_atual, cabec_anterior):
+        cols = ("metrica", "anterior", "atual", "diferenca")
+        tv = ttk.Treeview(parent, columns=cols, show="headings", height=len(metricas))
+        tv.heading("metrica", text="Métrica")
+        tv.heading("anterior", text=cabec_anterior)
+        tv.heading("atual", text=cabec_atual)
+        tv.heading("diferenca", text="Diferença")
+        tv.column("metrica", width=220, anchor="w")
+        tv.column("anterior", width=160, anchor="center")
+        tv.column("atual", width=140, anchor="center")
+        tv.column("diferenca", width=120, anchor="center")
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+
+        def fmt(valor):
+            if valor in (None, ""):
+                return "—"
+            if isinstance(valor, float):
+                texto = f"{valor:.2f}"
+                if "." in texto:
+                    texto = texto.rstrip("0").rstrip(".")
+                return texto
+            return str(valor)
+
+        def diff(val_atual, val_anterior):
+            if isinstance(val_atual, (int, float)) and isinstance(val_anterior, (int, float)):
+                delta = val_atual - val_anterior
+                if isinstance(delta, float) and not delta.is_integer():
+                    texto = f"{delta:+.2f}".rstrip("0").rstrip(".")
+                else:
+                    texto = f"{int(delta):+d}"
+                return texto
+            return "—"
+
+        for i, (titulo, chave) in enumerate(metricas, start=1):
+            atual = stats_atual.get(chave)
+            anterior = stats_anterior.get(chave)
+            tv.insert(
+                "",
+                "end",
+                values=(titulo, fmt(anterior), fmt(atual), diff(atual, anterior)),
+                tags=("odd" if i % 2 else "",)
+            )
+        tv.pack(fill="x", pady=(4, 0))
+        return tv
+
     # --------------------- Técnicos ---------------------
     def _carregar_tecnicos(self):
         for widget in self.frame_tecnicos.winfo_children():
@@ -1424,6 +1857,36 @@ class App:
         maxv = max(values) if values else 0
         for i, v in enumerate(values):
             ax.text(i, v + (0.02 * maxv if maxv else 0.1), str(v), ha="center", va="bottom")
+        canvas = FigureCanvasTkAgg(fig, master=container)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def _plot_barras_duplas(self, container, labels, valores_esquerda, valores_direita, legendas, titulo, xlabel, ylabel):
+        fig = Figure(figsize=(9.2, 5.2), dpi=100)
+        ax = fig.add_subplot(111)
+        x = list(range(len(labels)))
+        width = 0.38
+        barras_esq = ax.bar([xi - width / 2 for xi in x], valores_esquerda, width, label=legendas[0])
+        barras_dir = ax.bar([xi + width / 2 for xi in x], valores_direita, width, label=legendas[1])
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.set_title(titulo)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.legend(loc="best")
+        ax.grid(axis="y", linestyle="--", alpha=0.3)
+        valores_combinados = (valores_esquerda or []) + (valores_direita or [])
+        max_v = max(valores_combinados) if valores_combinados else 0
+        for bar_set in (barras_esq, barras_dir):
+            for rect in bar_set:
+                altura = rect.get_height()
+                ax.text(
+                    rect.get_x() + rect.get_width() / 2,
+                    altura + (0.02 * max_v if max_v else 0.1),
+                    f"{altura:.2f}".rstrip("0").rstrip("."),
+                    ha="center",
+                    va="bottom"
+                )
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)

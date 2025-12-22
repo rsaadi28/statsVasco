@@ -1,5 +1,1291 @@
 [
   {
+    "data": "11/01/2025",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Sidney",
+        "clube": "Nova Iguaçu",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Árbitro marcou pênalti contra o Vasco por toque de mão de Paulinho, mas o VAR revisou e anulou a penalidade:contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}.",
+    "tecnico": "Ramon Lima"
+  },
+  {
+    "data": "16/01/2025",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Lima"
+  },
+  {
+    "data": "19/01/2025",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Walace Falcão",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Zé Vitor",
+        "clube": "Boavista",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Xandão (Boavista) foi expulso nos minutos finais por entrada dura em Bruno Lopes:contentReference[oaicite:2]{index=2}.",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "23/01/2025",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "26/01/2025",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      },
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Joãozinho",
+        "clube": "Portuguesa",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "29/01/2025",
+    "adversario": "Maricá",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "01/02/2025",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "João Victor (contra)",
+        "clube": "Vasco",
+        "gols": 1
+      },
+      {
+        "nome": "Bruno Santos",
+        "clube": "Volta Redonda",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "João Victor marcou gol contra para o Volta Redonda e, mais tarde, Vegetti empatou de pênalti:contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}.",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "05/02/2025",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Thiago Silva",
+        "clube": "Fluminense",
+        "gols": 1
+      },
+      {
+        "nome": "Germán Cano",
+        "clube": "Fluminense",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "10/02/2025",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "15/02/2025",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Bruno Henrique",
+        "clube": "Flamengo",
+        "gols": 1
+      },
+      {
+        "nome": "Everton Cebolinha",
+        "clube": "Flamengo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Bruno Henrique abriu o placar cobrando pênalti e Everton Cebolinha ampliou com um belo gol:contentReference[oaicite:5]{index=5}.",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "18/02/2025",
+    "adversario": "União-MT",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Hugo Moura",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "23/02/2025",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "01/03/2025",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Bruno Henrique",
+        "clube": "Flamengo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "05/03/2025",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 2
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "08/03/2025",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Bruno Henrique",
+        "clube": "Flamengo",
+        "gols": 1
+      },
+      {
+        "nome": "Luiz Araújo",
+        "clube": "Flamengo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "30/03/2025",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Barreal",
+        "clube": "Santos",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "02/04/2025",
+    "adversario": "Melgar-PER",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Rodriguez",
+        "clube": "Melgar",
+        "gols": 1
+      },
+      {
+        "nome": "Castro",
+        "clube": "Melgar",
+        "gols": 1
+      },
+      {
+        "nome": "Cabrera",
+        "clube": "Melgar",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fábio Carille"
+  },
+  {
+    "data": "05/04/2025",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Yuri Alberto",
+        "clube": "Corinthians",
+        "gols": 1
+      },
+      {
+        "nome": "Memphis Depay",
+        "clube": "Corinthians",
+        "gols": 1
+      },
+      {
+        "nome": "João Victor (contra)",
+        "clube": "Vasco",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "08/04/2025",
+    "adversario": "Puerto Cabello-VEN",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "12/04/2025",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Hugo Moura (contra)",
+        "clube": "Vasco",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O gol do Sport foi marcado contra pelo volante Hugo Moura:contentReference[oaicite:6]{index=6}.",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "15/04/2025",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Pedro Raul",
+        "clube": "Ceará",
+        "gols": 2
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Pedro Raul marcou os dois gols do Ceará (lei do ex):contentReference[oaicite:7]{index=7}.",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "19/04/2025",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "22/04/2025",
+    "adversario": "Lanús-ARG",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "27/04/2025",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Christian",
+        "clube": "Cruzeiro",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O goleiro Léo Jardim fechou o gol, mas o meia Christian marcou o único gol da partida:contentReference[oaicite:8]{index=8}.",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "01/05/2025",
+    "adversario": "Operário-PR",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Gabriel Boschilia",
+        "clube": "Operário-PR",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "04/05/2025",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Vitor Roque",
+        "clube": "Palmeiras",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Vitor Roque marcou logo no início e garantiu a vitória do Palmeiras:contentReference[oaicite:9]{index=9}.",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "07/05/2025",
+    "adversario": "Puerto Cabello-VEN",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "João Victor",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Junior Paredes",
+        "clube": "Puerto Cabello",
+        "gols": 2
+      },
+      {
+        "nome": "Gerardo Padrón",
+        "clube": "Puerto Cabello",
+        "gols": 1
+      },
+      {
+        "nome": "Raudy Guerrero",
+        "clube": "Puerto Cabello",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "10/05/2025",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Renato Kayzer",
+        "clube": "Vitória",
+        "gols": 2
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O Vitória teve Matheuzinho expulso ainda no 1º tempo, mas Renato Kayzer virou o jogo com dois gols:contentReference[oaicite:10]{index=10}.",
+    "tecnico": "Felipe (interino)"
+  },
+  {
+    "data": "13/05/2025",
+    "adversario": "Lanús-ARG",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Ramiro Carrera",
+        "clube": "Lanús",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "17/05/2025",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "20/05/2025",
+    "adversario": "Operário-PR",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Ademilson",
+        "clube": "Operário-PR",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Vasco venceu nos pênaltis por 7 x 6 e avançou na competição:contentReference[oaicite:11]{index=11}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "24/05/2025",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "João Victor (contra)",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "João Victor (contra)",
+        "clube": "Vasco",
+        "gols": 1
+      },
+      {
+        "nome": "Guga",
+        "clube": "Fluminense",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O gol de empate do Fluminense saiu em um cruzamento que desviou em Vegetti (gol contra), e Guga marcou um golaço aos 42 do 2º tempo para virar o jogo:contentReference[oaicite:12]{index=12}:contentReference[oaicite:13]{index=13}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "27/05/2025",
+    "adversario": "Melgar-PER",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "31/05/2025",
+    "adversario": "RedBull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Guilherme Lopes",
+        "clube": "RedBull Bragantino",
+        "gols": 1
+      },
+      {
+        "nome": "Isidro Pitta",
+        "clube": "RedBull Bragantino",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "12/06/2025",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Ryan Francisco",
+        "clube": "São Paulo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Rayan, Nuno e Vegetti marcaram para o Vasco, enquanto Ryan Francisco descontou para o São Paulo:contentReference[oaicite:14]{index=14}:contentReference[oaicite:15]{index=15}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "12/07/2025",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Arthur Cabral",
+        "clube": "Botafogo",
+        "gols": 1
+      },
+      {
+        "nome": "Nathan Fernandes",
+        "clube": "Botafogo",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O clássico foi disputado em Brasília; Arthur Cabral marcou seu primeiro gol pelo Botafogo e Nathan Fernandes fechou o placar:contentReference[oaicite:16]{index=16}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "15/07/2025",
+    "adversario": "Independiente del Valle-EQU",
+    "competicao": "Copa Sul-Americana (Playoff Ida)",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Mateo Carabajal",
+        "clube": "Ind. del Valle",
+        "gols": 1
+      },
+      {
+        "nome": "Patrick Mercado",
+        "clube": "Ind. del Valle",
+        "gols": 2
+      },
+      {
+        "nome": "Claudio Spinelli",
+        "clube": "Ind. del Valle",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Jogo de ida dos playoffs da Sul-Americana, disputado na altitude de Quito; Vasco sofreu uma goleada que complicou a classificação:contentReference[oaicite:17]{index=17}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "19/07/2025",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Lucas Freitas",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Gustavo Martins",
+        "clube": "Grêmio",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Lucas Freitas marcou de cabeça na estreia como titular, mas Gustavo Martins empatou para o Grêmio no fim:contentReference[oaicite:18]{index=18}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "22/07/2025",
+    "adversario": "Independiente del Valle-EQU",
+    "competicao": "Copa Sul-Americana (Playoff Volta)",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Patrick Mercado",
+        "clube": "Ind. del Valle",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Vasco foi eliminado com placar agregado de 1-5, apesar do empate em São Januário.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "27/07/2025",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Johan Carbonero",
+        "clube": "Internacional",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O goleiro Léo Jardim foi expulso de forma polêmica, mas o Vasco segurou o empate mesmo com um a menos:contentReference[oaicite:19]{index=19}:contentReference[oaicite:20]{index=20}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "30/07/2025",
+    "adversario": "CSA-AL",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "02/08/2025",
+    "adversario": "Mirassol",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Negueba",
+        "clube": "Mirassol",
+        "gols": 1
+      },
+      {
+        "nome": "Chico da Costa",
+        "clube": "Mirassol",
+        "gols": 1
+      },
+      {
+        "nome": "Alesson",
+        "clube": "Mirassol",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": [
+        {
+          "nome": "Gabriel Taliari",
+          "gols": 1
+        }
+      ]
+    },
+    "observacao": "O Mirassol teve um gol de Gabriel Taliari anulado por impedimento no início do segundo tempo:contentReference[oaicite:21]{index=21}:contentReference[oaicite:22]{index=22}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "07/08/2025",
+    "adversario": "CSA-AL",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philipe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Tche Tche",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Brayann",
+        "clube": "CSA",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Vasco dominou o jogo e garantiu a classificação às quartas de final da Copa do Brasil:contentReference[oaicite:23]{index=23}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "10/08/2025",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Gabriel Menino",
+        "clube": "Atlético-MG",
+        "gols": 1
+      }
+    ],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "O Atlético-MG marcou um gol relâmpago com Gabriel Menino aos 38 segundos, e o pênalti marcado para o Vasco (cometido por Cuello) gerou muita reclamação dos atleticanos:contentReference[oaicite:24]{index=24}.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
     "data": "17/08/2025",
     "adversario": "Santos",
     "competicao": "Brasileirão Série A",
@@ -27,16 +1313,7 @@
       }
     ],
     "gols_adversario": [],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": [
-        {
-          "nome": "Guilherme",
-          "clube": "Santos",
-          "gols": 1
-        }
-      ]
-    },
+    "observacao": "",
     "tecnico": "Fernando Diniz"
   },
   {
@@ -61,10 +1338,7 @@
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": []
-    },
+    "observacao": "",
     "tecnico": "Fernando Diniz"
   },
   {
@@ -483,6 +1757,35 @@
     "tecnico": "Fernando Diniz"
   },
   {
+    "data": "05/11/2025",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_adversario": [
+      {
+        "nome": "Alex Telles",
+        "clube": "Botafogo",
+        "gols": 1
+      },
+      {
+        "nome": "Artur Victor",
+        "clube": "Botafogo",
+        "gols": 1
+      },
+      {
+        "nome": "David Ricardo",
+        "clube": "Botafogo",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
     "data": "08/11/2025",
     "adversario": "Juventude",
     "competicao": "Brasileirão Série A",
@@ -516,5 +1819,275 @@
     ],
     "observacao": "",
     "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "19/11/2025",
+    "adversario": "Gremio",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Carlos Vinicius",
+        "clube": "Gremio",
+        "gols": 1
+      },
+      {
+        "nome": "Amuzu",
+        "clube": "Gremio",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "23/11/2025",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Erick Pulga",
+        "clube": "Bahia",
+        "gols": 1
+      }
+    ],
+    "observacao": "vexame... 5 derrotas seguidas",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "28/11/2025",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 5,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Gomez",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 2
+      },
+      {
+        "nome": "Barros",
+        "gols": 1
+      },
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Ricardo Mathias",
+        "clube": "Internacional",
+        "gols": 1
+      }
+    ],
+    "observacao": "Choveu muito no intervalo, o vasco estava estreinhando o gramado novo bem nesse jogo",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "02/12/2025",
+    "adversario": "Mirassol",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Renato Marques",
+        "clube": "Mirassol",
+        "gols": 1
+      },
+      {
+        "nome": "Carlos Eduardo",
+        "clube": "Mirassol",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "07/12/2025",
+    "adversario": "Atletico-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 5
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Junior Alonso",
+        "clube": "Atletico-MG",
+        "gols": 1
+      },
+      {
+        "nome": "Hulk",
+        "clube": "Atletico-MG",
+        "gols": 1
+      },
+      {
+        "nome": "Dudu",
+        "clube": "Atletico-MG",
+        "gols": 2
+      },
+      {
+        "nome": "Victor Luis (contra)",
+        "clube": "Atletico-MG",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "11/12/2025",
+    "adversario": "Fluminense",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Kevin Serna",
+        "clube": "Fluminense",
+        "gols": 1
+      }
+    ],
+    "observacao": "De virada o Vasco vence o Fluminense",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "14/12/2025",
+    "adversario": "Fluminense",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Paulo Henrique (contra)",
+        "clube": "Fluminense",
+        "gols": 1
+      }
+    ],
+    "observacao": "Decisão foi para os penaltis, Fluminense 3 x 4 Vasco da Gama, o Vasco da Gama vai a final da copa do brasil!",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "17/12/2025",
+    "adversario": "Corinthians",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "21/12/2025",
+    "adversario": "Corinthians",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nuno Moreira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Yuri Alberto",
+        "clube": "Corinthians",
+        "gols": 1
+      },
+      {
+        "nome": "Memphis Depay",
+        "clube": "Corinthians",
+        "gols": 1
+      }
+    ],
+    "observacao": "O vasco foi vice-campeão da copa do Brasil, um banho de agua de fria para o Vascainos... estava tão perto, mas o Vasco fez o que fez o ano todo, que é dar uma esperança para o torcedor, para achar que vai dar e ter chance de algo, e no final por tudo a perder, foi assim com uma hipotetica vaga no G8 do brasileiro e agora com a copa do brasil, que chegou tão perto, vindo com um empate de São Paulo, e chegar aqui no Rio perder de 2 x 1 para o fraco, devedor, conturbado, impetimado time do corinhians.",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "14/01/2026",
+    "adversario": "Gremio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Gomez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": 5
+  },
+  {
+    "data": "15/01/2026",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   }
 ]
