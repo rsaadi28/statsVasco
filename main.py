@@ -250,6 +250,7 @@ class App:
             pass
 
         self.listas = carregar_listas()
+        self._evolucao_subtab_index = 0
         self._calendar_popup = None
 
         self.notebook = ttk.Notebook(root)
@@ -1796,6 +1797,22 @@ class App:
 
         ttk.Button(self.frame_graficos, text="Recarregar Gráficos", command=self._carregar_graficos).pack(pady=8)
 
+    def _configurar_tabs_evolucao(self, notebook):
+        tabs = notebook.tabs()
+        if not tabs:
+            return
+        idx = getattr(self, "_evolucao_subtab_index", 0)
+        idx = max(0, min(idx, len(tabs) - 1))
+        notebook.select(tabs[idx])
+
+        def on_change(event, self=self):
+            try:
+                self._evolucao_subtab_index = event.widget.index("current")
+            except Exception:
+                pass
+
+        notebook.bind("<<NotebookTabChanged>>", on_change)
+
     def _render_graficos_para_dataset(self, container, jogos, is_geral=False, prev_jogos=None, prev_label=None):
         if not jogos:
             ttk.Label(container, text="Sem partidas registradas neste contexto.").pack(anchor="w")
@@ -1866,6 +1883,7 @@ class App:
                             "Totais de Resultados", "Categoria", "Quantidade",
                             colors=["green", "yellow", "red"])
 
+        self._configurar_tabs_evolucao(nb)
     def _criar_overlay_series(self, base_series, prev_series, keys, label_prefix, labels_desc, color_override=None):
         if not prev_series or not base_series:
             return None
