@@ -859,48 +859,32 @@ class App:
 
     # --------------------- Temporadas ---------------------
     def _carregar_temporadas(self):
-        # limpa a aba
         for widget in self.frame_temporadas.winfo_children():
             widget.destroy()
 
-        # Canvas + Scrollbar
-        canvas = tk.Canvas(self.frame_temporadas, highlightthickness=0, bg=self.colors["bg"])
-        scrollbar = ttk.Scrollbar(self.frame_temporadas, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Frame interno que contém tudo
-        scroll_frame = ttk.Frame(canvas, padding=(8, 8))
-        # cria a janela e guarda o id
-        window_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-
-        # 1) sempre atualiza a scrollregion
-        def on_frame_configure(_):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-        scroll_frame.bind("<Configure>", on_frame_configure)
-
-        # 2) força o frame a ter a MESMA largura do canvas (ocupa toda a largura!)
-        def on_canvas_configure(e):
-            canvas.itemconfigure(window_id, width=e.width)
-        canvas.bind("<Configure>", on_canvas_configure)
-
-        # scroll com a roda do mouse
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
-
         jogos = carregar_dados_jogos()
+        if not jogos:
+            ttk.Label(self.frame_temporadas, text="Ainda não há jogos registrados.").pack(anchor="w")
+            return
+
         temporadas = defaultdict(list)
         for idx, jogo in enumerate(jogos):
-            ano = jogo["data"][-4:]  # dd/mm/aaaa
+            ano = jogo["data"][-4:]
             temporadas[ano].append((idx, jogo))
 
-        for ano in sorted(temporadas.keys(), reverse=True):
-            frame_ano = ttk.LabelFrame(scroll_frame, text=f"Temporada {ano}", padding=10)
-            frame_ano.pack(fill="x", padx=8, pady=14)  # mais espaçamento vertical
+        if not temporadas:
+            ttk.Label(self.frame_temporadas, text="Não foi possível agrupar as temporadas.").pack(anchor="w")
+            return
+
+        nb = ttk.Notebook(self.frame_temporadas)
+        nb.pack(fill="both", expand=True)
+
+        anos_ordenados = sorted(temporadas.keys())
+        indice_atual = len(anos_ordenados) - 1
+
+        for ano in anos_ordenados:
+            frame_ano = ttk.Frame(nb, padding=10)
+            nb.add(frame_ano, text=str(ano))
 
             jogos_ano = temporadas[ano]
             vitorias = empates = derrotas = 0
@@ -969,9 +953,11 @@ class App:
                 tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
                 tv.column(c, anchor="w", width=w, stretch=True)
 
+            sy = ttk.Scrollbar(table_wrap, orient="vertical", command=tv.yview)
             sx = ttk.Scrollbar(table_wrap, orient="horizontal", command=tv.xview)
-            tv.configure(xscrollcommand=sx.set)
-            tv.pack(fill="both", expand=True)   # em vez de apenas fill="x"
+            tv.configure(xscrollcommand=sx.set, yscrollcommand=sy.set)
+            tv.pack(side="left", fill="both", expand=True)
+            sy.pack(side="right", fill="y")
 
             if len(rows) > 12:
                 sx.pack(fill="x")
@@ -1077,13 +1063,10 @@ class App:
                     txt = "—"
                 ttk.Label(frame, text=txt, justify="left").pack(anchor="w")
 
-            fill_label_list(left, artilheiros)
-            fill_label_list(right, carrascos)
+        fill_label_list(left, artilheiros)
+        fill_label_list(right, carrascos)
 
-            # separador entre temporadas
-            sep = ttk.Separator(scroll_frame, orient="horizontal")
-            sep.pack(fill="x", padx=4, pady=(6, 2))
-
+        nb.select(indice_atual)
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):
