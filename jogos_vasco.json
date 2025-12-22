@@ -2089,5 +2089,121 @@
     "observacao": "",
     "tecnico": "Fernando Diniz",
     "posicao_tabela": null
+  },
+  {
+    "data": "22/01/2026",
+    "adversario": "Atletico-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Gomez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": 3
+  },
+  {
+    "data": "29/01/2026",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 10,
+      "adversario": 5
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Gomez",
+        "gols": 2
+      },
+      {
+        "nome": "David",
+        "gols": 3
+      },
+      {
+        "nome": "Carlos Cuesta",
+        "gols": 1
+      },
+      {
+        "nome": "Jair",
+        "gols": 1
+      },
+      {
+        "nome": "Hugo Moura",
+        "gols": 2
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Barreal",
+        "clube": "Cruzeiro",
+        "gols": 4
+      },
+      {
+        "nome": "Bruno Henrique",
+        "clube": "Cruzeiro",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": 1
+  },
+  {
+    "data": "04/02/2026",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 5
+    },
+    "gols_vasco": [
+      {
+        "nome": "Barros",
+        "gols": 1
+      },
+      {
+        "nome": "Hugo Moura",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Arthur Cabral",
+        "clube": "Botafogo",
+        "gols": 1
+      },
+      {
+        "nome": "Barreal",
+        "clube": "Botafogo",
+        "gols": 2
+      },
+      {
+        "nome": "Bruno Santos",
+        "clube": "Botafogo",
+        "gols": 1
+      },
+      {
+        "nome": "Bruno Henrique",
+        "clube": "Botafogo",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": 3
   }
 ]

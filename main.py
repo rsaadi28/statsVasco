@@ -1198,12 +1198,35 @@ class App:
         for widget in self.frame_comparativo.winfo_children():
             widget.destroy()
 
+        canvas = tk.Canvas(self.frame_comparativo, highlightthickness=0, bg=self.colors["bg"])
+        scrollbar = ttk.Scrollbar(self.frame_comparativo, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        scroll_frame = ttk.Frame(canvas, padding=8)
+        window_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+
+        def _update_scroll_region(_):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        scroll_frame.bind("<Configure>", _update_scroll_region)
+
+        def _update_width(event):
+            canvas.itemconfigure(window_id, width=event.width)
+
+        canvas.bind("<Configure>", _update_width)
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
         jogos = carregar_dados_jogos()
         temporadas = self._agrupar_por_temporada(jogos)
         anos = sorted(temporadas.keys())
         if len(anos) < 2:
             ttk.Label(
-                self.frame_comparativo,
+                scroll_frame,
                 text="Cadastre pelo menos duas temporadas completas para ver o comparativo."
             ).pack(anchor="w")
             return
@@ -1214,7 +1237,7 @@ class App:
         jogos_anterior = temporadas.get(ano_anterior, [])
         if not jogos_atual:
             ttk.Label(
-                self.frame_comparativo,
+                scroll_frame,
                 text=f"A temporada {ano_atual} ainda não possui jogos registrados."
             ).pack(anchor="w")
             return
@@ -1222,13 +1245,24 @@ class App:
         jogos_equivalentes_anterior = jogos_anterior[:len(jogos_atual)]
         stats_atual = self._resumir_jogos(jogos_atual)
         stats_anterior = self._resumir_jogos(jogos_equivalentes_anterior)
+        series_atual = self._montar_series_evolucao(jogos_atual)
+        series_anterior = self._montar_series_evolucao(jogos_equivalentes_anterior) if jogos_equivalentes_anterior else None
 
-        nb = ttk.Notebook(self.frame_comparativo)
+        nb = ttk.Notebook(scroll_frame)
         nb.pack(fill="both", expand=True)
 
         frame_totais = ttk.Frame(nb, padding=10)
         nb.add(frame_totais, text="Totais")
-        self._render_tab_totais(frame_totais, stats_atual, stats_anterior, ano_atual, ano_anterior, len(jogos_anterior))
+        self._render_tab_totais(
+            frame_totais,
+            stats_atual,
+            stats_anterior,
+            series_atual,
+            series_anterior,
+            ano_atual,
+            ano_anterior,
+            len(jogos_anterior)
+        )
 
         comps_por_ano = self._agrupar_competicoes_por_ano(temporadas)
         comps_atual = comps_por_ano.get(ano_atual, {})
@@ -1247,9 +1281,15 @@ class App:
         for nome_comp in todas_competicoes:
             frame_comp = ttk.Frame(nb, padding=10)
             nb.add(frame_comp, text=nome_comp)
-            self._render_tab_competicao(frame_comp, nome_comp, comps_por_ano, ano_atual, ano_anterior)
+            self._render_tab_competicao(
+                frame_comp,
+                nome_comp,
+                comps_por_ano,
+                ano_atual,
+                ano_anterior
+            )
 
-    def _render_tab_totais(self, container, stats_atual, stats_anterior, ano_atual, ano_anterior, total_jogos_anterior):
+    def _render_tab_totais(self, container, stats_atual, stats_anterior, series_atual, series_anterior, ano_atual, ano_anterior, total_jogos_anterior):
         geral_section = ttk.Labelframe(
             container,
             text=f"Temporada {ano_atual} x {ano_anterior} (mesmo número de jogos)",
@@ -1290,46 +1330,48 @@ class App:
             f"{ano_anterior}"
         )
 
-        if MATPLOTLIB_OK:
+        if MATPLOTLIB_OK and series_atual.get("x"):
             graficos_gerais = ttk.Frame(geral_section)
             graficos_gerais.pack(fill="x", pady=(12, 0))
-            self._plot_barras_duplas(
+            self._plot_linhas_comparativo(
                 graficos_gerais,
-                ["Gols Pró", "Gols Contra", "Saldo"],
-                [
-                    stats_anterior["gols_pro"],
-                    stats_anterior["gols_contra"],
-                    stats_anterior["saldo"],
-                ],
-                [
-                    stats_atual["gols_pro"],
-                    stats_atual["gols_contra"],
-                    stats_atual["saldo"],
-                ],
-                [f"{ano_anterior}", f"{ano_atual}"],
-                "Produção geral",
-                "Métrica",
-                "Quantidade"
+                series_atual,
+                ["gols_pro_acum", "gols_contra_acum"],
+                ["Gols pró (acum.)", "Gols contra (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução de gols",
+                ylabel="Gols"
             )
-            self._plot_barras_duplas(
+            self._plot_linhas_comparativo(
                 graficos_gerais,
-                ["Vitórias", "Empates", "Derrotas"],
-                [
-                    stats_anterior["vitorias"],
-                    stats_anterior["empates"],
-                    stats_anterior["derrotas"],
-                ],
-                [
-                    stats_atual["vitorias"],
-                    stats_atual["empates"],
-                    stats_atual["derrotas"],
-                ],
-                [f"{ano_anterior}", f"{ano_atual}"],
-                "Distribuição de resultados",
-                "Resultado",
-                "Quantidade"
+                series_atual,
+                ["saldo_acum"],
+                ["Saldo (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução do saldo",
+                ylabel="Saldo"
             )
-        else:
+            self._plot_linhas_comparativo(
+                graficos_gerais,
+                series_atual,
+                ["vit_acum", "emp_acum", "der_acum"],
+                ["Vitórias (acum.)", "Empates (acum.)", "Derrotas (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução de resultados",
+                ylabel="Qtd.",
+                color_override={
+                    "vit_acum": ("#15803d", "#86efac"),
+                    "emp_acum": ("#ca8a04", "#fde047"),
+                    "der_acum": ("#b91c1c", "#fca5a5"),
+                }
+            )
+        elif not MATPLOTLIB_OK:
             ttk.Label(
                 geral_section,
                 text="Matplotlib não disponível: os gráficos do comparativo geral estão desativados."
@@ -1349,6 +1391,8 @@ class App:
         jogos_equivalentes_anterior = jogos_anterior[:len(jogos_atual)]
         stats_atual = self._resumir_jogos(jogos_atual)
         stats_anterior = self._resumir_jogos(jogos_equivalentes_anterior)
+        series_atual = self._montar_series_evolucao(jogos_atual)
+        series_anterior = self._montar_series_evolucao(jogos_equivalentes_anterior) if jogos_equivalentes_anterior else None
 
         titulo = ttk.Label(
             container,
@@ -1409,45 +1453,53 @@ class App:
             f"{ano_anterior}"
         )
 
-        if MATPLOTLIB_OK:
+        if MATPLOTLIB_OK and series_atual.get("x"):
             graf_frame = ttk.Frame(container)
             graf_frame.pack(fill="x", pady=(10, 0))
-            labels_totais = ["Gols Pró", "Gols Contra", "Saldo"]
-            valores_dir = [stats_atual["gols_pro"], stats_atual["gols_contra"], stats_atual["saldo"]]
-            valores_esq = [stats_anterior["gols_pro"], stats_anterior["gols_contra"], stats_anterior["saldo"]]
+            keys_totais = ["gols_pro_acum", "gols_contra_acum"]
+            labels_totais = ["Gols pró (acum.)", "Gols contra (acum.)"]
             if mostra_posicao:
-                labels_totais.insert(0, "Pontos")
-                valores_dir.insert(0, stats_atual["pontos"])
-                valores_esq.insert(0, stats_anterior["pontos"])
-            self._plot_barras_duplas(
+                keys_totais.insert(0, "pontos_acum")
+                labels_totais.insert(0, "Pontos (acum.)")
+            self._plot_linhas_comparativo(
                 graf_frame,
+                series_atual,
+                keys_totais,
                 labels_totais,
-                valores_esq,
-                valores_dir,
-                [f"{ano_anterior}", f"{ano_atual}"],
-                "Indicadores da competição",
-                "Métrica",
-                "Quantidade"
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução dos indicadores",
+                ylabel="Valores"
             )
-            self._plot_barras_duplas(
+            self._plot_linhas_comparativo(
                 graf_frame,
-                ["Vitórias", "Empates", "Derrotas"],
-                [
-                    stats_anterior["vitorias"],
-                    stats_anterior["empates"],
-                    stats_anterior["derrotas"],
-                ],
-                [
-                    stats_atual["vitorias"],
-                    stats_atual["empates"],
-                    stats_atual["derrotas"],
-                ],
-                [f"{ano_anterior}", f"{ano_atual}"],
-                "Resultados acumulados",
-                "Resultado",
-                "Quantidade"
+                series_atual,
+                ["saldo_acum"],
+                ["Saldo (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução do saldo",
+                ylabel="Saldo"
             )
-        else:
+            self._plot_linhas_comparativo(
+                graf_frame,
+                series_atual,
+                ["vit_acum", "emp_acum", "der_acum"],
+                ["Vitórias (acum.)", "Empates (acum.)", "Derrotas (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução dos resultados",
+                ylabel="Qtd.",
+                color_override={
+                    "vit_acum": ("#15803d", "#86efac"),
+                    "emp_acum": ("#ca8a04", "#fde047"),
+                    "der_acum": ("#b91c1c", "#fca5a5"),
+                }
+            )
+        elif not MATPLOTLIB_OK:
             ttk.Label(
                 container,
                 text="Matplotlib não disponível: gráficos da competição desativados."
@@ -1699,54 +1751,127 @@ class App:
             ttk.Label(self.frame_graficos, text="Matplotlib não disponível. Instale para ver os gráficos (pip install matplotlib).").pack(anchor="w")
             return
 
-        series = self._montar_series_evolucao()
-        if not series["x"]:
+        jogos = carregar_dados_jogos()
+        if not jogos:
             ttk.Label(self.frame_graficos, text="Sem dados para exibir gráficos.").pack(anchor="w")
             return
 
-        artilheiros = self._contar_artilheiros()
-        nb = ttk.Notebook(self.frame_graficos)
-        nb.pack(fill="both", expand=True)
+        temporadas = self._agrupar_por_temporada(jogos)
+        nb_root = ttk.Notebook(self.frame_graficos)
+        nb_root.pack(fill="both", expand=True)
 
-        # 1) Artilheiros (barras horizontais) — decrescente
-        f1 = ttk.Frame(nb, padding=8)
-        nb.add(f1, text="Artilheiros")
-        if artilheiros:
-            top = artilheiros.most_common(15)
-            labels = [n for n, _ in top]   # já em ordem decrescente
-            values = [q for _, q in top]
-            self._plot_barras_h(f1, labels, values, "Artilheiros (Gols válidos)", "Gols", top_to_bottom=True)
-        else:
-            ttk.Label(f1, text="Ainda não há artilheiros registrados.").pack(anchor="w")
+        frame_geral = ttk.Frame(nb_root, padding=6)
+        nb_root.add(frame_geral, text="Geral")
+        self._render_graficos_para_dataset(frame_geral, jogos, is_geral=True)
 
-        # 2) Gols Pró x Contra (Acum.) - linhas
-        f2 = ttk.Frame(nb, padding=8)
-        nb.add(f2, text="Gols (Acum.)")
-        self._plot_linhas(f2, series["x"],
-                          [series["gols_pro_acum"], series["gols_contra_acum"]],
-                          ["Gols pró (acum.)", "Gols contra (acum.)"],
-                          "Gols Acumulados", "Jogo", "Gols")
-
-        # 3) Saldo de gols (Acum.) - linhas
-        f3 = ttk.Frame(nb, padding=8)
-        nb.add(f3, text="Saldo")
-        self._plot_linhas(f3, series["x"], [series["saldo_acum"]],
-                          ["Saldo (acum.)"], "Saldo de Gols (Acum.)", "Jogo", "Saldo")
-
-        # 4) V/E/D (Totais) - barras coloridas
-        f4 = ttk.Frame(nb, padding=8)
-        nb.add(f4, text="VED (Totais)")
-        v_total = series["vit_acum"][-1] if series["vit_acum"] else 0
-        e_total = series["emp_acum"][-1] if series["emp_acum"] else 0
-        d_total = series["der_acum"][-1] if series["der_acum"] else 0
-        self._plot_barras_v(f4, ["Vitórias", "Empates", "Derrotas"], [v_total, e_total, d_total],
-                            "Totais de Resultados", "Categoria", "Quantidade",
-                            colors=["green", "yellow", "red"])
+        for ano in sorted(temporadas.keys()):
+            frame_ano = ttk.Frame(nb_root, padding=6)
+            nb_root.add(frame_ano, text=str(ano))
+            prev = temporadas.get(ano - 1)
+            prev_label = str(ano - 1) if prev else None
+            self._render_graficos_para_dataset(frame_ano, temporadas[ano], is_geral=False,
+                                               prev_jogos=prev, prev_label=prev_label)
 
         ttk.Button(self.frame_graficos, text="Recarregar Gráficos", command=self._carregar_graficos).pack(pady=8)
 
-    def _contar_artilheiros(self) -> Counter:
-        jogos = carregar_dados_jogos()
+    def _render_graficos_para_dataset(self, container, jogos, is_geral=False, prev_jogos=None, prev_label=None):
+        if not jogos:
+            ttk.Label(container, text="Sem partidas registradas neste contexto.").pack(anchor="w")
+            return
+
+        series = self._montar_series_evolucao(jogos)
+        if not series["x"]:
+            ttk.Label(container, text="Sem dados suficientes para montar a evolução.").pack(anchor="w")
+            return
+
+        artilheiros = self._contar_artilheiros(jogos)
+        prev_series = None
+        if prev_jogos and not is_geral:
+            prev_series = self._montar_series_evolucao(prev_jogos)
+        overlay_label = prev_label or "Ano anterior"
+
+        nb = ttk.Notebook(container)
+        nb.pack(fill="both", expand=True)
+
+        # Artilheiros
+        tab_art = ttk.Frame(nb, padding=8)
+        nb.add(tab_art, text="Artilheiros")
+        if artilheiros:
+            top = artilheiros.most_common(15)
+            labels = [n for n, _ in top]
+            values = [q for _, q in top]
+            self._plot_barras_h(tab_art, labels, values, "Artilheiros (Gols válidos)", "Gols", top_to_bottom=True)
+        else:
+            ttk.Label(tab_art, text="Ainda não há artilheiros registrados.").pack(anchor="w")
+
+        # Gols acumulados
+        tab_gols = ttk.Frame(nb, padding=8)
+        nb.add(tab_gols, text="Gols (Acum.)")
+        comparativo_gols = None
+        if prev_series:
+            comparativo_gols = self._criar_overlay_series(series, prev_series,
+                                                          ["gols_pro_acum", "gols_contra_acum"],
+                                                          overlay_label,
+                                                          ["Gols pró (acum.)", "Gols contra (acum.)"])
+        self._plot_linhas(tab_gols, series["x"],
+                          [series["gols_pro_acum"], series["gols_contra_acum"]],
+                          ["Gols pró (acum.)", "Gols contra (acum.)"],
+                          "Gols Acumulados", "Jogo", "Gols",
+                          comparativos=[comparativo_gols] if comparativo_gols else None)
+
+        # Saldo acumulado
+        tab_saldo = ttk.Frame(nb, padding=8)
+        nb.add(tab_saldo, text="Saldo")
+        comparativo_saldo = None
+        if prev_series:
+            comparativo_saldo = self._criar_overlay_series(series, prev_series,
+                                                           ["saldo_acum"],
+                                                           overlay_label,
+                                                           ["Saldo (acum.)"])
+        self._plot_linhas(tab_saldo, series["x"], [series["saldo_acum"]],
+                          ["Saldo (acum.)"], "Saldo de Gols (Acum.)", "Jogo", "Saldo",
+                          comparativos=[comparativo_saldo] if comparativo_saldo else None)
+
+        # V/E/D acumulados
+        tab_ved = ttk.Frame(nb, padding=8)
+        nb.add(tab_ved, text="VED (Totais)")
+        v_total = series["vit_acum"][-1] if series["vit_acum"] else 0
+        e_total = series["emp_acum"][-1] if series["emp_acum"] else 0
+        d_total = series["der_acum"][-1] if series["der_acum"] else 0
+        self._plot_barras_v(tab_ved, ["Vitórias", "Empates", "Derrotas"], [v_total, e_total, d_total],
+                            "Totais de Resultados", "Categoria", "Quantidade",
+                            colors=["green", "yellow", "red"])
+
+    def _criar_overlay_series(self, base_series, prev_series, keys, label_prefix, labels_desc):
+        if not prev_series or not base_series:
+            return None
+        base_len = len(base_series.get("x", []))
+        prev_len = len(prev_series.get("x", []))
+        if not base_len or not prev_len:
+            return None
+        max_len = min(base_len, prev_len)
+        if max_len == 0:
+            return None
+        comparativo = {
+            "x": base_series["x"][:max_len],
+            "series": [],
+            "labels": [],
+            "color": "#6b7280",
+            "alpha": 0.45,
+            "linestyle": "--",
+            "linewidth": 1.7,
+        }
+        for key, desc in zip(keys, labels_desc):
+            valores_prev = prev_series.get(key, [])
+            if not valores_prev:
+                return None
+            comparativo["series"].append(valores_prev[:max_len])
+            comparativo["labels"].append(f"{label_prefix} - {desc}")
+        return comparativo
+
+    def _contar_artilheiros(self, jogos=None) -> Counter:
+        if jogos is None:
+            jogos = carregar_dados_jogos()
         c = Counter()
         for jogo in jogos:
             for g in jogo.get("gols_vasco", []):
@@ -1756,8 +1881,9 @@ class App:
                     c[g] += 1
         return c
 
-    def _montar_series_evolucao(self):
-        jogos = carregar_dados_jogos()
+    def _montar_series_evolucao(self, jogos=None):
+        if jogos is None:
+            jogos = carregar_dados_jogos()
         if not jogos:
             return {"x": []}
 
@@ -1770,8 +1896,9 @@ class App:
         vit_acum = []
         emp_acum = []
         der_acum = []
+        pontos_acum = []
 
-        gp = gc = s = v = e = d = 0
+        gp = gc = s = v = e = d = p = 0
 
         for i, jogo in enumerate(jogos_ordenados, start=1):
             placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -1789,6 +1916,8 @@ class App:
             else:
                 d += 1
 
+            p = v * 3 + e
+
             x.append(i)
             gols_pro_acum.append(gp)
             gols_contra_acum.append(gc)
@@ -1796,6 +1925,7 @@ class App:
             vit_acum.append(v)
             emp_acum.append(e)
             der_acum.append(d)
+            pontos_acum.append(p)
 
         return {
             "x": x,
@@ -1805,22 +1935,140 @@ class App:
             "vit_acum": vit_acum,
             "emp_acum": emp_acum,
             "der_acum": der_acum,
+            "pontos_acum": pontos_acum,
         }
 
     # --------- Helpers de plot ---------
-    def _plot_linhas(self, container, x, series_list, labels, titulo, xlabel, ylabel):
+    def _plot_linhas(self, container, x, series_list, labels, titulo, xlabel, ylabel, comparativos=None, line_colors=None):
         fig = Figure(figsize=(8.5, 5.0), dpi=100)
         ax = fig.add_subplot(111)
-        for serie, label in zip(series_list, labels):
-            ax.plot(x, serie, label=label, linewidth=2)
+        for idx, (serie, label) in enumerate(zip(series_list, labels)):
+            if not serie:
+                continue
+            color = None
+            if line_colors and idx < len(line_colors):
+                color = line_colors[idx]
+            plot_kwargs = {"label": label, "linewidth": 2}
+            if color:
+                plot_kwargs["color"] = color
+            ax.plot(x, serie, **plot_kwargs)
         ax.set_title(titulo)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.grid(True, linestyle="--", alpha=0.4)
-        ax.legend(loc="best")
+        if comparativos:
+            for comp in comparativos:
+                if not comp:
+                    continue
+                comp_x = comp.get("x", x)
+                comp_series = comp.get("series", [])
+                comp_labels = comp.get("labels", [])
+                default_color = comp.get("color", "#888888")
+                alpha = comp.get("alpha", 1.0)
+                linestyle = comp.get("linestyle", "--")
+                linewidth = comp.get("linewidth", 1.4)
+                comp_colors = comp.get("colors")
+                for idx, (serie, label) in enumerate(zip(comp_series, comp_labels)):
+                    if not serie:
+                        continue
+                    lim = min(len(comp_x), len(serie))
+                    if lim == 0:
+                        continue
+                    cor = default_color
+                    if comp_colors and idx < len(comp_colors) and comp_colors[idx]:
+                        cor = comp_colors[idx]
+                    ax.plot(
+                        comp_x[:lim],
+                        serie[:lim],
+                        label=label,
+                        linewidth=linewidth,
+                        linestyle=linestyle,
+                        color=cor,
+                        alpha=alpha,
+                    )
+        handles, labels_text = ax.get_legend_handles_labels()
+        if handles:
+            fig.subplots_adjust(bottom=0.22)
+            ncol = min(4, max(1, len(handles)))
+            ax.legend(
+                handles,
+                labels_text,
+                loc="upper center",
+                bbox_to_anchor=(0.5, -0.18),
+                ncol=ncol
+            )
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def _plot_linhas_comparativo(self, container, series_atual, keys, labels, ano_atual, ano_anterior, prev_series=None, titulo="", xlabel="Jogo", ylabel="", color_override=None):
+        color_override = color_override or {}
+        base_x = series_atual.get("x", [])
+        if not base_x:
+            ttk.Label(container, text="Sem dados suficientes para este gráfico.").pack(anchor="w", pady=(4, 6))
+            return
+        linhas = []
+        nomes = []
+        line_colors = []
+        present = []
+        color_map = {
+            "pontos_acum": ("#1d4ed8", "#60a5fa"),
+            "gols_pro_acum": ("#15803d", "#86efac"),
+            "gols_contra_acum": ("#b91c1c", "#fca5a5"),
+            "saldo_acum": ("#f97316", "#fdba74"),
+        }
+        ano_atual_txt = str(ano_atual)
+        ano_ant_txt = str(ano_anterior) if ano_anterior is not None else "Ano anterior"
+        for key, label in zip(keys, labels):
+            valores = series_atual.get(key)
+            if not valores:
+                continue
+            linhas.append(valores)
+            nomes.append(f"{ano_atual_txt} - {label}")
+            base_color, light_color = color_override.get(key, color_map.get(key, (None, None)))
+            line_colors.append(base_color)
+            present.append({"key": key, "label": label, "light_color": light_color})
+        if not linhas:
+            ttk.Label(container, text="Sem métricas disponíveis para exibir.").pack(anchor="w", pady=(4, 6))
+            return
+        comparativos = None
+        if prev_series and prev_series.get("x"):
+            comparativo = {
+                "x": base_x,
+                "series": [],
+                "labels": [],
+                "color": "#6b7280",
+                "alpha": 1.0,
+                "linestyle": "--",
+                "linewidth": 1.9,
+                "colors": [],
+            }
+            prev_x = prev_series.get("x", [])
+            lim_x = min(len(base_x), len(prev_x))
+            if lim_x > 0:
+                comparativo["x"] = base_x[:lim_x]
+                for info in present:
+                    key = info["key"]
+                    label = info["label"]
+                    valores_prev = prev_series.get(key)
+                    if not valores_prev:
+                        continue
+                    comparativo["series"].append(valores_prev[:lim_x])
+                    comparativo["labels"].append(f"{ano_ant_txt} - {label}")
+                    comparativo["colors"].append(info.get("light_color"))
+                if comparativo["series"]:
+                    comparativos = [comparativo]
+        self._plot_linhas(
+            container,
+            base_x,
+            linhas,
+            nomes,
+            titulo or "Evolução",
+            xlabel,
+            ylabel,
+            comparativos=comparativos,
+            line_colors=line_colors
+        )
 
     def _plot_barras_h(self, container, labels, values, titulo, xlabel, top_to_bottom=True):
         fig = Figure(figsize=(9.2, 6.0), dpi=100)
@@ -1857,36 +2105,6 @@ class App:
         maxv = max(values) if values else 0
         for i, v in enumerate(values):
             ax.text(i, v + (0.02 * maxv if maxv else 0.1), str(v), ha="center", va="bottom")
-        canvas = FigureCanvasTkAgg(fig, master=container)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-
-    def _plot_barras_duplas(self, container, labels, valores_esquerda, valores_direita, legendas, titulo, xlabel, ylabel):
-        fig = Figure(figsize=(9.2, 5.2), dpi=100)
-        ax = fig.add_subplot(111)
-        x = list(range(len(labels)))
-        width = 0.38
-        barras_esq = ax.bar([xi - width / 2 for xi in x], valores_esquerda, width, label=legendas[0])
-        barras_dir = ax.bar([xi + width / 2 for xi in x], valores_direita, width, label=legendas[1])
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
-        ax.set_title(titulo)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.legend(loc="best")
-        ax.grid(axis="y", linestyle="--", alpha=0.3)
-        valores_combinados = (valores_esquerda or []) + (valores_direita or [])
-        max_v = max(valores_combinados) if valores_combinados else 0
-        for bar_set in (barras_esq, barras_dir):
-            for rect in bar_set:
-                altura = rect.get_height()
-                ax.text(
-                    rect.get_x() + rect.get_width() / 2,
-                    altura + (0.02 * max_v if max_v else 0.1),
-                    f"{altura:.2f}".rstrip("0").rstrip("."),
-                    ha="center",
-                    va="bottom"
-                )
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
