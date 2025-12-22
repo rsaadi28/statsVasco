@@ -868,9 +868,35 @@ class App:
             return
 
         temporadas = defaultdict(list)
+        artilheiros_totais = Counter()
+        carrascos_totais = Counter()
         for idx, jogo in enumerate(jogos):
             ano = jogo["data"][-4:]
             temporadas[ano].append((idx, jogo))
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    artilheiros_totais[g["nome"]] += g["gols"]
+            for g in jogo.get("gols_adversario", []):
+                if isinstance(g, dict):
+                    carrascos_totais[g["nome"]] += g["gols"]
+        invicto_totais = 0
+        invicto_max_totais = 0
+        derrota_totais = 0
+        derrota_max_totais = 0
+        streak_inv = 0
+        streak_der = 0
+        for jogo in sorted(jogos, key=lambda j: _parse_data_ptbr(j["data"])):
+            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+            vasco = placar.get("vasco", 0)
+            adv = placar.get("adversario", 0)
+            if vasco >= adv:
+                streak_inv += 1
+                invicto_max_totais = max(invicto_max_totais, streak_inv)
+                streak_der = 0
+            else:
+                streak_der += 1
+                derrota_max_totais = max(derrota_max_totais, streak_der)
+                streak_inv = 0
 
         if not temporadas:
             ttk.Label(self.frame_temporadas, text="Não foi possível agrupar as temporadas.").pack(anchor="w")
@@ -893,6 +919,8 @@ class App:
             carrascos = Counter()
 
             rows = []
+            streak_inv = streak_der = 0
+            invicto_max = derrota_max = 0
             for idx_global, jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j[1]["data"])):
                 local = jogo.get("local", "desconhecido").capitalize()
                 placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -902,10 +930,19 @@ class App:
 
                 if placar["vasco"] > placar["adversario"]:
                     vitorias += 1
+                    streak_inv += 1
+                    invicto_max = max(invicto_max, streak_inv)
+                    streak_der = 0
                 elif placar["vasco"] < placar["adversario"]:
                     derrotas += 1
+                    streak_der += 1
+                    derrota_max = max(derrota_max, streak_der)
+                    streak_inv = 0
                 else:
                     empates += 1
+                    streak_inv += 1
+                    invicto_max = max(invicto_max, streak_inv)
+                    streak_der = 0
 
                 gols_pro += placar.get("vasco", 0)
                 gols_contra += placar.get("adversario", 0)
@@ -923,7 +960,11 @@ class App:
                 })
 
             # Cards
+            jogos_disputados = len(jogos_ano)
             saldo = gols_pro - gols_contra
+            aproveitamento = round(((vitorias * 3 + empates) / (jogos_disputados * 3)) * 100, 1) if jogos_disputados else 0.0
+            media_gols_pro = round(gols_pro / jogos_disputados, 2) if jogos_disputados else 0.0
+            media_gols_contra = round(gols_contra / jogos_disputados, 2) if jogos_disputados else 0.0
             cards = ttk.Frame(frame_ano)
             cards.pack(fill="x", pady=(0, 8))
             cards.columnconfigure((0, 1, 2, 3), weight=1)
@@ -940,6 +981,11 @@ class App:
             make_card(cards, "Gols Pró", gols_pro).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Maior sequência derrotas", derrota_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
 
             # ----- Tabela de partidas da temporada
             table_wrap = ttk.Frame(frame_ano)
@@ -954,13 +1000,9 @@ class App:
                 tv.column(c, anchor="w", width=w, stretch=True)
 
             sy = ttk.Scrollbar(table_wrap, orient="vertical", command=tv.yview)
-            sx = ttk.Scrollbar(table_wrap, orient="horizontal", command=tv.xview)
-            tv.configure(xscrollcommand=sx.set, yscrollcommand=sy.set)
+            tv.configure(yscrollcommand=sy.set)
             tv.pack(side="left", fill="both", expand=True)
             sy.pack(side="right", fill="y")
-
-            if len(rows) > 12:
-                sx.pack(fill="x")
 
             tv.tag_configure("odd", background=self.colors["row_alt_bg"])
 
@@ -1048,24 +1090,6 @@ class App:
 
 
 
-            # ----- Resumos curtos (top artilheiros/carrascos da temporada)
-            bottom = ttk.Frame(frame_ano)
-            bottom.pack(fill="x", pady=(8, 0))
-            left = ttk.Labelframe(bottom, text="Artilheiros do Vasco (na temporada)", padding=6)
-            left.pack(side="left", fill="x", expand=True, padx=(0, 4))
-            right = ttk.Labelframe(bottom, text="Carrascos (na temporada)", padding=6)
-            right.pack(side="left", fill="x", expand=True, padx=(4, 0))
-
-            def fill_label_list(frame, counter):
-                if counter:
-                    txt = "\n".join([f"• {n}: {q}" for n, q in counter.most_common(8)])
-                else:
-                    txt = "—"
-                ttk.Label(frame, text=txt, justify="left").pack(anchor="w")
-
-        fill_label_list(left, artilheiros)
-        fill_label_list(right, carrascos)
-
         nb.select(indice_atual)
 
     def _tooltip_gols_text(self, jogo):
@@ -1098,8 +1122,11 @@ class App:
         gols_pro = gols_contra = 0
         artilheiros = Counter()
         carrascos = Counter()
+        streak_inv = streak_der = 0
+        invicto_max = derrota_max = 0
 
-        for jogo in jogos:
+        jogos_ord = sorted(jogos, key=lambda j: _parse_data_ptbr(j["data"]))
+        for jogo in jogos_ord:
             placar = jogo.get("placar")
             if not placar:
                 continue
@@ -1109,10 +1136,19 @@ class App:
 
             if placar["vasco"] > placar["adversario"]:
                 vitorias += 1
+                streak_inv += 1
+                invicto_max = max(invicto_max, streak_inv)
+                streak_der = 0
             elif placar["vasco"] < placar["adversario"]:
                 derrotas += 1
+                streak_der += 1
+                derrota_max = max(derrota_max, streak_der)
+                streak_inv = 0
             else:
                 empates += 1
+                streak_inv += 1
+                invicto_max = max(invicto_max, streak_inv)
+                streak_der = 0
 
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
@@ -1123,7 +1159,8 @@ class App:
 
         saldo = gols_pro - gols_contra
         aproveitamento = round(((vitorias * 3 + empates) / (total * 3)) * 100, 1) if total else 0.0
-        invicto = round(((vitorias + empates) / total) * 100, 1) if total else 0.0
+        media_gols_pro = round(gols_pro / total, 2) if total else 0.0
+        media_gols_contra = round(gols_contra / total, 2) if total else 0.0
 
         # Cards
         cards = ttk.Frame(self.frame_geral)
@@ -1144,8 +1181,10 @@ class App:
         make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=6, pady=6)
         make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=6, pady=6)
         make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=6, pady=6)
-
-        make_card(cards, "Invicto (%)", f"{invicto}").grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
+        make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=6, pady=6)
+        make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=6, pady=6)
+        make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=6, pady=6)
+        make_card(cards, "Maior sequência derrotas", derrota_max).grid(row=2, column=3, sticky="nsew", padx=6, pady=6)
 
         # Tabelas
         tables = ttk.Frame(self.frame_geral)
@@ -1795,12 +1834,14 @@ class App:
             comparativo_gols = self._criar_overlay_series(series, prev_series,
                                                           ["gols_pro_acum", "gols_contra_acum"],
                                                           overlay_label,
-                                                          ["Gols pró (acum.)", "Gols contra (acum.)"])
+                                                          ["Gols pró (acum.)", "Gols contra (acum.)"],
+                                                          color_override=["#15803d", "#b91c1c"])
         self._plot_linhas(tab_gols, series["x"],
                           [series["gols_pro_acum"], series["gols_contra_acum"]],
                           ["Gols pró (acum.)", "Gols contra (acum.)"],
                           "Gols Acumulados", "Jogo", "Gols",
-                          comparativos=[comparativo_gols] if comparativo_gols else None)
+                          comparativos=[comparativo_gols] if comparativo_gols else None,
+                          line_colors=["#15803d", "#b91c1c"])
 
         # Saldo acumulado
         tab_saldo = ttk.Frame(nb, padding=8)
@@ -1825,7 +1866,7 @@ class App:
                             "Totais de Resultados", "Categoria", "Quantidade",
                             colors=["green", "yellow", "red"])
 
-    def _criar_overlay_series(self, base_series, prev_series, keys, label_prefix, labels_desc):
+    def _criar_overlay_series(self, base_series, prev_series, keys, label_prefix, labels_desc, color_override=None):
         if not prev_series or not base_series:
             return None
         base_len = len(base_series.get("x", []))
@@ -1840,16 +1881,32 @@ class App:
             "series": [],
             "labels": [],
             "color": "#6b7280",
-            "alpha": 0.45,
+            "alpha": 1.0,
             "linestyle": "--",
-            "linewidth": 1.7,
+            "linewidth": 1.9,
+            "colors": [],
         }
-        for key, desc in zip(keys, labels_desc):
+        color_map_default = {
+            "gols_pro_acum": "#86efac",
+            "gols_contra_acum": "#fca5a5",
+            "saldo_acum": "#fdba74",
+            "vit_acum": "#86efac",
+            "emp_acum": "#fde047",
+            "der_acum": "#fca5a5",
+            "pontos_acum": "#60a5fa",
+        }
+        for idx, (key, desc) in enumerate(zip(keys, labels_desc)):
             valores_prev = prev_series.get(key, [])
             if not valores_prev:
                 return None
             comparativo["series"].append(valores_prev[:max_len])
             comparativo["labels"].append(f"{label_prefix} - {desc}")
+            cor = None
+            if color_override and idx < len(color_override):
+                cor = color_override[idx]
+            else:
+                cor = color_map_default.get(key)
+            comparativo["colors"].append(cor)
         return comparativo
 
     def _contar_artilheiros(self, jogos=None) -> Counter:
@@ -1996,8 +2053,8 @@ class App:
         present = []
         color_map = {
             "pontos_acum": ("#1d4ed8", "#60a5fa"),
-            "gols_pro_acum": ("#15803d", "#86efac"),
-            "gols_contra_acum": ("#b91c1c", "#fca5a5"),
+            "gols_pro_acum": ("#15803d", "#15803d"),
+            "gols_contra_acum": ("#b91c1c", "#b91c1c"),
             "saldo_acum": ("#f97316", "#fdba74"),
         }
         ano_atual_txt = str(ano_atual)
@@ -2030,7 +2087,7 @@ class App:
             lim_x = min(len(base_x), len(prev_x))
             if lim_x > 0:
                 comparativo["x"] = base_x[:lim_x]
-                for info in present:
+                for idx_present, info in enumerate(present):
                     key = info["key"]
                     label = info["label"]
                     valores_prev = prev_series.get(key)
@@ -2038,7 +2095,8 @@ class App:
                         continue
                     comparativo["series"].append(valores_prev[:lim_x])
                     comparativo["labels"].append(f"{ano_ant_txt} - {label}")
-                    comparativo["colors"].append(info.get("light_color"))
+                    cor_clara = info.get("light_color")
+                    comparativo["colors"].append(cor_clara)
                 if comparativo["series"]:
                     comparativos = [comparativo]
         self._plot_linhas(
