@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import sys
+import ast
 try:
     from tkcalendar import Calendar
     TKCALENDAR_OK = True
@@ -12,6 +13,7 @@ except Exception:
     Calendar = None
     TKCALENDAR_OK = False
 import tkinter.font as tkFont
+import re
 from datetime import datetime
 
 # --- Matplotlib (gráficos) ---
@@ -42,6 +44,7 @@ def _definir_diretorio_dados():
 DATA_DIR = _definir_diretorio_dados()
 ARQUIVO_JOGOS = os.path.join(DATA_DIR, "jogos_vasco.json")
 ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
+ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 
 
@@ -49,7 +52,7 @@ def _bootstrap_jsons():
     """Copia JSONs originais para Application Support no primeiro uso."""
     if DATA_DIR == PROJECT_ROOT:
         return
-    for nome in ("jogos_vasco.json", "listas_auxiliares.json"):
+    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json"):
         destino = os.path.join(DATA_DIR, nome)
         if os.path.exists(destino):
             continue
@@ -91,6 +94,10 @@ def carregar_dados_jogos():
     return _load_json_safe(ARQUIVO_JOGOS, [])
 
 
+def carregar_jogos_futuros():
+    return _load_json_safe(ARQUIVO_FUTUROS, [])
+
+
 def carregar_listas():
     dados = _load_json_safe(ARQUIVO_LISTAS, {
         "clubes_adversarios": [],
@@ -128,9 +135,72 @@ def salvar_lista_jogos(dados):
         json.dump(dados, f, ensure_ascii=False, indent=2)
 
 
+def salvar_lista_futuros(dados):
+    with open(ARQUIVO_FUTUROS, "w", encoding="utf-8") as f:
+        json.dump(dados, f, ensure_ascii=False, indent=2)
+
+
 def _parse_data_ptbr(s: str) -> datetime:
     # dd/mm/aaaa
     return datetime.strptime(s, "%d/%m/%Y")
+
+
+def _parse_data_ptbr_safe(s: str):
+    try:
+        return _parse_data_ptbr(s)
+    except Exception:
+        return None
+
+
+def _extrair_adversario_de_jogo(jogo_txt: str) -> str:
+    if not jogo_txt:
+        return ""
+    jogo_clean = jogo_txt.replace("×", "x")
+    partes = re.split(r"\s*(?:x|vs\.?)\s*", jogo_clean, maxsplit=1, flags=re.IGNORECASE)
+    if len(partes) == 2:
+        p1, p2 = partes[0].strip(), partes[1].strip()
+        if "vasco" in p1.casefold():
+            return p2
+        if "vasco" in p2.casefold():
+            return p1
+        return p2
+    return jogo_txt.strip()
+
+
+def _normalizar_em_casa(valor):
+    if isinstance(valor, bool):
+        return valor
+    if valor is None:
+        return None
+    txt = str(valor).strip().lower()
+    if txt in ("sim", "s", "casa", "em casa", "emcasa", "true", "1", "yes", "y"):
+        return True
+    if txt in ("nao", "não", "n", "fora", "false", "0", "no"):
+        return False
+    return None
+
+
+def _normalizar_futuro_item(item):
+    if not isinstance(item, dict):
+        return None
+    jogo = (item.get("jogo") or "").strip()
+    data = (item.get("data") or "").strip()
+    em_casa = _normalizar_em_casa(
+        item.get("emCasa", item.get("em_casa", item.get("emcasa")))
+    )
+    campeonato = (item.get("campeonato") or item.get("competicao") or "").strip()
+    if not jogo:
+        adversario = (item.get("adversario") or "").strip()
+        if adversario:
+            jogo = f"Vasco x {adversario}"
+    if not jogo or not data:
+        return None
+    return {
+        "jogo": jogo,
+        "data": data,
+        "em_casa": em_casa,
+        "campeonato": campeonato,
+    }
 
 
 # --------------------- Tooltip simples ---------------------
@@ -256,6 +326,7 @@ class App:
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True)
 
+        self.frame_futuros = ttk.Frame(self.notebook, padding=10)
         self.frame_registro = ttk.Frame(self.notebook, padding=10)
         self.frame_temporadas = ttk.Frame(self.notebook, padding=10)
         self.frame_geral = ttk.Frame(self.notebook, padding=10)
@@ -263,6 +334,7 @@ class App:
         self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
 
+        self.notebook.insert(0, self.frame_futuros, text="Jogos Futuros")
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
         self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
@@ -270,12 +342,176 @@ class App:
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
 
+        self._criar_aba_futuros(self.frame_futuros)
         self._criar_formulario(self.frame_registro)
         self._carregar_temporadas()
         self._carregar_geral()
         self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
+        self.notebook.select(self.frame_registro)
+
+    # --------------------- Jogos Futuros ---------------------
+    def _criar_aba_futuros(self, frame):
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(3, weight=1)
+
+        header = ttk.Label(frame, text="Importar jogos futuros (JSON):")
+        header.grid(row=0, column=0, sticky="w", pady=(0, 6))
+
+        json_wrap = ttk.Frame(frame)
+        json_wrap.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        json_wrap.columnconfigure(0, weight=1)
+
+        self.futuros_json_text = tk.Text(
+            json_wrap, height=7, wrap="none",
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            insertbackground=self.colors["accent"]
+        )
+        self.futuros_json_text.grid(row=0, column=0, sticky="ew")
+
+        btns = ttk.Frame(json_wrap)
+        btns.grid(row=0, column=1, sticky="ns", padx=(8, 0))
+        ttk.Button(btns, text="Importar JSON", command=self._importar_jogos_futuros).pack(fill="x", pady=(0, 6))
+        ttk.Button(btns, text="Limpar", command=lambda: self.futuros_json_text.delete("1.0", "end")).pack(fill="x")
+
+        ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=2, column=0, sticky="w", pady=(0, 6))
+
+        list_wrap = ttk.Frame(frame)
+        list_wrap.grid(row=3, column=0, sticky="nsew")
+        list_wrap.rowconfigure(0, weight=1)
+        list_wrap.columnconfigure(0, weight=1)
+
+        cols = ("data", "jogo", "local", "campeonato")
+        self.tv_futuros = ttk.Treeview(list_wrap, columns=cols, show="headings", height=10)
+        self.tv_futuros.heading("data", text="Data")
+        self.tv_futuros.heading("jogo", text="Jogo")
+        self.tv_futuros.heading("local", text="Em casa?")
+        self.tv_futuros.heading("campeonato", text="Campeonato")
+        self.tv_futuros.column("data", width=100, anchor="center")
+        self.tv_futuros.column("jogo", width=320, anchor="w")
+        self.tv_futuros.column("local", width=90, anchor="center")
+        self.tv_futuros.column("campeonato", width=240, anchor="w")
+        self.tv_futuros.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_futuros.tag_configure("past", foreground="#7a7a7a")
+        self.tv_futuros.grid(row=0, column=0, sticky="nsew")
+
+        sy = ttk.Scrollbar(list_wrap, orient="vertical", command=self.tv_futuros.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        self.tv_futuros.configure(yscrollcommand=sy.set)
+        self.tv_futuros.bind("<Double-1>", self._importar_futuro_para_registro)
+
+        self._render_lista_futuros()
+
+    def _importar_jogos_futuros(self):
+        raw = self.futuros_json_text.get("1.0", "end").strip()
+        if not raw:
+            messagebox.showerror("Erro", "Cole o JSON dos jogos futuros antes de importar.")
+            return
+        try:
+            data = json.loads(raw)
+        except Exception:
+            try:
+                data = ast.literal_eval(raw)
+            except Exception:
+                messagebox.showerror(
+                    "Erro",
+                    "JSON inválido. Use aspas duplas para as chaves e valores."
+                )
+                return
+        if not isinstance(data, list):
+            messagebox.showerror("Erro", "O JSON deve ser uma lista de jogos.")
+            return
+
+        validos = []
+        invalidos = 0
+        for item in data:
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado:
+                invalidos += 1
+                continue
+            data_obj = _parse_data_ptbr_safe(normalizado["data"])
+            if not data_obj:
+                invalidos += 1
+                continue
+            validos.append(normalizado)
+
+        if not validos and not invalidos and not ignorados:
+            messagebox.showerror("Erro", "Nenhum jogo encontrado no JSON.")
+            return
+
+        salvar_lista_futuros(validos)
+        self._render_lista_futuros()
+        message = f"Importado(s): {len(validos)}"
+        if invalidos:
+            message += f" | Inválidos: {invalidos}"
+        messagebox.showinfo("Importação concluída", message)
+
+    def _render_lista_futuros(self):
+        for iid in self.tv_futuros.get_children():
+            self.tv_futuros.delete(iid)
+
+        jogos = carregar_jogos_futuros()
+        jogos_validos = []
+        for item in jogos:
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado:
+                continue
+            data_obj = _parse_data_ptbr_safe(normalizado["data"])
+            if not data_obj:
+                continue
+            jogos_validos.append((data_obj, normalizado))
+
+        today = datetime.now().date()
+        for i, (data_obj, jogo) in enumerate(sorted(jogos_validos, key=lambda j: j[0])):
+            em_casa = jogo.get("em_casa")
+            if em_casa is True:
+                local = "Sim"
+            elif em_casa is False:
+                local = "Não"
+            else:
+                local = "-"
+            tags = []
+            if i % 2 == 1:
+                tags.append("odd")
+            if data_obj.date() < today:
+                tags.append("past")
+            self.tv_futuros.insert(
+                "",
+                "end",
+                values=(jogo.get("data"), jogo.get("jogo"), local, jogo.get("campeonato") or "-"),
+                tags=tuple(tags)
+            )
+
+    def _importar_futuro_para_registro(self, _event=None):
+        sel = self.tv_futuros.selection()
+        if not sel:
+            return
+        values = self.tv_futuros.item(sel[0], "values")
+        if len(values) < 4:
+            return
+        data_txt, jogo_txt, local_txt, campeonato_txt = values
+        adversario = _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
+
+        if data_txt:
+            self.data_var.set(data_txt)
+        if adversario:
+            match = next(
+                (c for c in self.listas.get("clubes_adversarios", []) if c.casefold() == adversario.casefold()),
+                None
+            )
+            valor = match or adversario
+            self.adversario_var.set(valor)
+            self.adversario_entry.set(valor)
+        if campeonato_txt and campeonato_txt != "-":
+            self.competicao_var.set(campeonato_txt)
+        local_norm = local_txt.strip().lower()
+        if local_norm in ("sim", "s", "casa"):
+            self.local_var.set("casa")
+        elif local_norm in ("nao", "não", "n", "fora"):
+            self.local_var.set("fora")
+
+        self.notebook.select(self.frame_registro)
 
     # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
@@ -409,6 +645,7 @@ class App:
         ttk.Label(botoes, textvariable=self.modo_edicao_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 12))
         self.btn_salvar = ttk.Button(botoes, textvariable=self.salvar_btn_label, command=self.salvar_partida)
         self.btn_salvar.pack(side="left", padx=6)
+        ttk.Button(botoes, text="Limpar Campos", command=self._limpar_formulario).pack(side="left", padx=6)
         self.btn_cancelar_edicao = ttk.Button(botoes, text="Cancelar Edição", command=self._cancelar_edicao)
         self.btn_cancelar_edicao.pack(side="left", padx=6)
         self.btn_cancelar_edicao.state(["disabled"])
@@ -641,6 +878,7 @@ class App:
             salvar_lista_jogos(jogos)
             msg = "Partida registrada com sucesso!"
 
+        self._remover_futuro_registrado(data, adversario, competicao)
         messagebox.showinfo("Sucesso", msg)
         self._limpar_formulario()
         self._atualizar_abas()
@@ -670,6 +908,34 @@ class App:
         self.entry_gol_contra.delete(0, tk.END)
         self.obs_text.delete("1.0", "end")
         self.local_var.set("casa")
+
+    def _remover_futuro_registrado(self, data_txt: str, adversario: str, competicao: str):
+        futuros = carregar_jogos_futuros()
+        if not futuros:
+            return
+        adv_cf = (adversario or "").casefold()
+        comp_cf = (competicao or "").casefold()
+        kept = []
+        removed = 0
+        for item in futuros:
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado:
+                kept.append(item)
+                continue
+            if normalizado.get("data") != data_txt:
+                kept.append(item)
+                continue
+            adv_item = _extrair_adversario_de_jogo(normalizado.get("jogo", "")).replace("Vasco", "").strip()
+            if adv_item and adv_item.casefold() == adv_cf:
+                if comp_cf and normalizado.get("campeonato") and normalizado["campeonato"].casefold() != comp_cf:
+                    kept.append(item)
+                    continue
+                removed += 1
+                continue
+            kept.append(item)
+        if removed:
+            salvar_lista_futuros(kept)
+            self._render_lista_futuros()
 
     def _preencher_listbox_gols(self, listbox, dados):
         listbox.delete(0, tk.END)
