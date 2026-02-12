@@ -62,7 +62,7 @@
  [],
  False,
  False,
- 1769704049,
+ 1770913607,
  [('runw',
    '/Users/rodrigo/Documents/pessoal/Sistemas/stats_vasco/.venv/lib/python3.12/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
    'EXECUTABLE')],
