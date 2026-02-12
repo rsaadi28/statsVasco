@@ -238,5 +238,29 @@
     "data": "02/12/2026",
     "em_casa": true,
     "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Goias x Vasco",
+    "data": "14/02/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Lanus",
+    "data": "15/02/2026",
+    "em_casa": true,
+    "campeonato": "Libertadores"
+  },
+  {
+    "jogo": "Time adversario x Vasco",
+    "data": "18/02/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Time adversario x Vasco",
+    "data": "22/02/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
   }
 ]

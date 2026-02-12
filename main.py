@@ -189,10 +189,19 @@ def _normalizar_futuro_item(item):
         item.get("emCasa", item.get("em_casa", item.get("emcasa")))
     )
     campeonato = (item.get("campeonato") or item.get("competicao") or "").strip()
+    adversario = (item.get("adversario") or "").strip()
+    if not adversario and jogo:
+        extraido = _extrair_adversario_de_jogo(jogo)
+        adversario = re.sub(r"\bvasco\b", "", extraido, flags=re.IGNORECASE).strip()
+
+    if em_casa is True and adversario:
+        jogo = f"Vasco x {adversario}"
+    elif em_casa is False and adversario:
+        jogo = f"{adversario} x Vasco"
+
     if not jogo:
-        adversario = (item.get("adversario") or "").strip()
         if adversario:
-            jogo = f"Vasco x {adversario}"
+            jogo = f"Vasco x {adversario}" if em_casa is not False else f"{adversario} x Vasco"
     if not jogo or not data:
         return None
     return {
@@ -396,9 +405,21 @@ class App:
         )
 
         ttk.Label(manual_frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_campeonato_var).grid(
+        competicoes_disputadas = sorted({
+            str(j.get("competicao", "")).strip()
+            for j in carregar_dados_jogos()
+            if str(j.get("competicao", "")).strip()
+        }, key=lambda s: s.casefold())
+        opcoes_campeonato = sorted(set(self.listas.get("competicoes", []) + competicoes_disputadas), key=lambda s: s.casefold())
+        self.fut_manual_campeonato_entry = ttk.Combobox(
+            manual_frame,
+            textvariable=self.fut_manual_campeonato_var,
+            values=opcoes_campeonato
+        )
+        self.fut_manual_campeonato_entry.grid(
             row=1, column=1, columnspan=3, sticky="ew", pady=3, padx=(6, 0)
         )
+        self._forcar_cursor_visivel(self.fut_manual_campeonato_entry)
 
         ttk.Label(manual_frame, text="Data (dd/mm/aaaa):").grid(row=2, column=0, sticky="w", pady=3)
         ttk.Entry(manual_frame, width=14, textvariable=self.fut_manual_data_var).grid(
