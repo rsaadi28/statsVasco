@@ -400,9 +400,21 @@ class App:
         self.fut_manual_campeonato_var = tk.StringVar()
 
         ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_adversario_var).grid(
+        adversarios_disputados = sorted({
+            str(j.get("adversario", "")).strip()
+            for j in carregar_dados_jogos()
+            if str(j.get("adversario", "")).strip()
+        }, key=lambda s: s.casefold())
+        opcoes_adversario = sorted(set(self.listas.get("clubes_adversarios", []) + adversarios_disputados), key=lambda s: s.casefold())
+        self.fut_manual_adversario_entry = ttk.Combobox(
+            manual_frame,
+            textvariable=self.fut_manual_adversario_var,
+            values=opcoes_adversario
+        )
+        self.fut_manual_adversario_entry.grid(
             row=0, column=1, columnspan=3, sticky="ew", pady=3, padx=(6, 0)
         )
+        self._forcar_cursor_visivel(self.fut_manual_adversario_entry)
 
         ttk.Label(manual_frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=3)
         competicoes_disputadas = sorted({
@@ -422,8 +434,11 @@ class App:
         self._forcar_cursor_visivel(self.fut_manual_campeonato_entry)
 
         ttk.Label(manual_frame, text="Data (dd/mm/aaaa):").grid(row=2, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, width=14, textvariable=self.fut_manual_data_var).grid(
-            row=2, column=1, sticky="w", pady=3, padx=(6, 0)
+        data_fut_wrap = ttk.Frame(manual_frame)
+        data_fut_wrap.grid(row=2, column=1, sticky="w", pady=3, padx=(6, 0))
+        ttk.Entry(data_fut_wrap, width=14, textvariable=self.fut_manual_data_var).pack(side="left")
+        ttk.Button(data_fut_wrap, text="Calendário", command=lambda: self._abrir_calendario_popup(self.fut_manual_data_var)).pack(
+            side="left", padx=(8, 0)
         )
         ttk.Checkbutton(manual_frame, text="Vasco em casa (em_casa = true)", variable=self.fut_manual_em_casa_var).grid(
             row=2, column=2, columnspan=2, sticky="w", pady=3, padx=(10, 0)
@@ -477,13 +492,13 @@ class App:
 
         retro_cols = ("data", "competicao", "local", "placar", "resultado", "gols_vasco", "gols_adversario")
         self.tv_retro_futuros = ttk.Treeview(retro_table_wrap, columns=retro_cols, show="headings", height=8)
-        self.tv_retro_futuros.heading("data", text="Data")
-        self.tv_retro_futuros.heading("competicao", text="Competição")
-        self.tv_retro_futuros.heading("local", text="Local")
-        self.tv_retro_futuros.heading("placar", text="Placar")
-        self.tv_retro_futuros.heading("resultado", text="Resultado")
-        self.tv_retro_futuros.heading("gols_vasco", text="Gols do Vasco")
-        self.tv_retro_futuros.heading("gols_adversario", text="Gols do Adversário")
+        self.tv_retro_futuros.heading("data", text="Data", command=lambda c="data": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("competicao", text="Competição", command=lambda c="competicao": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("local", text="Local", command=lambda c="local": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("placar", text="Placar", command=lambda c="placar": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("resultado", text="Resultado", command=lambda c="resultado": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("gols_vasco", text="Gols do Vasco", command=lambda c="gols_vasco": self._ordenar_coluna_retro(c))
+        self.tv_retro_futuros.heading("gols_adversario", text="Gols do Adversário", command=lambda c="gols_adversario": self._ordenar_coluna_retro(c))
         self.tv_retro_futuros.column("data", width=90, anchor="center")
         self.tv_retro_futuros.column("competicao", width=170, anchor="w")
         self.tv_retro_futuros.column("local", width=70, anchor="center")
@@ -497,6 +512,9 @@ class App:
         sy_retro = ttk.Scrollbar(retro_table_wrap, orient="vertical", command=self.tv_retro_futuros.yview)
         sy_retro.grid(row=0, column=1, sticky="ns")
         self.tv_retro_futuros.configure(yscrollcommand=sy_retro.set)
+        self._retro_partidas_atual = []
+        self._retro_sort_col = "data"
+        self._retro_sort_reverse = True
 
         self._render_lista_futuros()
         self._atualizar_retro_futuro_selecionado()
@@ -792,23 +810,27 @@ class App:
 
         sel = self.tv_futuros.selection()
         if not sel:
+            self._retro_partidas_atual = []
             self.retro_resumo_var.set("Selecione um jogo para ver o retrospecto contra o adversário.")
             return
 
         values = self.tv_futuros.item(sel[0], "values")
         if len(values) < 2:
+            self._retro_partidas_atual = []
             self.retro_resumo_var.set("Não foi possível identificar o adversário.")
             return
 
         jogo_txt = str(values[1]).strip()
         adversario = _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
         if not adversario:
+            self._retro_partidas_atual = []
             self.retro_resumo_var.set("Não foi possível identificar o adversário.")
             return
 
         retro = self._coletar_retro_por_adversario(adversario)
         total = len(retro["partidas"])
         if total == 0:
+            self._retro_partidas_atual = []
             self.retro_resumo_var.set(f"{adversario}: sem partidas registradas contra o Vasco.")
             return
 
@@ -822,8 +844,31 @@ class App:
         self.retro_resumo_var.set(
             f"{resumo} | Artilheiros do Vasco: {artilheiros_vasco} | Artilheiros do {adversario}: {artilheiros_adv}"
         )
+        self._retro_partidas_atual = list(retro["partidas"])
+        self._retro_sort_col = "data"
+        self._retro_sort_reverse = True
+        self._render_retro_partidas_ordenado()
 
-        for i, partida in enumerate(retro["partidas"], start=1):
+    def _chave_ordenacao_retro(self, partida, coluna):
+        if coluna == "data":
+            return partida.get("data_ord") or datetime.min
+        if coluna == "placar":
+            placar_txt = str(partida.get("placar", "0 x 0")).strip()
+            m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", placar_txt)
+            if m:
+                return int(m.group(1)), int(m.group(2))
+            return -1, -1
+        return str(partida.get(coluna, "")).casefold()
+
+    def _render_retro_partidas_ordenado(self):
+        for iid in self.tv_retro_futuros.get_children():
+            self.tv_retro_futuros.delete(iid)
+        partidas = sorted(
+            self._retro_partidas_atual,
+            key=lambda p: self._chave_ordenacao_retro(p, self._retro_sort_col),
+            reverse=self._retro_sort_reverse
+        )
+        for i, partida in enumerate(partidas, start=1):
             self.tv_retro_futuros.insert(
                 "",
                 "end",
@@ -838,6 +883,16 @@ class App:
                 ),
                 tags=("odd",) if i % 2 else ()
             )
+
+    def _ordenar_coluna_retro(self, coluna):
+        if not getattr(self, "_retro_partidas_atual", None):
+            return
+        if self._retro_sort_col == coluna:
+            self._retro_sort_reverse = not self._retro_sort_reverse
+        else:
+            self._retro_sort_col = coluna
+            self._retro_sort_reverse = False
+        self._render_retro_partidas_ordenado()
 
     def _local_futuro_txt(self, em_casa):
         if em_casa is True:
@@ -1084,7 +1139,7 @@ class App:
         if self.editing_index is not None:
             self._limpar_formulario()
 
-    def _abrir_calendario_popup(self):
+    def _abrir_calendario_popup(self, target_var=None):
         if not TKCALENDAR_OK:
             messagebox.showerror(
                 "Calendário indisponível",
@@ -1106,9 +1161,10 @@ class App:
         top.lift()
         top.attributes("-topmost", True)
         self._calendar_popup = top
+        self._calendar_target_var = target_var or self.data_var
 
         try:
-            data_atual = _parse_data_ptbr(self.data_var.get().strip())
+            data_atual = _parse_data_ptbr(self._calendar_target_var.get().strip())
         except Exception:
             data_atual = datetime.now()
 
@@ -1148,7 +1204,8 @@ class App:
             except Exception:
                 selecionada = None
             if selecionada:
-                self.data_var.set(selecionada.strftime("%d/%m/%Y"))
+                target_var = getattr(self, "_calendar_target_var", self.data_var)
+                target_var.set(selecionada.strftime("%d/%m/%Y"))
         self._fechar_calendario_popup()
 
     def _fechar_calendario_popup(self):
@@ -1160,6 +1217,7 @@ class App:
                 pass
             popup.destroy()
         self._calendar_popup = None
+        self._calendar_target_var = None
 
     # --------------------- Handlers de Gols ---------------------
     def adicionar_gol_vasco(self, event):
