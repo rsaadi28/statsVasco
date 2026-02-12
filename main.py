@@ -247,7 +247,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Estatísticas do Vasco")
-        self.root.geometry("1500x800")
+        self.root.geometry("1500x1000")
         self.root.minsize(1000, 700)
         self.root.after(10, self._centralizar_janela)
         
@@ -366,7 +366,7 @@ class App:
         json_wrap.columnconfigure(0, weight=1)
 
         self.futuros_json_text = tk.Text(
-            json_wrap, height=7, wrap="none",
+            json_wrap, height=10, wrap="none",
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             insertbackground=self.colors["accent"]
         )
@@ -377,7 +377,7 @@ class App:
         btns = ttk.Frame(json_wrap)
         btns.grid(row=0, column=1, sticky="ns", padx=(8, 0))
         ttk.Button(btns, text="Importar JSON", command=self._importar_jogos_futuros).pack(fill="x", pady=(0, 6))
-        ttk.Button(btns, text="Limpar", command=lambda: self.futuros_json_text.delete("1.0", "end")).pack(fill="x", pady=(0, 6))
+        ttk.Button(btns, text="Limpar", command=self._limpar_campos_futuros).pack(fill="x", pady=(0, 6))
         ttk.Button(btns, text="Copiar Exemplo JSON", command=self._copiar_exemplo_json_futuros).pack(fill="x")
 
         manual_frame = ttk.Labelframe(frame, text="Adicionar jogo manualmente", padding=8)
@@ -391,18 +391,25 @@ class App:
         self.fut_manual_campeonato_var = tk.StringVar()
 
         ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_adversario_var).grid(row=0, column=1, sticky="ew", pady=3, padx=(6, 12))
-        ttk.Label(manual_frame, text="Data (dd/mm/aaaa):").grid(row=0, column=2, sticky="w", pady=3)
-        ttk.Entry(manual_frame, width=14, textvariable=self.fut_manual_data_var).grid(row=0, column=3, sticky="w", pady=3, padx=(6, 0))
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_adversario_var).grid(
+            row=0, column=1, columnspan=3, sticky="ew", pady=3, padx=(6, 0)
+        )
 
         ttk.Label(manual_frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_campeonato_var).grid(row=1, column=1, sticky="ew", pady=3, padx=(6, 12))
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_campeonato_var).grid(
+            row=1, column=1, columnspan=3, sticky="ew", pady=3, padx=(6, 0)
+        )
+
+        ttk.Label(manual_frame, text="Data (dd/mm/aaaa):").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Entry(manual_frame, width=14, textvariable=self.fut_manual_data_var).grid(
+            row=2, column=1, sticky="w", pady=3, padx=(6, 0)
+        )
         ttk.Checkbutton(manual_frame, text="Vasco em casa (em_casa = true)", variable=self.fut_manual_em_casa_var).grid(
-            row=1, column=2, columnspan=2, sticky="w", pady=3
+            row=2, column=2, columnspan=2, sticky="w", pady=3, padx=(10, 0)
         )
 
         ttk.Button(manual_frame, text="Adicionar Jogo", command=self._adicionar_jogo_futuro_manual).grid(
-            row=2, column=0, columnspan=4, sticky="e", pady=(6, 0)
+            row=3, column=0, columnspan=4, sticky="e", pady=(6, 0)
         )
 
         ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
@@ -567,7 +574,13 @@ class App:
         self.root.clipboard_clear()
         self.root.clipboard_append(texto)
         self.root.update()
-        messagebox.showinfo("Clipboard", "Exemplo de JSON copiado para o clipboard.")
+
+    def _limpar_campos_futuros(self):
+        self.futuros_json_text.delete("1.0", "end")
+        self.fut_manual_adversario_var.set("")
+        self.fut_manual_campeonato_var.set("")
+        self.fut_manual_data_var.set(datetime.now().strftime("%d/%m/%Y"))
+        self.fut_manual_em_casa_var.set(True)
 
     def _abrir_menu_contexto_json_futuros(self, event):
         menu = tk.Menu(self.root, tearoff=0)
@@ -923,7 +936,7 @@ class App:
         self.adversario_var = tk.StringVar()
         self.adversario_entry = ttk.Combobox(frame, textvariable=self.adversario_var)
         self.adversario_entry['values'] = self.listas["clubes_adversarios"]
-        self.adversario_entry.grid(row=1, column=1, columnspan=3, sticky="ew", pady=4)
+        self.adversario_entry.grid(row=1, column=0, sticky="w", pady=4)
         self.adversario_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "clubes"))
         self._forcar_cursor_visivel(self.adversario_entry)
 
