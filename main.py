@@ -247,7 +247,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Estatísticas do Vasco")
-        self.root.geometry("1150x800")
+        self.root.geometry("1500x800")
         self.root.minsize(1000, 700)
         self.root.after(10, self._centralizar_janela)
         
@@ -354,13 +354,15 @@ class App:
     # --------------------- Jogos Futuros ---------------------
     def _criar_aba_futuros(self, frame):
         frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(3, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.rowconfigure(4, weight=1)
+        frame.rowconfigure(6, weight=1)
 
         header = ttk.Label(frame, text="Importar jogos futuros (JSON):")
-        header.grid(row=0, column=0, sticky="w", pady=(0, 6))
+        header.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
         json_wrap = ttk.Frame(frame)
-        json_wrap.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        json_wrap.grid(row=1, column=0, sticky="nsew", pady=(0, 10), padx=(0, 6))
         json_wrap.columnconfigure(0, weight=1)
 
         self.futuros_json_text = tk.Text(
@@ -369,16 +371,44 @@ class App:
             insertbackground=self.colors["accent"]
         )
         self.futuros_json_text.grid(row=0, column=0, sticky="ew")
+        self.futuros_json_text.bind("<Button-3>", self._abrir_menu_contexto_json_futuros)
+        self.futuros_json_text.bind("<Control-Button-1>", self._abrir_menu_contexto_json_futuros)
 
         btns = ttk.Frame(json_wrap)
         btns.grid(row=0, column=1, sticky="ns", padx=(8, 0))
         ttk.Button(btns, text="Importar JSON", command=self._importar_jogos_futuros).pack(fill="x", pady=(0, 6))
-        ttk.Button(btns, text="Limpar", command=lambda: self.futuros_json_text.delete("1.0", "end")).pack(fill="x")
+        ttk.Button(btns, text="Limpar", command=lambda: self.futuros_json_text.delete("1.0", "end")).pack(fill="x", pady=(0, 6))
+        ttk.Button(btns, text="Copiar Exemplo JSON", command=self._copiar_exemplo_json_futuros).pack(fill="x")
 
-        ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=2, column=0, sticky="w", pady=(0, 6))
+        manual_frame = ttk.Labelframe(frame, text="Adicionar jogo manualmente", padding=8)
+        manual_frame.grid(row=1, column=1, sticky="nsew", pady=(0, 10), padx=(6, 0))
+        manual_frame.columnconfigure(1, weight=1)
+        manual_frame.columnconfigure(3, weight=1)
+
+        self.fut_manual_adversario_var = tk.StringVar()
+        self.fut_manual_data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
+        self.fut_manual_em_casa_var = tk.BooleanVar(value=True)
+        self.fut_manual_campeonato_var = tk.StringVar()
+
+        ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_adversario_var).grid(row=0, column=1, sticky="ew", pady=3, padx=(6, 12))
+        ttk.Label(manual_frame, text="Data (dd/mm/aaaa):").grid(row=0, column=2, sticky="w", pady=3)
+        ttk.Entry(manual_frame, width=14, textvariable=self.fut_manual_data_var).grid(row=0, column=3, sticky="w", pady=3, padx=(6, 0))
+
+        ttk.Label(manual_frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_campeonato_var).grid(row=1, column=1, sticky="ew", pady=3, padx=(6, 12))
+        ttk.Checkbutton(manual_frame, text="Vasco em casa (em_casa = true)", variable=self.fut_manual_em_casa_var).grid(
+            row=1, column=2, columnspan=2, sticky="w", pady=3
+        )
+
+        ttk.Button(manual_frame, text="Adicionar Jogo", command=self._adicionar_jogo_futuro_manual).grid(
+            row=2, column=0, columnspan=4, sticky="e", pady=(6, 0)
+        )
+
+        ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
         list_wrap = ttk.Frame(frame)
-        list_wrap.grid(row=3, column=0, sticky="nsew")
+        list_wrap.grid(row=4, column=0, columnspan=2, sticky="nsew")
         list_wrap.rowconfigure(0, weight=1)
         list_wrap.columnconfigure(0, weight=1)
 
@@ -399,9 +429,49 @@ class App:
         sy = ttk.Scrollbar(list_wrap, orient="vertical", command=self.tv_futuros.yview)
         sy.grid(row=0, column=1, sticky="ns")
         self.tv_futuros.configure(yscrollcommand=sy.set)
+        self.tv_futuros.bind("<<TreeviewSelect>>", self._atualizar_retro_futuro_selecionado)
         self.tv_futuros.bind("<Double-1>", self._importar_futuro_para_registro)
+        self.tv_futuros.bind("<Button-3>", self._abrir_menu_contexto_futuros)
+        self.tv_futuros.bind("<Control-Button-1>", self._abrir_menu_contexto_futuros)
+
+        retro_frame = ttk.Labelframe(frame, text="Retrospecto do adversário selecionado", padding=8)
+        retro_frame.grid(row=5, column=0, columnspan=2, sticky="nsew", pady=(10, 0))
+        retro_frame.columnconfigure(0, weight=1)
+        retro_frame.rowconfigure(1, weight=1)
+
+        self.retro_resumo_var = tk.StringVar(value="Selecione um jogo para ver o retrospecto contra o adversário.")
+        ttk.Label(retro_frame, textvariable=self.retro_resumo_var).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        retro_table_wrap = ttk.Frame(retro_frame)
+        retro_table_wrap.grid(row=1, column=0, sticky="nsew")
+        retro_table_wrap.columnconfigure(0, weight=1)
+        retro_table_wrap.rowconfigure(0, weight=1)
+
+        retro_cols = ("data", "competicao", "local", "placar", "resultado", "gols_vasco", "gols_adversario")
+        self.tv_retro_futuros = ttk.Treeview(retro_table_wrap, columns=retro_cols, show="headings", height=8)
+        self.tv_retro_futuros.heading("data", text="Data")
+        self.tv_retro_futuros.heading("competicao", text="Competição")
+        self.tv_retro_futuros.heading("local", text="Local")
+        self.tv_retro_futuros.heading("placar", text="Placar")
+        self.tv_retro_futuros.heading("resultado", text="Resultado")
+        self.tv_retro_futuros.heading("gols_vasco", text="Gols do Vasco")
+        self.tv_retro_futuros.heading("gols_adversario", text="Gols do Adversário")
+        self.tv_retro_futuros.column("data", width=90, anchor="center")
+        self.tv_retro_futuros.column("competicao", width=170, anchor="w")
+        self.tv_retro_futuros.column("local", width=70, anchor="center")
+        self.tv_retro_futuros.column("placar", width=90, anchor="center")
+        self.tv_retro_futuros.column("resultado", width=90, anchor="center")
+        self.tv_retro_futuros.column("gols_vasco", width=280, anchor="w")
+        self.tv_retro_futuros.column("gols_adversario", width=280, anchor="w")
+        self.tv_retro_futuros.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_retro_futuros.grid(row=0, column=0, sticky="nsew")
+
+        sy_retro = ttk.Scrollbar(retro_table_wrap, orient="vertical", command=self.tv_retro_futuros.yview)
+        sy_retro.grid(row=0, column=1, sticky="ns")
+        self.tv_retro_futuros.configure(yscrollcommand=sy_retro.set)
 
         self._render_lista_futuros()
+        self._atualizar_retro_futuro_selecionado()
 
     def _importar_jogos_futuros(self):
         raw = self.futuros_json_text.get("1.0", "end").strip()
@@ -436,16 +506,120 @@ class App:
                 continue
             validos.append(normalizado)
 
-        if not validos and not invalidos and not ignorados:
-            messagebox.showerror("Erro", "Nenhum jogo encontrado no JSON.")
+        if not validos:
+            messagebox.showerror("Erro", "Nenhum jogo válido encontrado no JSON.")
             return
 
-        salvar_lista_futuros(validos)
+        existentes = carregar_jogos_futuros()
+        base = list(existentes)
+
+        def chave_futuro(item):
+            return (
+                str(item.get("data", "")).strip(),
+                str(item.get("jogo", "")).strip(),
+                item.get("em_casa"),
+                str(item.get("campeonato", "")).strip(),
+            )
+
+        chaves_existentes = set()
+        for item in existentes:
+            normalizado = _normalizar_futuro_item(item)
+            if normalizado:
+                chaves_existentes.add(chave_futuro(normalizado))
+
+        adicionados = 0
+        duplicados = 0
+        for item in validos:
+            chave = chave_futuro(item)
+            if chave in chaves_existentes:
+                duplicados += 1
+                continue
+            base.append(item)
+            chaves_existentes.add(chave)
+            adicionados += 1
+
+        salvar_lista_futuros(base)
         self._render_lista_futuros()
-        message = f"Importado(s): {len(validos)}"
+        message = f"Novos adicionados: {adicionados}"
+        if duplicados:
+            message += f" | Já existiam: {duplicados}"
         if invalidos:
             message += f" | Inválidos: {invalidos}"
+        message += f" | Total cadastrado: {len(base)}"
         messagebox.showinfo("Importação concluída", message)
+
+    def _copiar_exemplo_json_futuros(self):
+        exemplo = [
+            {
+                "jogo": "Vasco x Time adversario",
+                "data": "18/02/2026",
+                "em_casa": True,
+                "campeonato": "Campeonato Carioca"
+            },
+            {
+                "jogo": "Time adversario x Vasco",
+                "data": "22/02/2026",
+                "em_casa": False,
+                "campeonato": "Brasileirão Série A"
+            }
+        ]
+        texto = json.dumps(exemplo, ensure_ascii=False, indent=2)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(texto)
+        self.root.update()
+        messagebox.showinfo("Clipboard", "Exemplo de JSON copiado para o clipboard.")
+
+    def _abrir_menu_contexto_json_futuros(self, event):
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Colar do clipboard", command=self._colar_json_futuros_clipboard)
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _colar_json_futuros_clipboard(self):
+        try:
+            texto = self.root.clipboard_get()
+        except tk.TclError:
+            messagebox.showwarning("Clipboard", "O clipboard está vazio ou indisponível.")
+            return
+        if not texto:
+            messagebox.showwarning("Clipboard", "O clipboard está vazio.")
+            return
+        self.futuros_json_text.insert("insert", texto)
+
+    def _adicionar_jogo_futuro_manual(self):
+        adversario = self.fut_manual_adversario_var.get().strip()
+        data_txt = self.fut_manual_data_var.get().strip()
+        campeonato = self.fut_manual_campeonato_var.get().strip()
+        em_casa = bool(self.fut_manual_em_casa_var.get())
+
+        if not adversario or not data_txt:
+            messagebox.showerror("Erro", "Preencha pelo menos os campos Adversário e Data.")
+            return
+
+        jogo = f"Vasco x {adversario}" if em_casa else f"{adversario} x Vasco"
+        item = {
+            "jogo": jogo,
+            "data": data_txt,
+            "em_casa": em_casa,
+            "campeonato": campeonato,
+        }
+        normalizado = _normalizar_futuro_item(item)
+        if not normalizado:
+            messagebox.showerror("Erro", "Não foi possível normalizar o jogo informado.")
+            return
+        if not _parse_data_ptbr_safe(normalizado["data"]):
+            messagebox.showerror("Erro", "Data inválida. Use o formato dd/mm/aaaa.")
+            return
+
+        jogos = carregar_jogos_futuros()
+        jogos.append(normalizado)
+        salvar_lista_futuros(jogos)
+        self._render_lista_futuros()
+        self.fut_manual_adversario_var.set("")
+        self.fut_manual_campeonato_var.set("")
+        messagebox.showinfo("Sucesso", "Jogo futuro adicionado.")
 
     def _render_lista_futuros(self):
         for iid in self.tv_futuros.get_children():
@@ -482,6 +656,214 @@ class App:
                 values=(jogo.get("data"), jogo.get("jogo"), local, jogo.get("campeonato") or "-"),
                 tags=tuple(tags)
             )
+        self._atualizar_retro_futuro_selecionado()
+
+    def _contagem_goleadores(self, gols_lista):
+        contagem = Counter()
+        for item in gols_lista or []:
+            if isinstance(item, dict):
+                nome = str(item.get("nome", "")).strip() or "Desconhecido"
+                try:
+                    qtd = int(item.get("gols", 1))
+                except (ValueError, TypeError):
+                    qtd = 1
+                contagem[nome] += max(1, qtd)
+            elif isinstance(item, str):
+                nome = item.strip()
+                if nome:
+                    contagem[nome] += 1
+        return contagem
+
+    def _formatar_goleadores(self, contagem):
+        if not contagem:
+            return "—"
+        partes = []
+        for nome, qtd in contagem.most_common():
+            partes.append(f"{nome} x{qtd}" if qtd > 1 else nome)
+        return ", ".join(partes)
+
+    def _coletar_retro_por_adversario(self, adversario):
+        retrospecto = {
+            "partidas": [],
+            "vitorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "gols_vasco": 0,
+            "gols_adversario": 0,
+            "artilheiros_vasco": Counter(),
+            "artilheiros_adversario": Counter(),
+        }
+        if not adversario:
+            return retrospecto
+
+        jogos = carregar_dados_jogos()
+        alvo = adversario.casefold()
+        for jogo in jogos:
+            adv_jogo = str(jogo.get("adversario", "")).strip()
+            if not adv_jogo or adv_jogo.casefold() != alvo:
+                continue
+
+            placar = jogo.get("placar", {})
+            try:
+                gols_vasco = int(placar.get("vasco", 0))
+            except (ValueError, TypeError):
+                gols_vasco = 0
+            try:
+                gols_adv = int(placar.get("adversario", 0))
+            except (ValueError, TypeError):
+                gols_adv = 0
+
+            if gols_vasco > gols_adv:
+                resultado = "Vitória"
+                retrospecto["vitorias"] += 1
+            elif gols_vasco < gols_adv:
+                resultado = "Derrota"
+                retrospecto["derrotas"] += 1
+            else:
+                resultado = "Empate"
+                retrospecto["empates"] += 1
+
+            retrospecto["gols_vasco"] += gols_vasco
+            retrospecto["gols_adversario"] += gols_adv
+
+            goleadores_vasco = self._contagem_goleadores(jogo.get("gols_vasco", []))
+            goleadores_adv = self._contagem_goleadores(jogo.get("gols_adversario", []))
+            retrospecto["artilheiros_vasco"].update(goleadores_vasco)
+            retrospecto["artilheiros_adversario"].update(goleadores_adv)
+
+            local = "Casa" if jogo.get("local", "casa") == "casa" else "Fora"
+            data_txt = str(jogo.get("data", "")).strip()
+            data_ord = _parse_data_ptbr_safe(data_txt) or datetime.min
+
+            retrospecto["partidas"].append({
+                "data": data_txt or "—",
+                "data_ord": data_ord,
+                "competicao": str(jogo.get("competicao", "")).strip() or "—",
+                "local": local,
+                "placar": f"{gols_vasco} x {gols_adv}",
+                "resultado": resultado,
+                "gols_vasco": self._formatar_goleadores(goleadores_vasco),
+                "gols_adversario": self._formatar_goleadores(goleadores_adv),
+            })
+
+        retrospecto["partidas"].sort(key=lambda p: p["data_ord"])
+        return retrospecto
+
+    def _atualizar_retro_futuro_selecionado(self, _event=None):
+        if not hasattr(self, "tv_retro_futuros"):
+            return
+
+        for iid in self.tv_retro_futuros.get_children():
+            self.tv_retro_futuros.delete(iid)
+
+        sel = self.tv_futuros.selection()
+        if not sel:
+            self.retro_resumo_var.set("Selecione um jogo para ver o retrospecto contra o adversário.")
+            return
+
+        values = self.tv_futuros.item(sel[0], "values")
+        if len(values) < 2:
+            self.retro_resumo_var.set("Não foi possível identificar o adversário.")
+            return
+
+        jogo_txt = str(values[1]).strip()
+        adversario = _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
+        if not adversario:
+            self.retro_resumo_var.set("Não foi possível identificar o adversário.")
+            return
+
+        retro = self._coletar_retro_por_adversario(adversario)
+        total = len(retro["partidas"])
+        if total == 0:
+            self.retro_resumo_var.set(f"{adversario}: sem partidas registradas contra o Vasco.")
+            return
+
+        resumo = (
+            f"{adversario} | Jogos: {total} | V/E/D: "
+            f"{retro['vitorias']}/{retro['empates']}/{retro['derrotas']} | "
+            f"Gols totais: Vasco {retro['gols_vasco']} x {retro['gols_adversario']} {adversario}"
+        )
+        artilheiros_vasco = self._formatar_goleadores(retro["artilheiros_vasco"])
+        artilheiros_adv = self._formatar_goleadores(retro["artilheiros_adversario"])
+        self.retro_resumo_var.set(
+            f"{resumo} | Artilheiros do Vasco: {artilheiros_vasco} | Artilheiros do {adversario}: {artilheiros_adv}"
+        )
+
+        for i, partida in enumerate(retro["partidas"], start=1):
+            self.tv_retro_futuros.insert(
+                "",
+                "end",
+                values=(
+                    partida["data"],
+                    partida["competicao"],
+                    partida["local"],
+                    partida["placar"],
+                    partida["resultado"],
+                    partida["gols_vasco"],
+                    partida["gols_adversario"],
+                ),
+                tags=("odd",) if i % 2 else ()
+            )
+
+    def _local_futuro_txt(self, em_casa):
+        if em_casa is True:
+            return "Sim"
+        if em_casa is False:
+            return "Não"
+        return "-"
+
+    def _abrir_menu_contexto_futuros(self, event):
+        iid = self.tv_futuros.identify_row(event.y)
+        if not iid:
+            return
+        self.tv_futuros.selection_set(iid)
+        self.tv_futuros.focus(iid)
+
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Excluir jogo futuro", command=self._excluir_jogo_futuro_selecionado)
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _excluir_jogo_futuro_selecionado(self):
+        sel = self.tv_futuros.selection()
+        if not sel:
+            return
+        values = self.tv_futuros.item(sel[0], "values")
+        if len(values) < 4:
+            return
+        data_txt, jogo_txt, local_txt, campeonato_txt = values
+        desc = f"{data_txt} | {jogo_txt}"
+        if not messagebox.askyesno("Excluir jogo futuro", f"Deseja excluir este jogo futuro?\n\n{desc}"):
+            return
+
+        futuros = carregar_jogos_futuros()
+        novos = []
+        removido = False
+        for item in futuros:
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado or removido:
+                novos.append(item)
+                continue
+
+            mesmo_jogo = (
+                str(normalizado.get("data", "")) == str(data_txt)
+                and str(normalizado.get("jogo", "")) == str(jogo_txt)
+                and self._local_futuro_txt(normalizado.get("em_casa")) == str(local_txt)
+                and str(normalizado.get("campeonato") or "-") == str(campeonato_txt)
+            )
+            if mesmo_jogo:
+                removido = True
+                continue
+            novos.append(item)
+
+        if not removido:
+            messagebox.showwarning("Não encontrado", "Não foi possível localizar o jogo futuro para exclusão.")
+            return
+
+        salvar_lista_futuros(novos)
+        self._render_lista_futuros()
 
     def _importar_futuro_para_registro(self, _event=None):
         sel = self.tv_futuros.selection()
