@@ -50,17 +50,58 @@ ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 
 
+def _json_tem_dados(path):
+    """Retorna True se o JSON existir e contiver dados úteis."""
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+        if not content:
+            return False
+        data = json.loads(content)
+        if data in (None, "", [], {}):
+            return False
+        return True
+    except Exception:
+        return False
+
+
 def _bootstrap_jsons():
-    """Copia JSONs originais para Application Support no primeiro uso."""
+    """Garante JSONs na pasta de produção com fallback nos JSONs do app."""
     if DATA_DIR == PROJECT_ROOT:
         return
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    defaults = {
+        "jogos_vasco.json": [],
+        "jogos_futuros.json": [],
+        "listas_auxiliares.json": {
+            "clubes_adversarios": [],
+            "jogadores_vasco": [],
+            "jogadores_contra": [],
+            "competicoes": [],
+            "tecnicos": ["Fernando Diniz"],
+            "tecnico_atual": "Fernando Diniz",
+        },
+    }
+
     for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json"):
         destino = os.path.join(DATA_DIR, nome)
-        if os.path.exists(destino):
+        if _json_tem_dados(destino):
             continue
+
         origem = os.path.join(PROJECT_ROOT, nome)
+        if _json_tem_dados(origem):
+            shutil.copy2(origem, destino)
+            continue
+
         if os.path.exists(origem):
             shutil.copy2(origem, destino)
+            continue
+
+        with open(destino, "w", encoding="utf-8") as f:
+            json.dump(defaults[nome], f, ensure_ascii=False, indent=2)
 
 
 _bootstrap_jsons()
