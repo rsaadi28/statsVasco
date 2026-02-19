@@ -1,19 +1,21 @@
 {
   "clubes_adversarios": [
-    "Atletico-MG",
+    "Atlético-MG",
     "Bahia",
     "Bangu",
     "Boavista",
     "Botafogo",
     "Ceará SC",
     "Corinthians",
+    "Criciúma",
     "Cruzeiro",
     "CSA",
     "Flamengo",
     "Fluminense",
     "Fortaleza",
-    "Gremio",
+    "Grêmio",
     "Independiente del Valle",
+    "Independiente del Valle-EQU",
     "Internacional",
     "Juventude",
     "Lanús",
@@ -36,9 +38,12 @@
     "Volta Redonda"
   ],
   "jogadores_vasco": [
+    "Andres Gomez",
     "Andrés Gomez",
+    "Andrés Gómez",
     "Barros",
     "Carlos Cuesta",
+    "Claudio Spinelli",
     "David",
     "Gabriel Silva (GB)",
     "Hugo Moura",
@@ -51,6 +56,7 @@
     "Pablo Vegetti",
     "Paulinho",
     "Paulo Henrique",
+    "Paulo Ricardo",
     "Penalti claro não visto pelo var",
     "Philipe Coutinho",
     "Puma Rodrigurez",
@@ -131,11 +137,13 @@
     "Thiago Silva",
     "Victor Luis (contra)",
     "Vitor Roque",
+    "Ygor Catatau",
     "Yuri Alberto",
     "Zé Vitor"
   ],
   "competicoes": [
     "Brasileirão Série A",
+    "Campeonato Brasileiro Série A",
     "Campeonato Carioca",
     "Copa do Brasil",
     "Copa Sul-Americana"
@@ -144,6 +152,7 @@
     "Felipe (interino)",
     "Fernando Diniz",
     "Fábio Carille",
+    "Rafael Paiva",
     "Ramon Lima"
   ],
   "tecnico_atual": "Fernando Diniz"

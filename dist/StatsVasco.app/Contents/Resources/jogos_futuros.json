@@ -1,0 +1,284 @@
+[
+  {
+    "jogo": "Vasco x Maricá",
+    "data": "15/01/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Vasco x Nova Iguaçu",
+    "data": "18/01/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Flamengo x Vasco",
+    "data": "21/01/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Boavista x Vasco",
+    "data": "25/01/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Mirassol x Vasco",
+    "data": "29/01/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Madureira x Vasco",
+    "data": "02/02/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Vasco x Chapecoense",
+    "data": "05/02/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Botafogo",
+    "data": "08/02/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Vasco x Bahia",
+    "data": "11/02/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Santos x Vasco",
+    "data": "26/02/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Palmeiras",
+    "data": "12/03/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Cruzeiro x Vasco",
+    "data": "15/03/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Fluminense",
+    "data": "18/03/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Grêmio",
+    "data": "22/03/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Coritiba x Vasco",
+    "data": "01/04/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Botafogo",
+    "data": "04/04/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Remo x Vasco",
+    "data": "11/04/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x São Paulo",
+    "data": "18/04/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Corinthians x Vasco",
+    "data": "25/04/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Flamengo x Vasco",
+    "data": "02/05/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Athletico-PR",
+    "data": "09/05/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Internacional x Vasco",
+    "data": "16/05/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x RedBull Bragantino",
+    "data": "23/05/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Atlético-MG",
+    "data": "30/05/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vitória x Vasco",
+    "data": "22/07/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Mirassol",
+    "data": "25/07/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Chapecoense x Vasco",
+    "data": "29/07/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Bahia x Vasco",
+    "data": "08/08/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Santos",
+    "data": "15/08/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Palmeiras x Vasco",
+    "data": "22/08/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Cruzeiro",
+    "data": "29/08/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Fluminense x Vasco",
+    "data": "05/09/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Grêmio x Vasco",
+    "data": "12/09/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Coritiba",
+    "data": "19/09/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Botafogo x Vasco",
+    "data": "07/10/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Remo",
+    "data": "10/10/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "São Paulo x Vasco",
+    "data": "17/10/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Corinthians",
+    "data": "24/10/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Flamengo",
+    "data": "28/10/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Athletico-PR x Vasco",
+    "data": "04/11/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Internacional",
+    "data": "18/11/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "RedBull Bragantino x Vasco",
+    "data": "21/11/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Atlético-MG x Vasco",
+    "data": "28/11/2026",
+    "em_casa": false,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Vitória",
+    "data": "02/12/2026",
+    "em_casa": true,
+    "campeonato": "Brasileirão Série A"
+  },
+  {
+    "jogo": "Vasco x Volta Redonda",
+    "data": "14/02/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Vasco x Fluminense",
+    "data": "22/02/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Fluminense x Vasco",
+    "data": "01/03/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  }
+]

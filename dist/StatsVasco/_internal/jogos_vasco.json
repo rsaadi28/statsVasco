@@ -1,5 +1,1499 @@
 [
   {
+    "data": "18/01/2024",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Capasso",
+        "gols": 1
+      },
+      {
+        "nome": "Leandrinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "18/01/2024",
+    "adversario": "San Lorenzo-ARG",
+    "competicao": "Serie Río de la Plata",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "21/01/2024",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Barros",
+        "gols": 1
+      },
+      {
+        "nome": "Orellano",
+        "gols": 1
+      },
+      {
+        "nome": "Paixão",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "21/01/2024",
+    "adversario": "Deportivo Maldonado-URU",
+    "competicao": "Serie Río de la Plata",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "25/01/2024",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo",
+        "gols": 1
+      },
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "28/01/2024",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 1
+      },
+      {
+        "nome": "Praxedes",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "31/01/2024",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "04/02/2024",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "08/02/2024",
+    "adversario": "Audax Rio",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "David",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "14/02/2024",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "18/02/2024",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 4,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Galdames",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "24/02/2024",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      },
+      {
+        "nome": "Zé Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "27/02/2024",
+    "adversario": "Marcílio Dias",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Adson",
+        "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "03/03/2024",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Adson",
+        "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
+      },
+      {
+        "nome": "Payet",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "07/03/2024",
+    "adversario": "Água Santa",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Galdames",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "10/03/2024",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "17/03/2024",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "14/04/2024",
+    "adversario": "Grêmio",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "David",
+        "gols": 1
+      },
+      {
+        "nome": "Mateus Carvalho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "17/04/2024",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "20/04/2024",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "27/04/2024",
+    "adversario": "Criciúma",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Ramón Díaz",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "01/05/2024",
+    "adversario": "Fortaleza",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Jogo decidido nos pênaltis (Copa do Brasil).",
+    "tecnico": "Rafael Paiva (interino)"
+  },
+  {
+    "data": "05/05/2024",
+    "adversario": "Athletico-PR",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "12/05/2024",
+    "adversario": "Vitória",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maicon",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "21/05/2024",
+    "adversario": "Fortaleza",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "02/06/2024",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 6
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Álvaro Pacheco",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "13/06/2024",
+    "adversario": "Palmeiras",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Álvaro Pacheco",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "16/06/2024",
+    "adversario": "Cruzeiro",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Álvaro Pacheco",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "19/06/2024",
+    "adversario": "Juventude",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Álvaro Pacheco",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "22/06/2024",
+    "adversario": "São Paulo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alan Franco (contra)",
+        "gols": 1
+      },
+      {
+        "nome": "Estrella",
+        "gols": 1
+      },
+      {
+        "nome": "Leandrinho",
+        "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "André Silva",
+        "gols": 1
+      }
+    ],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "26/06/2024",
+    "adversario": "Bahia",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "29/06/2024",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "03/07/2024",
+    "adversario": "Fortaleza",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Mateus Carvalho",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "07/07/2024",
+    "adversario": "Internacional",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Adson",
+        "gols": 1
+      },
+      {
+        "nome": "Lyncon",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "10/07/2024",
+    "adversario": "Corinthians",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Juan Sforza",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "17/07/2024",
+    "adversario": "Atlético-GO",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "David",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "21/07/2024",
+    "adversario": "Atlético-MG",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "28/07/2024",
+    "adversario": "Grêmio",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "31/07/2024",
+    "adversario": "Atlético-GO",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "03/08/2024",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Silva (GB)",
+        "gols": 1
+      },
+      {
+        "nome": "Adson",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "06/08/2024",
+    "adversario": "Atlético-GO",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "10/08/2024",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Victor Luis",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "18/08/2024",
+    "adversario": "Criciúma",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "posicao_tabela": null
+  },
+  {
+    "data": "26/08/2024",
+    "adversario": "Athletico-PR",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Emerson Rodríguez",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "29/08/2024",
+    "adversario": "Athletico-PR",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Hugo Moura",
+        "gols": 1
+      },
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "01/09/2024",
+    "adversario": "Vitória",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "João Victor",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "11/09/2024",
+    "adversario": "Athletico-PR",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Jogo decidido nos pênaltis (Copa do Brasil).",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "15/09/2024",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philippe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "22/09/2024",
+    "adversario": "Palmeiras",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "29/09/2024",
+    "adversario": "Cruzeiro",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "02/10/2024",
+    "adversario": "Atlético-MG",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philippe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "05/10/2024",
+    "adversario": "Juventude",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "16/10/2024",
+    "adversario": "São Paulo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "19/10/2024",
+    "adversario": "Atlético-MG",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Rafael Paiva"
+  },
+  {
+    "data": "24/10/2024",
+    "adversario": "Cuiabá",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Hugo Moura",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "28/10/2024",
+    "adversario": "Bahia",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 2
+      },
+      {
+        "nome": "Emerson Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "05/11/2024",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "09/11/2024",
+    "adversario": "Fortaleza",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "21/11/2024",
+    "adversario": "Internacional",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "24/11/2024",
+    "adversario": "Corinthians",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Rafael Paiva",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "30/11/2024",
+    "adversario": "Atlético-GO",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      },
+      {
+        "nome": "Maxime Dominguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Felipe (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "04/12/2024",
+    "adversario": "Atlético-MG",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Philippe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Felipe (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
+    "data": "08/12/2024",
+    "adversario": "Cuiabá",
+    "competicao": "Campeonato Brasileiro Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "",
+    "tecnico": "Felipe (interino)",
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    }
+  },
+  {
     "data": "11/01/2025",
     "adversario": "Nova Iguaçu",
     "competicao": "Campeonato Carioca",
@@ -10,7 +1504,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Paulinho",
+        "nome": "Paulo Ricardo",
         "gols": 1
       }
     ],
@@ -21,12 +1515,9 @@
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": []
-    },
     "observacao": "Árbitro marcou pênalti contra o Vasco por toque de mão de Paulinho, mas o VAR revisou e anulou a penalidade:contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}.",
-    "tecnico": "Ramon Lima"
+    "tecnico": "Ramon Lima",
+    "posicao_tabela": null
   },
   {
     "data": "16/01/2025",
@@ -121,7 +1612,7 @@
         "gols": 1
       },
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       }
     ],
@@ -207,7 +1698,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       }
     ],
@@ -366,7 +1857,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 2
       },
       {
@@ -464,7 +1955,7 @@
         "gols": 2
       },
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       }
     ],
@@ -883,28 +2374,25 @@
     },
     "gols_vasco": [
       {
-        "nome": "João Victor (contra)",
+        "nome": "João Victor",
         "gols": 1
       }
     ],
     "gols_adversario": [
       {
-        "nome": "João Victor (contra)",
-        "clube": "Vasco",
+        "nome": "Guga",
+        "clube": "Fluminense",
         "gols": 1
       },
       {
-        "nome": "Guga",
+        "nome": "Pablo Vegetti (contra)",
         "clube": "Fluminense",
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": []
-    },
     "observacao": "O gol de empate do Fluminense saiu em um cruzamento que desviou em Vegetti (gol contra), e Guga marcou um golaço aos 42 do 2º tempo para virar o jogo:contentReference[oaicite:12]{index=12}:contentReference[oaicite:13]{index=13}.",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "27/05/2025",
@@ -939,7 +2427,7 @@
   },
   {
     "data": "31/05/2025",
-    "adversario": "RedBull Bragantino",
+    "adversario": "Red Bull Bragantino",
     "competicao": "Brasileirão Série A",
     "local": "casa",
     "placar": {
@@ -950,12 +2438,12 @@
     "gols_adversario": [
       {
         "nome": "Guilherme Lopes",
-        "clube": "RedBull Bragantino",
+        "clube": "Red Bull Bragantino",
         "gols": 1
       },
       {
         "nome": "Isidro Pitta",
-        "clube": "RedBull Bragantino",
+        "clube": "Red Bull Bragantino",
         "gols": 1
       }
     ],
@@ -1035,7 +2523,7 @@
   {
     "data": "15/07/2025",
     "adversario": "Independiente del Valle-EQU",
-    "competicao": "Copa Sul-Americana (Playoff Ida)",
+    "competicao": "Copa Sul-Americana",
     "local": "fora",
     "placar": {
       "vasco": 0,
@@ -1045,26 +2533,23 @@
     "gols_adversario": [
       {
         "nome": "Mateo Carabajal",
-        "clube": "Ind. del Valle",
+        "clube": "Independiente del Valle-EQU",
         "gols": 1
       },
       {
         "nome": "Patrick Mercado",
-        "clube": "Ind. del Valle",
+        "clube": "Independiente del Valle-EQU",
         "gols": 2
       },
       {
         "nome": "Claudio Spinelli",
-        "clube": "Ind. del Valle",
+        "clube": "Independiente del Valle-EQU",
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": []
-    },
     "observacao": "Jogo de ida dos playoffs da Sul-Americana, disputado na altitude de Quito; Vasco sofreu uma goleada que complicou a classificação:contentReference[oaicite:17]{index=17}.",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "19/07/2025",
@@ -1098,7 +2583,7 @@
   {
     "data": "22/07/2025",
     "adversario": "Independiente del Valle-EQU",
-    "competicao": "Copa Sul-Americana (Playoff Volta)",
+    "competicao": "Copa Sul-Americana",
     "local": "casa",
     "placar": {
       "vasco": 1,
@@ -1113,16 +2598,13 @@
     "gols_adversario": [
       {
         "nome": "Patrick Mercado",
-        "clube": "Ind. del Valle",
+        "clube": "Independiente del Valle-EQU",
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": []
-    },
     "observacao": "Vasco foi eliminado com placar agregado de 1-5, apesar do empate em São Januário.",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "27/07/2025",
@@ -1177,8 +2659,8 @@
     "competicao": "Brasileirão Série A",
     "local": "fora",
     "placar": {
-      "vasco": 3,
-      "adversario": 2
+      "vasco": 2,
+      "adversario": 3
     },
     "gols_vasco": [
       {
@@ -1207,17 +2689,9 @@
         "gols": 1
       }
     ],
-    "gols_anulados": {
-      "vasco": [],
-      "adversario": [
-        {
-          "nome": "Gabriel Taliari",
-          "gols": 1
-        }
-      ]
-    },
     "observacao": "O Mirassol teve um gol de Gabriel Taliari anulado por impedimento no início do segundo tempo:contentReference[oaicite:21]{index=21}:contentReference[oaicite:22]{index=22}.",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "07/08/2025",
@@ -1230,7 +2704,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       },
       {
@@ -1296,7 +2770,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 2
       },
       {
@@ -1310,11 +2784,16 @@
       {
         "nome": "Tche Tche",
         "gols": 1
+      },
+      {
+        "nome": "David",
+        "gols": 1
       }
     ],
     "gols_adversario": [],
     "observacao": "",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "20/08/2025",
@@ -1431,7 +2910,7 @@
         "gols": 1
       },
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       },
       {
@@ -1490,7 +2969,7 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       },
       {
@@ -1549,11 +3028,11 @@
     },
     "gols_vasco": [
       {
-        "nome": "Philipe Coutinho",
+        "nome": "Philippe Coutinho",
         "gols": 1
       },
       {
-        "nome": "Puma Rodrigurez",
+        "nome": "Puma Rodríguez",
         "gols": 1
       },
       {
@@ -1710,7 +3189,7 @@
   },
   {
     "data": "26/10/2025",
-    "adversario": "RedBull Bragantino",
+    "adversario": "Red Bull Bragantino",
     "competicao": "Brasileirão Série A",
     "local": "fora",
     "placar": {
@@ -1783,7 +3262,8 @@
       }
     ],
     "observacao": "",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "gols_vasco": []
   },
   {
     "data": "08/11/2025",
@@ -1822,7 +3302,7 @@
   },
   {
     "data": "19/11/2025",
-    "adversario": "Gremio",
+    "adversario": "Grêmio",
     "competicao": "Brasileirão Série A",
     "local": "fora",
     "placar": {
@@ -1833,17 +3313,18 @@
     "gols_adversario": [
       {
         "nome": "Carlos Vinicius",
-        "clube": "Gremio",
+        "clube": "Grêmio",
         "gols": 1
       },
       {
         "nome": "Amuzu",
-        "clube": "Gremio",
+        "clube": "Grêmio",
         "gols": 1
       }
     ],
     "observacao": "",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "23/11/2025",
@@ -1876,10 +3357,6 @@
     },
     "gols_vasco": [
       {
-        "nome": "Andrés Gomez",
-        "gols": 1
-      },
-      {
         "nome": "Rayan",
         "gols": 2
       },
@@ -1889,6 +3366,10 @@
       },
       {
         "nome": "Nuno Moreira",
+        "gols": 1
+      },
+      {
+        "nome": "Andrés Gómez",
         "gols": 1
       }
     ],
@@ -1900,7 +3381,8 @@
       }
     ],
     "observacao": "Choveu muito no intervalo, o vasco estava estreinhando o gramado novo bem nesse jogo",
-    "tecnico": "Fernando Diniz"
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   },
   {
     "data": "02/12/2025",
@@ -1929,7 +3411,7 @@
   },
   {
     "data": "07/12/2025",
-    "adversario": "Atletico-MG",
+    "adversario": "Atlético-MG",
     "competicao": "Brasileirão Série A",
     "local": "fora",
     "placar": {
@@ -1940,22 +3422,22 @@
     "gols_adversario": [
       {
         "nome": "Junior Alonso",
-        "clube": "Atletico-MG",
+        "clube": "Atlético-MG",
         "gols": 1
       },
       {
         "nome": "Hulk",
-        "clube": "Atletico-MG",
+        "clube": "Atlético-MG",
         "gols": 1
       },
       {
         "nome": "Dudu",
-        "clube": "Atletico-MG",
+        "clube": "Atlético-MG",
         "gols": 2
       },
       {
         "nome": "Victor Luis (contra)",
-        "clube": "Atletico-MG",
+        "clube": "Atlético-MG",
         "gols": 1
       }
     ],
@@ -2056,28 +3538,47 @@
     "tecnico": "Fernando Diniz"
   },
   {
-    "data": "14/01/2026",
-    "adversario": "Gremio",
-    "competicao": "Brasileirão Série A",
+    "data": "15/01/2026",
+    "adversario": "Maricá",
+    "competicao": "Campeonato Carioca",
     "local": "casa",
     "placar": {
-      "vasco": 1,
-      "adversario": 0
+      "vasco": 4,
+      "adversario": 2
     },
     "gols_vasco": [
       {
-        "nome": "Andrés Gomez",
+        "nome": "Rayan",
+        "gols": 2
+      },
+      {
+        "nome": "Philippe Coutinho",
+        "gols": 1
+      },
+      {
+        "nome": "Carlos Cuesta",
         "gols": 1
       }
     ],
-    "gols_adversario": [],
-    "observacao": "",
+    "gols_adversario": [
+      {
+        "nome": "Marcelo",
+        "clube": "Maricá",
+        "gols": 1
+      },
+      {
+        "nome": "Alex Azeredo",
+        "clube": "Maricá",
+        "gols": 1
+      }
+    ],
+    "observacao": "Estreia do Vasco no ano de 2026, bom ataque mas a defesa ainda fragil",
     "tecnico": "Fernando Diniz",
-    "posicao_tabela": 5
+    "posicao_tabela": null
   },
   {
-    "data": "15/01/2026",
-    "adversario": "Botafogo",
+    "data": "18/01/2026",
+    "adversario": "Nova Iguaçu",
     "competicao": "Campeonato Carioca",
     "local": "casa",
     "placar": {
@@ -2086,124 +3587,196 @@
     },
     "gols_vasco": [],
     "gols_adversario": [],
-    "observacao": "",
+    "observacao": "O Vasco jogou com time reserva, somente o Leo Jardim de titular que jogou e o Andres Gomes entrou no segundo tempo.",
     "tecnico": "Fernando Diniz",
     "posicao_tabela": null
   },
   {
-    "data": "22/01/2026",
-    "adversario": "Atletico-MG",
-    "competicao": "Brasileirão Série A",
-    "local": "casa",
+    "data": "21/01/2026",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
     "placar": {
-      "vasco": 1,
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Carrascal",
+        "clube": "Flamengo",
+        "gols": 1
+      }
+    ],
+    "observacao": "O Flamengo estava com 1 ponto no campeonato, precisava ganhar para não disputar mais 2 ou 3 jogos para não cair. Dito isso, por mais que o Vasco estivesse mal, o Flamengo não conseguia fazer gol no Vasco, eis que no começo do segundo tempo o Juiz achou um pretesto para expulsar o melhor marcador do Vasco para facilitar o trabalho do Flamengo, então saiu o gol do Flamengo, mas tenho certeza que se mesmo assim não tivesse saido gol até os 35 min tudo segundo tempo o Juiz do Flamengo certamente iria achar um penalti para o clube da zona sul também.",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
+  },
+  {
+    "data": "25/01/2026",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
       "adversario": 0
     },
     "gols_vasco": [
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 2
+      },
       {
         "nome": "Andrés Gomez",
         "gols": 1
       }
     ],
     "gols_adversario": [],
-    "observacao": "",
+    "observacao": "Vasco jogou com time misto, Leo Jardim não jogou pois teve virose. Fuzato entrou no lugar e jogou bem, salvou o Vasco algumas vezes.",
     "tecnico": "Fernando Diniz",
-    "posicao_tabela": 3
+    "posicao_tabela": null
   },
   {
     "data": "29/01/2026",
-    "adversario": "Cruzeiro",
+    "adversario": "Mirassol",
     "competicao": "Brasileirão Série A",
     "local": "fora",
     "placar": {
-      "vasco": 10,
-      "adversario": 5
+      "vasco": 1,
+      "adversario": 2
     },
     "gols_vasco": [
       {
-        "nome": "Andrés Gomez",
-        "gols": 2
-      },
-      {
-        "nome": "David",
-        "gols": 3
-      },
-      {
-        "nome": "Carlos Cuesta",
-        "gols": 1
-      },
-      {
-        "nome": "Jair",
-        "gols": 1
-      },
-      {
-        "nome": "Hugo Moura",
-        "gols": 2
-      },
-      {
-        "nome": "Lucas Piton",
+        "nome": "Philippe Coutinho",
         "gols": 1
       }
     ],
     "gols_adversario": [
       {
-        "nome": "Barreal",
-        "clube": "Cruzeiro",
-        "gols": 4
+        "nome": "Carlos Cuesta (Contra)",
+        "clube": "Mirassol",
+        "gols": 1
       },
       {
-        "nome": "Bruno Henrique",
-        "clube": "Cruzeiro",
+        "nome": "Eduardo",
+        "clube": "Mirassol",
         "gols": 1
       }
     ],
-    "observacao": "sdfsdfsdfsdfsdf",
+    "observacao": "Coutinho fez o gol de cabeça e acabou de chocando com o zagueiro, caiu desacordado e quando bateu a cabeça no chão acordou, lance assustador, até quando o Vasco faz gol e doido.\nMais uma gol contra dos jogadores que deveriam proteger o gol do Vasco...",
     "tecnico": "Fernando Diniz",
-    "posicao_tabela": 1
+    "posicao_tabela": 12
   },
   {
-    "data": "04/02/2026",
-    "adversario": "Botafogo",
-    "competicao": "Brasileirão Série A",
+    "data": "02/02/2026",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
     "local": "fora",
     "placar": {
-      "vasco": 2,
-      "adversario": 5
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "observacao": "Jogadores do Vasco sem vontade, jogo moroso.",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
+  },
+  {
+    "data": "05/02/2026",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
     },
     "gols_vasco": [
       {
-        "nome": "Barros",
-        "gols": 1
-      },
-      {
-        "nome": "Hugo Moura",
+        "nome": "Puma Rodríguez",
         "gols": 1
       }
     ],
     "gols_adversario": [
       {
-        "nome": "Arthur Cabral",
-        "clube": "Botafogo",
-        "gols": 1
-      },
-      {
-        "nome": "Barreal",
-        "clube": "Botafogo",
-        "gols": 2
-      },
-      {
-        "nome": "Bruno Santos",
-        "clube": "Botafogo",
-        "gols": 1
-      },
-      {
-        "nome": "Bruno Henrique",
-        "clube": "Botafogo",
+        "nome": "Jean Carlos",
+        "clube": "Chapecoense",
         "gols": 1
       }
     ],
-    "observacao": "",
+    "observacao": "Vergonhoso jogo do Vasco, atacou e atacou, criou chances, mas todos os jogadores de frente não sabem fazer gols, e no final a Chape empatou.",
     "tecnico": "Fernando Diniz",
-    "posicao_tabela": 3
+    "posicao_tabela": 13
+  },
+  {
+    "data": "08/02/2026",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Brenner",
+        "gols": 1
+      },
+      {
+        "nome": "Philippe Coutinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "observacao": "Jogo com muita chuva o tempo todo, o gramado enxarcado com muita agua mas não fez piscina.",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
+  },
+  {
+    "data": "11/02/2026",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [
+      {
+        "nome": "Luciano Juba",
+        "clube": "Bahia",
+        "gols": 1
+      }
+    ],
+    "observacao": "Time do Vasco horrivel, jogadores sem sangue no modo blazer, um tecnico que se agarra o fato de \"jogar bem\" mesmo sem vitorias, pior que nem jogar bem está jogando. Mas desse balaio o unico bom jogador e que joga com vontade e é bom jogador é o Andrés Gómez.",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": 18
+  },
+  {
+    "data": "14/02/2026",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Claudio Spinelli",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [
+      {
+        "nome": "Ygor Catatau",
+        "clube": "Volta Redonda",
+        "gols": 1
+      }
+    ],
+    "observacao": "Jogo vergonhoso, Coutinho foi substituido e não gostou, e não voltou para o banco no segundo tempo, pessimo lider, jogo esse que fez o Coutinho pedir pra sair, so pq foi vainhado.",
+    "tecnico": "Fernando Diniz",
+    "posicao_tabela": null
   }
 ]

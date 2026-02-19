@@ -5582,11 +5582,23 @@
 		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		brTMuTQIl0ctqeLlifpZUdjFV2I=
+		3qPc2V0AinSe++zUYvpbtVEN588=
 		</data>
 		<key>Resources/dateutil/zoneinfo/dateutil-zoneinfo.tar.gz</key>
 		<data>
 		c+JCO8FU6iR/UDl+lpaYpwphJ6s=
+		</data>
+		<key>Resources/jogos_futuros.json</key>
+		<data>
+		2tTXIkMd7J9d335aTvSz895FpQw=
+		</data>
+		<key>Resources/jogos_vasco.json</key>
+		<data>
+		9eWjVKDmnNO7K/UNG08bSZReGpY=
+		</data>
+		<key>Resources/listas_auxiliares.json</key>
+		<data>
+		X2Fl/n6Hp6N2qV0gTyXycSwWQZ8=
 		</data>
 		<key>Resources/matplotlib/mpl-data/fonts/afm/cmex10.afm</key>
 		<data>
@@ -6704,6 +6716,16 @@
 			<key>symlink</key>
 			<string>../Resources/dateutil</string>
 		</dict>
+		<key>Frameworks/jogos_futuros.json</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/jogos_futuros.json</string>
+		</dict>
+		<key>Frameworks/jogos_vasco.json</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/jogos_vasco.json</string>
+		</dict>
 		<key>Frameworks/kiwisolver/_cext.cpython-312-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
@@ -6831,6 +6853,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>PIL/.dylibs/libz.1.3.1.zlib-ng.dylib</string>
+		</dict>
+		<key>Frameworks/listas_auxiliares.json</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/listas_auxiliares.json</string>
 		</dict>
 		<key>Frameworks/matplotlib/_c_internal_utils.cpython-312-darwin.so</key>
 		<dict>
@@ -17314,7 +17341,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			qTHYb9uVCEe9e6Zo4B3dOY+8S7IiOkL9nxWR2xscQOg=
+			GU/lT9Nj2vThymObEHaKTqXM7uwk0iXATFRaHHK7NrM=
 			</data>
 		</dict>
 		<key>Resources/contourpy</key>
@@ -17327,6 +17354,20 @@
 			<key>hash2</key>
 			<data>
 			0+pS57bpaN4NiE3xKIGTWW+pW4A9tPkqGCeac5gARHU=
+			</data>
+		</dict>
+		<key>Resources/jogos_futuros.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+jPC9WLErq29e4jJjCy77BShgvnarOmJReJY2DFx2Kw=
+			</data>
+		</dict>
+		<key>Resources/jogos_vasco.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yO+mRmsE1IWFgcJPI04Z8ssYOoPywUp8YwJDRvnc64w=
 			</data>
 		</dict>
 		<key>Resources/kiwisolver</key>
@@ -17428,6 +17469,13 @@
 		<dict>
 			<key>symlink</key>
 			<string>PIL/.dylibs/libz.1.3.1.zlib-ng.dylib</string>
+		</dict>
+		<key>Resources/listas_auxiliares.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			boo3CvHrwh+iXjmHZR+X9SE/1T3jwX7jn+0/ccHu+go=
+			</data>
 		</dict>
 		<key>Resources/matplotlib/_c_internal_utils.cpython-312-darwin.so</key>
 		<dict>

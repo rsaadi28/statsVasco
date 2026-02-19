@@ -1,5 +1,29 @@
 [
   {
+    "jogo": "Vasco x Maricá",
+    "data": "15/01/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Vasco x Nova Iguaçu",
+    "data": "18/01/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Flamengo x Vasco",
+    "data": "21/01/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Boavista x Vasco",
+    "data": "25/01/2026",
+    "em_casa": false,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
     "jogo": "Mirassol x Vasco",
     "data": "29/01/2026",
     "em_casa": false,
@@ -96,7 +120,7 @@
     "campeonato": "Brasileirão Série A"
   },
   {
-    "jogo": "Vasco x Athletico Paranaense",
+    "jogo": "Vasco x Athletico-PR",
     "data": "09/05/2026",
     "em_casa": true,
     "campeonato": "Brasileirão Série A"
@@ -108,7 +132,7 @@
     "campeonato": "Brasileirão Série A"
   },
   {
-    "jogo": "Vasco x Red Bull Bragantino",
+    "jogo": "Vasco x RedBull Bragantino",
     "data": "23/05/2026",
     "em_casa": true,
     "campeonato": "Brasileirão Série A"
@@ -210,7 +234,7 @@
     "campeonato": "Brasileirão Série A"
   },
   {
-    "jogo": "Athletico Paranaense x Vasco",
+    "jogo": "Athletico-PR x Vasco",
     "data": "04/11/2026",
     "em_casa": false,
     "campeonato": "Brasileirão Série A"
@@ -222,7 +246,7 @@
     "campeonato": "Brasileirão Série A"
   },
   {
-    "jogo": "Red Bull Bragantino x Vasco",
+    "jogo": "RedBull Bragantino x Vasco",
     "data": "21/11/2026",
     "em_casa": false,
     "campeonato": "Brasileirão Série A"
@@ -240,27 +264,21 @@
     "campeonato": "Brasileirão Série A"
   },
   {
-    "jogo": "Goias x Vasco",
+    "jogo": "Vasco x Volta Redonda",
     "data": "14/02/2026",
-    "em_casa": false,
-    "campeonato": "Brasileirão Série A"
-  },
-  {
-    "jogo": "Vasco x Lanus",
-    "data": "15/02/2026",
     "em_casa": true,
-    "campeonato": "Libertadores"
-  },
-  {
-    "jogo": "Time adversario x Vasco",
-    "data": "18/02/2026",
-    "em_casa": false,
     "campeonato": "Campeonato Carioca"
   },
   {
-    "jogo": "Time adversario x Vasco",
+    "jogo": "Vasco x Fluminense",
     "data": "22/02/2026",
+    "em_casa": true,
+    "campeonato": "Campeonato Carioca"
+  },
+  {
+    "jogo": "Fluminense x Vasco",
+    "data": "01/03/2026",
     "em_casa": false,
-    "campeonato": "Brasileirão Série A"
+    "campeonato": "Campeonato Carioca"
   }
 ]
