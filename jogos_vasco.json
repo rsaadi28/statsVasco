@@ -1,5 +1,5 @@
 [
- {
+  {
     "data": "18/01/2018",
     "adversario": "Bangu",
     "competicao": "Campeonato Carioca",
@@ -1461,8 +1461,8 @@
     },
     "observacao": "",
     "tecnico": "Jorginho"
-  }
-  ,{
+  },
+  {
     "data": "19/01/2019",
     "adversario": "Madureira",
     "competicao": "Campeonato Carioca",
@@ -2900,8 +2900,8 @@
     },
     "observacao": "",
     "tecnico": "Vanderlei Luxemburgo"
-  }
-  ,{
+  },
+  {
     "data": "07/01/2020",
     "adversario": "Atlético-GO",
     "competicao": "Brasileirão Série A",
@@ -4212,8 +4212,8 @@
     },
     "observacao": "",
     "tecnico": "Ricardo Sá Pinto"
-  }
- ,{
+  },
+  {
     "data": "03/03/2021",
     "adversario": "Portuguesa",
     "competicao": "Campeonato Carioca",
@@ -5585,8 +5585,8 @@
     },
     "observacao": "",
     "tecnico": "Fernando Diniz"
-  }
-  ,{
+  },
+  {
     "data": "26/01/2022",
     "adversario": "Volta Redonda",
     "competicao": "Campeonato Carioca",
@@ -6832,8 +6832,8 @@
     },
     "observacao": "",
     "tecnico": "Jorginho"
-  }
-   ,{
+  },
+  {
     "data": "14/01/2023",
     "adversario": "Madureira",
     "competicao": "Campeonato Carioca",
@@ -8147,8 +8147,8 @@
     },
     "observacao": "",
     "tecnico": "Ramón Díaz"
-  }
-  ,{
+  },
+  {
     "data": "18/01/2024",
     "adversario": "Boavista",
     "competicao": "Campeonato Carioca",
@@ -11185,7 +11185,7 @@
         "gols": 1
       },
       {
-        "nome": "Luciano Juba (Contra)",
+        "nome": "Luciano Juba (contra)",
         "gols": 1
       }
     ],
@@ -11776,7 +11776,7 @@
         "gols": 2
       },
       {
-        "nome": "Andrés Gomez",
+        "nome": "Andrés Gómez",
         "gols": 1
       }
     ],
@@ -11802,7 +11802,7 @@
     ],
     "gols_adversario": [
       {
-        "nome": "Carlos Cuesta (Contra)",
+        "nome": "Carlos Cuesta (contra)",
         "clube": "Mirassol",
         "gols": 1
       },
