@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import ast
+import glob
 try:
     from tkcalendar import Calendar
     TKCALENDAR_OK = True
@@ -14,6 +15,7 @@ except Exception:
     TKCALENDAR_OK = False
 import tkinter.font as tkFont
 import re
+import unicodedata
 from datetime import datetime
 
 # --- Matplotlib (gráficos) ---
@@ -62,6 +64,30 @@ def _bootstrap_jsons():
 
 
 _bootstrap_jsons()
+
+
+def _gerar_backup_jsons_inicio():
+    """Gera backup snapshot dos JSONs ao abrir o app (mantém somente o mais recente de cada arquivo)."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    arquivos = (
+        ("jogos_vasco", ARQUIVO_JOGOS),
+        ("jogos_futuros", ARQUIVO_FUTUROS),
+        ("listas_auxiliares", ARQUIVO_LISTAS),
+    )
+    for prefixo, origem in arquivos:
+        if not os.path.exists(origem):
+            continue
+        padrao_antigos = os.path.join(DATA_DIR, f"{prefixo}.backup_*.json")
+        for antigo in glob.glob(padrao_antigos):
+            try:
+                os.remove(antigo)
+            except Exception:
+                pass
+        destino = os.path.join(DATA_DIR, f"{prefixo}.backup_{timestamp}.json")
+        try:
+            shutil.copy2(origem, destino)
+        except Exception:
+            pass
 
 
 def _ordenar_listas(dados: dict) -> dict:
@@ -1352,7 +1378,6 @@ class App:
             salvar_lista_jogos(jogos)
             msg = "Partida registrada com sucesso!"
 
-        self._remover_futuro_registrado(data, adversario, competicao)
         messagebox.showinfo("Sucesso", msg)
         self._limpar_formulario()
         self._atualizar_abas()
@@ -1475,6 +1500,48 @@ class App:
             return
         tree.selection_set(iid)
         self._carregar_jogo_para_edicao(jogo_idx)
+
+    def _abrir_menu_contexto_temporadas(self, event):
+        tree = event.widget
+        iid = tree.identify_row(event.y)
+        if not iid:
+            return
+        tree.selection_set(iid)
+        tree.focus(iid)
+
+        mapping = getattr(tree, "_item_to_idx", {})
+        jogo_idx = mapping.get(iid)
+        if jogo_idx is None:
+            return
+
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Excluir jogo", command=lambda idx=jogo_idx: self._excluir_jogo_por_indice(idx))
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _excluir_jogo_por_indice(self, jogo_idx):
+        jogos = carregar_dados_jogos()
+        if not (0 <= jogo_idx < len(jogos)):
+            messagebox.showerror("Erro", "Não foi possível localizar o jogo para exclusão.")
+            return
+
+        jogo = jogos[jogo_idx]
+        desc = f"{jogo.get('data', '')} - Vasco x {jogo.get('adversario', '')} ({jogo.get('competicao', '')})"
+        if not messagebox.askyesno("Excluir jogo", f"Deseja excluir este jogo?\n\n{desc}"):
+            return
+
+        jogos.pop(jogo_idx)
+        salvar_lista_jogos(jogos)
+
+        if self.editing_index == jogo_idx:
+            self._limpar_formulario()
+        elif self.editing_index is not None and self.editing_index > jogo_idx:
+            self.editing_index -= 1
+
+        self._atualizar_abas()
+        messagebox.showinfo("Sucesso", "Jogo excluído com sucesso.")
 
     def _atualizar_abas(self):
         self._carregar_temporadas()
@@ -1778,6 +1845,8 @@ class App:
             self._bind_treeview_tooltips(tv, tooltip_map)
             tv._item_to_idx = item_to_idx
             tv.bind("<Double-1>", self._on_tree_double_click)
+            tv.bind("<Button-3>", self._abrir_menu_contexto_temporadas)
+            tv.bind("<Control-Button-1>", self._abrir_menu_contexto_temporadas)
 
             # ----- Área de Observações (aparece só se houver texto) -----
             obs_frame = ttk.Frame(frame_ano)
@@ -2576,7 +2645,7 @@ class App:
         tab_art = ttk.Frame(nb, padding=8)
         nb.add(tab_art, text="Artilheiros")
         if artilheiros:
-            top = artilheiros.most_common(15)
+            top = sorted(artilheiros.items(), key=lambda item: (-item[1], item[0].casefold()))
             labels = [n for n, _ in top]
             values = [q for _, q in top]
             self._plot_barras_h(tab_art, labels, values, "Artilheiros (Gols válidos)", "Gols", top_to_bottom=True)
@@ -2671,13 +2740,51 @@ class App:
         if jogos is None:
             jogos = carregar_dados_jogos()
         c = Counter()
+        nomes_exibicao = {}
+
+        def chave_nome(nome):
+            nome_limpo = re.sub(r"\s+", " ", str(nome or "").strip())
+            nome_sem_acentos = "".join(
+                ch for ch in unicodedata.normalize("NFKD", nome_limpo)
+                if not unicodedata.combining(ch)
+            )
+            return nome_sem_acentos.casefold()
+
+        def preferir_exibicao(atual, novo):
+            if not atual:
+                return novo
+            if atual.isascii() and not novo.isascii():
+                return novo
+            if len(novo) > len(atual):
+                return novo
+            return atual
+
         for jogo in jogos:
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
-                    c[g.get("nome", "Desconhecido")] += int(g.get("gols", 0))
+                    nome = re.sub(r"\s+", " ", str(g.get("nome", "Desconhecido")).strip()) or "Desconhecido"
+                    try:
+                        qtd = int(g.get("gols", 0))
+                    except Exception:
+                        qtd = 0
+                    if qtd <= 0:
+                        continue
+                    chave = chave_nome(nome)
+                    nomes_exibicao[chave] = preferir_exibicao(nomes_exibicao.get(chave), nome)
+                    c[chave] += qtd
                 elif isinstance(g, str):
-                    c[g] += 1
-        return c
+                    nome = re.sub(r"\s+", " ", g.strip())
+                    if not nome:
+                        continue
+                    chave = chave_nome(nome)
+                    nomes_exibicao[chave] = preferir_exibicao(nomes_exibicao.get(chave), nome)
+                    c[chave] += 1
+
+        c_final = Counter()
+        for chave, gols in c.items():
+            if gols > 0:
+                c_final[nomes_exibicao.get(chave, chave)] = gols
+        return c_final
 
     def _montar_series_evolucao(self, jogos=None):
         if jogos is None:
@@ -2910,6 +3017,7 @@ class App:
 
 
 if __name__ == "__main__":
+    _gerar_backup_jsons_inicio()
     root = tk.Tk()
     app = App(root)
     root.mainloop()
