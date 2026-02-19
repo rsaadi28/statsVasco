@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>StatsVasco</string>
+	<string>Midia</string>
 	<key>CFBundleExecutable</key>
-	<string>StatsVasco</string>
+	<string>Midia</string>
 	<key>CFBundleIconFile</key>
 	<string>app.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.statsvasco.full</string>
+	<string>Midia</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>StatsVasco</string>
+	<string>Midia</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
