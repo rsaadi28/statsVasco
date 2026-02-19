@@ -2583,7 +2583,7 @@ class App:
             "artilheiro": 180,
         }
         for col in cols:
-            tv.heading(col, text=headings[col])
+            tv.heading(col, text=headings[col], command=lambda c=col: self._ordenar_coluna_tecnicos(c))
             tv.column(col, width=widths[col], anchor="center" if col != "tecnico" else "w")
 
         sy = ttk.Scrollbar(container, orient="vertical", command=tv.yview)
@@ -2592,30 +2592,78 @@ class App:
         sy.pack(side="right", fill="y")
 
         tv.tag_configure("odd", background=self.colors["row_alt_bg"])
-        for i, (tecnico, info) in enumerate(sorted(stats.items(), key=lambda kv: (-kv[1]["jogos"], kv[0].casefold())), start=1):
+        self._tv_tecnicos = tv
+        self._tecnicos_rows = []
+        for tecnico, info in stats.items():
             saldo = info["gols_pro"] - info["gols_contra"]
             top = info["artilheiros"].most_common(1)
             artilheiro_txt = "—"
             if top:
                 nome, gols = top[0]
                 artilheiro_txt = f"{nome} ({gols})"
+            self._tecnicos_rows.append({
+                "tecnico": tecnico,
+                "jogos": info["jogos"],
+                "casa": info["casa"],
+                "fora": info["fora"],
+                "vitorias": info["vitorias"],
+                "empates": info["empates"],
+                "derrotas": info["derrotas"],
+                "gols_pro": info["gols_pro"],
+                "gols_contra": info["gols_contra"],
+                "saldo": saldo,
+                "artilheiro": artilheiro_txt,
+            })
+
+        self._tecnicos_sort_col = "jogos"
+        self._tecnicos_sort_reverse = True
+        self._render_tecnicos_ordenado()
+
+    def _chave_ordenacao_tecnicos(self, row, coluna):
+        if coluna in {"jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo"}:
+            return int(row.get(coluna, 0))
+        return str(row.get(coluna, "")).casefold()
+
+    def _render_tecnicos_ordenado(self):
+        if not getattr(self, "_tv_tecnicos", None):
+            return
+        tv = self._tv_tecnicos
+        for iid in tv.get_children():
+            tv.delete(iid)
+        rows = sorted(
+            self._tecnicos_rows,
+            key=lambda r: (self._chave_ordenacao_tecnicos(r, self._tecnicos_sort_col), str(r.get("tecnico", "")).casefold()),
+            reverse=self._tecnicos_sort_reverse
+        )
+        for i, row in enumerate(rows, start=1):
             tv.insert(
-                "", "end",
+                "",
+                "end",
                 values=(
-                    tecnico,
-                    info["jogos"],
-                    info["casa"],
-                    info["fora"],
-                    info["vitorias"],
-                    info["empates"],
-                    info["derrotas"],
-                    info["gols_pro"],
-                    info["gols_contra"],
-                    saldo,
-                    artilheiro_txt,
+                    row["tecnico"],
+                    row["jogos"],
+                    row["casa"],
+                    row["fora"],
+                    row["vitorias"],
+                    row["empates"],
+                    row["derrotas"],
+                    row["gols_pro"],
+                    row["gols_contra"],
+                    row["saldo"],
+                    row["artilheiro"],
                 ),
-                tags=("odd" if i % 2 else "",),
+                tags=("odd",) if i % 2 else ()
             )
+
+    def _ordenar_coluna_tecnicos(self, coluna):
+        if not getattr(self, "_tecnicos_rows", None):
+            return
+        if getattr(self, "_tecnicos_sort_col", None) == coluna:
+            self._tecnicos_sort_reverse = not self._tecnicos_sort_reverse
+        else:
+            self._tecnicos_sort_col = coluna
+            self._tecnicos_sort_reverse = False
+        self._render_tecnicos_ordenado()
 
     # --------------------- Gráficos ---------------------
     def _carregar_graficos(self):
