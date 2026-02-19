@@ -397,6 +397,8 @@ class App:
 
         self.listas = carregar_listas()
         self._evolucao_subtab_index = 0
+        self._evolucao_geral_art_page = 0
+        self._evolucao_geral_art_page_size = 20
         self._calendar_popup = None
 
         self.notebook = ttk.Notebook(root)
@@ -2687,8 +2689,56 @@ class App:
         nb.add(tab_art, text="Artilheiros")
         if artilheiros:
             top = sorted(artilheiros.items(), key=lambda item: (-item[1], item[0].casefold()))
-            labels = [n for n, _ in top]
-            values = [q for _, q in top]
+            top_plot = top
+            if is_geral:
+                page_size = max(1, int(getattr(self, "_evolucao_geral_art_page_size", 20)))
+                total = len(top)
+                total_pages = max(1, (total + page_size - 1) // page_size)
+                page_idx = int(getattr(self, "_evolucao_geral_art_page", 0))
+                page_idx = max(0, min(page_idx, total_pages - 1))
+                self._evolucao_geral_art_page = page_idx
+                ini = page_idx * page_size
+                fim = min(ini + page_size, total)
+
+                controles = ttk.Frame(tab_art)
+                controles.pack(fill="x", pady=(0, 8))
+
+                def mudar_pagina_art(delta):
+                    novo_idx = max(0, min(total_pages - 1, self._evolucao_geral_art_page + delta))
+                    if novo_idx == self._evolucao_geral_art_page:
+                        return
+                    self._evolucao_geral_art_page = novo_idx
+                    for widget in container.winfo_children():
+                        widget.destroy()
+                    self._render_graficos_para_dataset(
+                        container,
+                        jogos,
+                        is_geral=True,
+                        prev_jogos=prev_jogos,
+                        prev_label=prev_label,
+                    )
+
+                ttk.Button(
+                    controles,
+                    text="Anterior",
+                    command=lambda: mudar_pagina_art(-1),
+                    state=("normal" if page_idx > 0 else "disabled"),
+                ).pack(side="left")
+                ttk.Label(
+                    controles,
+                    text=f"Nomes {ini + 1}-{fim} de {total}  |  Página {page_idx + 1}/{total_pages}",
+                ).pack(side="left", padx=10)
+                ttk.Button(
+                    controles,
+                    text="Próxima",
+                    command=lambda: mudar_pagina_art(1),
+                    state=("normal" if page_idx < total_pages - 1 else "disabled"),
+                ).pack(side="left")
+
+                top_plot = top[ini:fim]
+
+            labels = [n for n, _ in top_plot]
+            values = [q for _, q in top_plot]
             self._plot_barras_h(tab_art, labels, values, "Artilheiros (Gols válidos)", "Gols", top_to_bottom=True)
         else:
             ttk.Label(tab_art, text="Ainda não há artilheiros registrados.").pack(anchor="w")
