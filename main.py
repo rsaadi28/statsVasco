@@ -47,7 +47,18 @@ DATA_DIR = _definir_diretorio_dados()
 ARQUIVO_JOGOS = os.path.join(DATA_DIR, "jogos_vasco.json")
 ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
 ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
+ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
+POSICOES_ELENCO = [
+    "Goleiro",
+    "Lateral-Direito",
+    "Zagueiro",
+    "Lateral-Esquerdo",
+    "Volante",
+    "Meio-Campista",
+    "Atacante",
+]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado"]
 
 
 def _json_tem_dados(path):
@@ -76,6 +87,7 @@ def _bootstrap_jsons():
     defaults = {
         "jogos_vasco.json": [],
         "jogos_futuros.json": [],
+        "elenco_atual.json": {"jogadores": []},
         "listas_auxiliares.json": {
             "clubes_adversarios": [],
             "jogadores_vasco": [],
@@ -86,7 +98,7 @@ def _bootstrap_jsons():
         },
     }
 
-    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json"):
+    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json", "elenco_atual.json"):
         destino = os.path.join(DATA_DIR, nome)
         if _json_tem_dados(destino):
             continue
@@ -114,6 +126,7 @@ def _gerar_backup_jsons_inicio():
         ("jogos_vasco", ARQUIVO_JOGOS),
         ("jogos_futuros", ARQUIVO_FUTUROS),
         ("listas_auxiliares", ARQUIVO_LISTAS),
+        ("elenco_atual", ARQUIVO_ELENCO_ATUAL),
     )
     for prefixo, origem in arquivos:
         if not os.path.exists(origem):
@@ -205,6 +218,105 @@ def salvar_lista_jogos(dados):
 def salvar_lista_futuros(dados):
     with open(ARQUIVO_FUTUROS, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
+
+
+def _normalizar_posicao_elenco(posicao: str) -> str:
+    posicao_txt = str(posicao or "").strip()
+    if posicao_txt.casefold() == "goleiros":
+        posicao_txt = "Goleiro"
+    return posicao_txt if posicao_txt in POSICOES_ELENCO else "Meio-Campista"
+
+
+def _normalizar_condicao_elenco(condicao: str) -> str:
+    condicao_txt = str(condicao or "").strip()
+    return condicao_txt if condicao_txt in CONDICOES_ELENCO else "Reserva"
+
+
+def _normalizar_jogador_elenco(item):
+    if isinstance(item, str):
+        nome = item.strip()
+        if not nome:
+            return None
+        return {
+            "nome": nome,
+            "posicao": "Meio-Campista",
+            "condicao": "Reserva",
+        }
+    if not isinstance(item, dict):
+        return None
+    nome = str(item.get("nome", "")).strip()
+    if not nome:
+        return None
+    return {
+        "nome": nome,
+        "posicao": _normalizar_posicao_elenco(item.get("posicao")),
+        "condicao": _normalizar_condicao_elenco(item.get("condicao")),
+    }
+
+
+def _ordenar_jogadores_elenco(jogadores):
+    ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+    ordem_condicao = {cond: idx for idx, cond in enumerate(CONDICOES_ELENCO)}
+    return sorted(
+        jogadores,
+        key=lambda j: (
+            ordem_condicao.get(j.get("condicao", ""), len(CONDICOES_ELENCO)),
+            ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
+            str(j.get("nome", "")).casefold()
+        )
+    )
+
+
+def carregar_elenco_atual():
+    dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": []})
+    if isinstance(dados, list):
+        dados = {"jogadores": dados}
+    if not isinstance(dados, dict):
+        dados = {"jogadores": []}
+    jogadores = dados.get("jogadores", [])
+    if not isinstance(jogadores, list):
+        jogadores = []
+
+    normalizados = []
+    vistos = set()
+    for item in jogadores:
+        jogador = _normalizar_jogador_elenco(item)
+        if not jogador:
+            continue
+        chave = jogador["nome"].casefold()
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(jogador)
+
+    normalizados = _ordenar_jogadores_elenco(normalizados)
+    return {"jogadores": normalizados}
+
+
+def salvar_elenco_atual(dados):
+    if isinstance(dados, list):
+        dados = {"jogadores": dados}
+    if not isinstance(dados, dict):
+        dados = {"jogadores": []}
+    jogadores = dados.get("jogadores", [])
+    if not isinstance(jogadores, list):
+        jogadores = []
+
+    normalizados = []
+    vistos = set()
+    for item in jogadores:
+        jogador = _normalizar_jogador_elenco(item)
+        if not jogador:
+            continue
+        chave = jogador["nome"].casefold()
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(jogador)
+
+    jogadores_limpos = _ordenar_jogadores_elenco(normalizados)
+    with open(ARQUIVO_ELENCO_ATUAL, "w", encoding="utf-8") as f:
+        json.dump({"jogadores": jogadores_limpos}, f, ensure_ascii=False, indent=2)
 
 
 def _parse_data_ptbr(s: str) -> datetime:
@@ -396,6 +508,21 @@ class App:
             pass
 
         self.listas = carregar_listas()
+        self.elenco_atual = carregar_elenco_atual()
+        jogadores_elenco = [j.get("nome", "") for j in self.elenco_atual.get("jogadores", []) if j.get("nome")]
+        jogadores_vasco = list(self.listas.get("jogadores_vasco", []))
+        if jogadores_elenco:
+            self.listas["jogadores_vasco"] = jogadores_elenco
+            salvar_listas(self.listas)
+        elif jogadores_vasco:
+            self.elenco_atual = {
+                "jogadores": [
+                    {"nome": nome, "posicao": "Meio-Campista", "condicao": "Reserva"}
+                    for nome in jogadores_vasco
+                ]
+            }
+            salvar_elenco_atual(self.elenco_atual)
+            self.elenco_atual = carregar_elenco_atual()
         self._evolucao_subtab_index = 0
         self._evolucao_geral_art_page = 0
         self._evolucao_geral_art_page_size = 20
@@ -405,6 +532,7 @@ class App:
         self.notebook.pack(fill="both", expand=True)
 
         self.frame_futuros = ttk.Frame(self.notebook, padding=10)
+        self.frame_elenco_atual = ttk.Frame(self.notebook, padding=10)
         self.frame_registro = ttk.Frame(self.notebook, padding=10)
         self.frame_temporadas = ttk.Frame(self.notebook, padding=10)
         self.frame_geral = ttk.Frame(self.notebook, padding=10)
@@ -419,8 +547,10 @@ class App:
         self.notebook.add(self.frame_comparativo, text="Comparativo")
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
+        self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
 
         self._criar_aba_futuros(self.frame_futuros)
+        self._criar_aba_elenco_atual(self.frame_elenco_atual)
         self._criar_formulario(self.frame_registro)
         self._carregar_temporadas()
         self._carregar_geral()
@@ -1052,6 +1182,250 @@ class App:
             self.local_var.set("fora")
 
         self.notebook.select(self.frame_registro)
+
+    # --------------------- Elenco Atual ---------------------
+    def _criar_aba_elenco_atual(self, frame):
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.rowconfigure(2, weight=1)
+
+        ttk.Label(
+            frame,
+            text="Cadastre os jogadores que estão no Vasco atualmente."
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+
+        entrada_wrap = ttk.Frame(frame)
+        entrada_wrap.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+        entrada_wrap.columnconfigure(3, weight=1)
+
+        self.elenco_nome_var = tk.StringVar()
+        self.elenco_posicao_var = tk.StringVar(value=POSICOES_ELENCO[0])
+        self.elenco_condicao_var = tk.StringVar(value=CONDICOES_ELENCO[0])
+        self.elenco_modo_var = tk.StringVar(value="")
+        self.elenco_botao_var = tk.StringVar(value="Adicionar")
+        self._elenco_edit_nome_cf = None
+
+        ttk.Label(entrada_wrap, text="Posição:").grid(row=0, column=0, sticky="w")
+        self.elenco_posicao_entry = ttk.Combobox(
+            entrada_wrap,
+            textvariable=self.elenco_posicao_var,
+            values=POSICOES_ELENCO,
+            state="readonly",
+            width=18
+        )
+        self.elenco_posicao_entry.grid(row=0, column=1, sticky="w", padx=(6, 10))
+
+        ttk.Label(entrada_wrap, text="Jogador:").grid(row=0, column=2, sticky="w")
+        self.elenco_nome_entry = ttk.Entry(entrada_wrap, textvariable=self.elenco_nome_var)
+        self.elenco_nome_entry.grid(row=0, column=3, sticky="ew", padx=(6, 10))
+        self.elenco_nome_entry.bind("<Return>", self._adicionar_jogador_elenco)
+        self._forcar_cursor_visivel(self.elenco_nome_entry)
+
+        ttk.Label(entrada_wrap, text="Condição:").grid(row=0, column=4, sticky="w")
+        self.elenco_condicao_entry = ttk.Combobox(
+            entrada_wrap,
+            textvariable=self.elenco_condicao_var,
+            values=CONDICOES_ELENCO,
+            state="readonly",
+            width=16
+        )
+        self.elenco_condicao_entry.grid(row=0, column=5, sticky="w", padx=(6, 10))
+
+        ttk.Button(
+            entrada_wrap, textvariable=self.elenco_botao_var, command=self._adicionar_jogador_elenco
+        ).grid(row=0, column=6)
+
+        list_wrap = ttk.Frame(frame)
+        list_wrap.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        list_wrap.rowconfigure(0, weight=1)
+        list_wrap.columnconfigure(0, weight=1)
+
+        cols = ("posicao", "jogador", "condicao")
+        self.tv_elenco_atual = ttk.Treeview(list_wrap, columns=cols, show="headings", height=14)
+        self.tv_elenco_atual.heading("posicao", text="Posição", command=lambda c="posicao": self._ordenar_coluna_elenco(c))
+        self.tv_elenco_atual.heading("jogador", text="Jogador", command=lambda c="jogador": self._ordenar_coluna_elenco(c))
+        self.tv_elenco_atual.heading("condicao", text="Condição", command=lambda c="condicao": self._ordenar_coluna_elenco(c))
+        self.tv_elenco_atual.column("posicao", width=180, anchor="w")
+        self.tv_elenco_atual.column("jogador", width=340, anchor="w")
+        self.tv_elenco_atual.column("condicao", width=150, anchor="center")
+        self.tv_elenco_atual.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
+        self.tv_elenco_atual.bind("<Delete>", self._remover_jogador_elenco)
+        self.tv_elenco_atual.bind("<Double-1>", self._iniciar_edicao_jogador_elenco)
+        self._elenco_sort_col = "condicao"
+        self._elenco_sort_reverse = False
+
+        sy = ttk.Scrollbar(list_wrap, orient="vertical", command=self.tv_elenco_atual.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        self.tv_elenco_atual.configure(yscrollcommand=sy.set)
+
+        botoes = ttk.Frame(frame)
+        botoes.grid(row=3, column=0, columnspan=2, sticky="e", pady=(8, 0))
+        ttk.Label(botoes, textvariable=self.elenco_modo_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 10))
+        self.btn_cancelar_edicao_elenco = ttk.Button(
+            botoes, text="Cancelar Edição", command=self._cancelar_edicao_jogador_elenco
+        )
+        self.btn_cancelar_edicao_elenco.pack(side="left", padx=(0, 8))
+        self.btn_cancelar_edicao_elenco.state(["disabled"])
+        ttk.Button(
+            botoes, text="Remover Selecionado", command=self._remover_jogador_elenco
+        ).pack(side="left", padx=(0, 8))
+        ttk.Button(
+            botoes, text="Limpar Lista", command=self._limpar_elenco_atual
+        ).pack(side="left")
+
+        self._render_elenco_atual()
+
+    def _render_elenco_atual(self):
+        if not hasattr(self, "tv_elenco_atual"):
+            return
+        for iid in self.tv_elenco_atual.get_children():
+            self.tv_elenco_atual.delete(iid)
+        jogadores = sorted(
+            list(self.elenco_atual.get("jogadores", [])),
+            key=lambda j: self._chave_ordenacao_elenco(j, self._elenco_sort_col),
+            reverse=self._elenco_sort_reverse
+        )
+        for i, jogador in enumerate(jogadores):
+            tags = ("odd",) if i % 2 == 1 else ()
+            self.tv_elenco_atual.insert(
+                "",
+                "end",
+                values=(jogador.get("posicao", ""), jogador.get("nome", ""), jogador.get("condicao", "")),
+                tags=tags
+            )
+
+    def _chave_ordenacao_elenco(self, jogador, coluna):
+        ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+        ordem_condicao = {cond: idx for idx, cond in enumerate(CONDICOES_ELENCO)}
+        nome = str(jogador.get("nome", "")).strip()
+        posicao = _normalizar_posicao_elenco(jogador.get("posicao"))
+        condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
+
+        if coluna == "jogador":
+            return nome.casefold(), ordem_condicao.get(condicao, len(CONDICOES_ELENCO)), ordem_posicao.get(posicao, len(POSICOES_ELENCO))
+        if coluna == "posicao":
+            return ordem_posicao.get(posicao, len(POSICOES_ELENCO)), ordem_condicao.get(condicao, len(CONDICOES_ELENCO)), nome.casefold()
+        return ordem_condicao.get(condicao, len(CONDICOES_ELENCO)), ordem_posicao.get(posicao, len(POSICOES_ELENCO)), nome.casefold()
+
+    def _ordenar_coluna_elenco(self, coluna):
+        if self._elenco_sort_col == coluna:
+            self._elenco_sort_reverse = not self._elenco_sort_reverse
+        else:
+            self._elenco_sort_col = coluna
+            self._elenco_sort_reverse = False
+        self._render_elenco_atual()
+
+    def _resetar_modo_edicao_elenco(self):
+        self._elenco_edit_nome_cf = None
+        self.elenco_modo_var.set("")
+        self.elenco_botao_var.set("Adicionar")
+        if hasattr(self, "btn_cancelar_edicao_elenco"):
+            self.btn_cancelar_edicao_elenco.state(["disabled"])
+
+    def _iniciar_edicao_jogador_elenco(self, event=None):
+        iid = None
+        if event is not None:
+            iid = self.tv_elenco_atual.identify_row(event.y)
+            if iid:
+                self.tv_elenco_atual.selection_set(iid)
+                self.tv_elenco_atual.focus(iid)
+        selecao = self.tv_elenco_atual.selection()
+        if not selecao:
+            return
+        posicao, nome, condicao = self.tv_elenco_atual.item(selecao[0], "values")
+        nome = str(nome).strip()
+        if not nome:
+            return
+        self._elenco_edit_nome_cf = nome.casefold()
+        self.elenco_nome_var.set(nome)
+        self.elenco_posicao_var.set(_normalizar_posicao_elenco(posicao))
+        self.elenco_condicao_var.set(_normalizar_condicao_elenco(condicao))
+        self.elenco_modo_var.set(f"Editando: {nome}")
+        self.elenco_botao_var.set("Salvar Edição")
+        self.btn_cancelar_edicao_elenco.state(["!disabled"])
+        self.elenco_nome_entry.focus_set()
+        self.elenco_nome_entry.icursor(tk.END)
+
+    def _cancelar_edicao_jogador_elenco(self):
+        self._resetar_modo_edicao_elenco()
+        self.elenco_nome_var.set("")
+        self.elenco_posicao_var.set(POSICOES_ELENCO[0])
+        self.elenco_condicao_var.set(CONDICOES_ELENCO[0])
+
+    def _salvar_elenco_da_interface(self):
+        jogadores = []
+        for iid in self.tv_elenco_atual.get_children():
+            posicao, nome, condicao = self.tv_elenco_atual.item(iid, "values")
+            jogadores.append(
+                {"nome": str(nome).strip(), "posicao": str(posicao).strip(), "condicao": str(condicao).strip()}
+            )
+        self.elenco_atual = {"jogadores": jogadores}
+        salvar_elenco_atual(self.elenco_atual)
+        self.elenco_atual = carregar_elenco_atual()
+        self._render_elenco_atual()
+        self._sincronizar_jogadores_vasco_com_elenco()
+
+    def _sincronizar_jogadores_vasco_com_elenco(self):
+        atuais = [j.get("nome", "") for j in self.elenco_atual.get("jogadores", []) if j.get("nome")]
+        self.listas["jogadores_vasco"] = atuais
+        salvar_listas(self.listas)
+        if hasattr(self, "entry_gol_vasco"):
+            self.entry_gol_vasco["values"] = atuais
+
+    def _adicionar_jogador_elenco(self, _event=None):
+        nome = self.elenco_nome_var.get().strip()
+        posicao = _normalizar_posicao_elenco(self.elenco_posicao_var.get())
+        condicao = _normalizar_condicao_elenco(self.elenco_condicao_var.get())
+        if not nome:
+            messagebox.showwarning("Campo obrigatório", "Informe o nome do jogador.")
+            return
+        nomes_atuais = {}
+        for iid in self.tv_elenco_atual.get_children():
+            _, nome_atual, _ = self.tv_elenco_atual.item(iid, "values")
+            nomes_atuais[str(nome_atual).casefold()] = iid
+
+        editando = self._elenco_edit_nome_cf is not None
+        if editando:
+            if nome.casefold() != self._elenco_edit_nome_cf and nome.casefold() in nomes_atuais:
+                messagebox.showwarning("Duplicado", f"'{nome}' já está no elenco atual.")
+                return
+            iid_edit = nomes_atuais.get(self._elenco_edit_nome_cf)
+            if iid_edit:
+                self.tv_elenco_atual.item(iid_edit, values=(posicao, nome, condicao))
+            else:
+                self.tv_elenco_atual.insert("", "end", values=(posicao, nome, condicao))
+        elif nome.casefold() in nomes_atuais:
+            messagebox.showwarning("Duplicado", f"'{nome}' já está no elenco atual.")
+            return
+        else:
+            self.tv_elenco_atual.insert("", "end", values=(posicao, nome, condicao))
+
+        self._resetar_modo_edicao_elenco()
+        self.elenco_nome_var.set("")
+        self.elenco_posicao_var.set(POSICOES_ELENCO[0])
+        self.elenco_condicao_var.set(CONDICOES_ELENCO[0])
+        self._salvar_elenco_da_interface()
+
+    def _remover_jogador_elenco(self, _event=None):
+        selecao = self.tv_elenco_atual.selection()
+        if not selecao:
+            return
+        _, nome_removido, _ = self.tv_elenco_atual.item(selecao[0], "values")
+        self.tv_elenco_atual.delete(selecao[0])
+        if self._elenco_edit_nome_cf and str(nome_removido).strip().casefold() == self._elenco_edit_nome_cf:
+            self._cancelar_edicao_jogador_elenco()
+        self._salvar_elenco_da_interface()
+
+    def _limpar_elenco_atual(self):
+        if not self.tv_elenco_atual.get_children():
+            return
+        if not messagebox.askyesno("Limpar elenco", "Deseja remover todos os jogadores da lista do elenco atual?"):
+            return
+        for iid in self.tv_elenco_atual.get_children():
+            self.tv_elenco_atual.delete(iid)
+        self._cancelar_edicao_jogador_elenco()
+        self._salvar_elenco_da_interface()
 
     # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
