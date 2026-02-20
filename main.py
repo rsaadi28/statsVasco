@@ -1210,8 +1210,8 @@ class App:
 
     # --------------------- Elenco Atual ---------------------
     def _criar_aba_elenco_atual(self, frame):
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(0, weight=3)
+        frame.columnconfigure(1, weight=2)
         frame.rowconfigure(2, weight=1)
 
         ttk.Label(
@@ -1228,6 +1228,7 @@ class App:
         self.elenco_condicao_var = tk.StringVar(value=CONDICOES_ELENCO[0])
         self.elenco_modo_var = tk.StringVar(value="")
         self.elenco_botao_var = tk.StringVar(value="Adicionar")
+        self.elenco_resumo_var = tk.StringVar(value="")
         self._elenco_edit_nome_cf = None
 
         ttk.Label(entrada_wrap, text="Posição:").grid(row=0, column=0, sticky="w")
@@ -1260,8 +1261,12 @@ class App:
             entrada_wrap, textvariable=self.elenco_botao_var, command=self._adicionar_jogador_elenco
         ).grid(row=0, column=6)
 
+        ttk.Label(frame, textvariable=self.elenco_resumo_var).grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(0, 6)
+        )
+
         list_wrap = ttk.Frame(frame)
-        list_wrap.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        list_wrap.grid(row=3, column=0, sticky="nsew", padx=(0, 6))
         list_wrap.rowconfigure(0, weight=1)
         list_wrap.columnconfigure(0, weight=1)
 
@@ -1288,8 +1293,23 @@ class App:
         sy.grid(row=0, column=1, sticky="ns")
         self.tv_elenco_atual.configure(yscrollcommand=sy.set)
 
+        campinho_wrap = ttk.Labelframe(frame, text="Campinho (ordenação dos titulares)", padding=8)
+        campinho_wrap.grid(row=3, column=1, sticky="nsew", padx=(6, 0))
+        campinho_wrap.columnconfigure(0, weight=1)
+        campinho_wrap.rowconfigure(0, weight=1)
+        self.canvas_campinho_elenco = tk.Canvas(
+            campinho_wrap,
+            background="#0f6a35",
+            highlightthickness=1,
+            highlightbackground="#1a1a1a",
+        )
+        self.canvas_campinho_elenco.grid(row=0, column=0, sticky="nsew")
+        self.canvas_campinho_elenco.bind("<Configure>", lambda _e: self._render_campinho_elenco())
+        self.canvas_campinho_elenco.bind("<ButtonPress-1>", self._elenco_campinho_drag_start)
+        self.canvas_campinho_elenco.bind("<ButtonRelease-1>", self._elenco_campinho_drag_end)
+
         botoes = ttk.Frame(frame)
-        botoes.grid(row=3, column=0, columnspan=2, sticky="e", pady=(8, 0))
+        botoes.grid(row=4, column=0, columnspan=2, sticky="e", pady=(8, 0))
         ttk.Label(botoes, textvariable=self.elenco_modo_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 10))
         self.btn_cancelar_edicao_elenco = ttk.Button(
             botoes, text="Cancelar Edição", command=self._cancelar_edicao_jogador_elenco
@@ -1311,8 +1331,10 @@ class App:
         for iid in self.tv_elenco_atual.get_children():
             self.tv_elenco_atual.delete(iid)
         jogadores = list(self.elenco_atual.get("jogadores", []))
+        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0}
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
+            cont[condicao] = cont.get(condicao, 0) + 1
             if condicao == "Titular":
                 tag = "status_titulares"
             elif condicao == "Reserva":
@@ -1329,6 +1351,146 @@ class App:
                 values=(jogador.get("posicao", ""), jogador.get("nome", ""), jogador.get("condicao", "")),
                 tags=(tag,)
             )
+        if hasattr(self, "elenco_resumo_var"):
+            self.elenco_resumo_var.set(
+                f"Titulares: {cont['Titular']} | Reservas: {cont['Reserva']} | "
+                f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']}"
+            )
+        self._render_campinho_elenco()
+
+    def _titulares_elenco_por_posicao(self):
+        tit = {pos: [] for pos in POSICOES_ELENCO}
+        for jogador in self.elenco_atual.get("jogadores", []):
+            if not isinstance(jogador, dict):
+                continue
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            if _normalizar_condicao_elenco(jogador.get("condicao")) != "Titular":
+                continue
+            pos = _normalizar_posicao_elenco(jogador.get("posicao"))
+            tit.setdefault(pos, []).append(nome)
+        return tit
+
+    def _render_campinho_elenco(self):
+        canvas = getattr(self, "canvas_campinho_elenco", None)
+        if canvas is None:
+            return
+        canvas.delete("all")
+        self._elenco_campinho_hits = []
+
+        w = max(300, canvas.winfo_width())
+        h = max(220, canvas.winfo_height())
+        m = 14
+        canvas.create_rectangle(0, 0, w, h, fill="#0f6a35", outline="")
+        canvas.create_rectangle(m, m, w - m, h - m, outline="#e9f7ed", width=2)
+        meio_y = h / 2
+        canvas.create_line(m, meio_y, w - m, meio_y, fill="#e9f7ed", width=2)
+        canvas.create_oval(w / 2 - 34, meio_y - 34, w / 2 + 34, meio_y + 34, outline="#e9f7ed", width=2)
+
+        titulares = self._titulares_elenco_por_posicao()
+
+        def _lista(pos):
+            return [str(n).strip() for n in titulares.get(pos, []) if str(n).strip()]
+
+        linhas = [
+            ("ATA", "Atacante", _lista("Atacante"), 0.16),
+            ("MEI", "Meio-Campista", _lista("Meio-Campista"), 0.34),
+            ("VOL", "Volante", _lista("Volante"), 0.50),
+            ("DEF", "Defesa", _lista("Lateral-Esquerdo") + _lista("Zagueiro") + _lista("Lateral-Direito"), 0.68),
+            ("GOL", "Goleiro", _lista("Goleiro"), 0.84),
+        ]
+
+        for setor, chave_linha, nomes, rel_y in linhas:
+            y = m + (h - 2 * m) * rel_y
+            canvas.create_text(m + 16, y, text=setor, fill="#d8f0de", font=("Segoe UI", 9, "bold"))
+            if not nomes:
+                continue
+            n = len(nomes)
+            for i, nome in enumerate(nomes):
+                x = m + (w - 2 * m) * ((i + 1) / (n + 1))
+                r = 14
+                canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
+                canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
+                nome_curto = nome if len(nome) <= 21 else (nome[:20] + "…")
+                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
+                self._elenco_campinho_hits.append({
+                    "linha": chave_linha,
+                    "idx": i,
+                    "n": n,
+                    "x": x,
+                    "y": y,
+                    "r": r,
+                })
+
+    def _elenco_reordenar_linha(self, linha, origem, alvo, n):
+        jogadores = list(self.elenco_atual.get("jogadores", []))
+        if linha == "Defesa":
+            idx_le = [i for i, j in enumerate(jogadores) if _normalizar_condicao_elenco(j.get("condicao")) == "Titular" and _normalizar_posicao_elenco(j.get("posicao")) == "Lateral-Esquerdo"]
+            idx_zag = [i for i, j in enumerate(jogadores) if _normalizar_condicao_elenco(j.get("condicao")) == "Titular" and _normalizar_posicao_elenco(j.get("posicao")) == "Zagueiro"]
+            idx_ld = [i for i, j in enumerate(jogadores) if _normalizar_condicao_elenco(j.get("condicao")) == "Titular" and _normalizar_posicao_elenco(j.get("posicao")) == "Lateral-Direito"]
+            seq = [jogadores[i] for i in idx_le] + [jogadores[i] for i in idx_zag] + [jogadores[i] for i in idx_ld]
+            if len(seq) != n:
+                return
+            it = seq.pop(origem)
+            seq.insert(alvo, it)
+            n_le = len(idx_le)
+            n_zag = len(idx_zag)
+            seq_le = seq[:n_le]
+            seq_zag = seq[n_le:n_le + n_zag]
+            seq_ld = seq[n_le + n_zag:]
+            for i, item in zip(idx_le, seq_le):
+                jogadores[i] = item
+            for i, item in zip(idx_zag, seq_zag):
+                jogadores[i] = item
+            for i, item in zip(idx_ld, seq_ld):
+                jogadores[i] = item
+        else:
+            idxs = [i for i, j in enumerate(jogadores) if _normalizar_condicao_elenco(j.get("condicao")) == "Titular" and _normalizar_posicao_elenco(j.get("posicao")) == linha]
+            if len(idxs) != n:
+                return
+            seq = [jogadores[i] for i in idxs]
+            it = seq.pop(origem)
+            seq.insert(alvo, it)
+            for i, item in zip(idxs, seq):
+                jogadores[i] = item
+
+        self.elenco_atual["jogadores"] = jogadores
+        salvar_elenco_atual(self.elenco_atual)
+        self.elenco_atual = carregar_elenco_atual()
+        self._sincronizar_jogadores_vasco_com_elenco()
+
+    def _elenco_campinho_drag_start(self, event):
+        hit = None
+        for item in getattr(self, "_elenco_campinho_hits", []):
+            dx = event.x - item["x"]
+            dy = event.y - item["y"]
+            if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
+                hit = item
+                break
+        self._elenco_campinho_drag_state = hit
+        if hit:
+            self.canvas_campinho_elenco.configure(cursor="hand2")
+
+    def _elenco_campinho_drag_end(self, event):
+        state = getattr(self, "_elenco_campinho_drag_state", None)
+        self._elenco_campinho_drag_state = None
+        self.canvas_campinho_elenco.configure(cursor="")
+        if not state or state["n"] < 2:
+            return
+        linha = state["linha"]
+        origem = state["idx"]
+        n = state["n"]
+        mesmos = sorted(
+            [p for p in getattr(self, "_elenco_campinho_hits", []) if p.get("linha") == linha],
+            key=lambda p: p.get("idx", 0),
+        )
+        if len(mesmos) != n:
+            return
+        alvo = min(range(n), key=lambda i: abs(event.x - mesmos[i]["x"]))
+        if alvo == origem:
+            return
+        self._elenco_reordenar_linha(linha, origem, alvo, n)
 
     def _chave_ordenacao_elenco(self, jogador, coluna):
         ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
