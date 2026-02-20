@@ -273,8 +273,7 @@ def _ordenar_jogadores_elenco(jogadores):
         jogadores,
         key=lambda j: (
             ordem_condicao.get(j.get("condicao", ""), len(CONDICOES_ELENCO)),
-            ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
-            str(j.get("nome", "")).casefold()
+            ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO))
         )
     )
 
@@ -286,8 +285,7 @@ def _ordenar_jogadores_por_posicao(jogadores):
         jogadores,
         key=lambda j: (
             ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
-            ordem_condicao.get(_normalizar_condicao_elenco(j.get("condicao")), len(CONDICOES_ELENCO)),
-            str(j.get("nome", "")).casefold()
+            ordem_condicao.get(_normalizar_condicao_elenco(j.get("condicao")), len(CONDICOES_ELENCO))
         )
     )
 
@@ -1269,9 +1267,9 @@ class App:
 
         cols = ("posicao", "jogador", "condicao")
         self.tv_elenco_atual = ttk.Treeview(list_wrap, columns=cols, show="headings", height=14)
-        self.tv_elenco_atual.heading("posicao", text="Posição", command=lambda c="posicao": self._ordenar_coluna_elenco(c))
-        self.tv_elenco_atual.heading("jogador", text="Jogador", command=lambda c="jogador": self._ordenar_coluna_elenco(c))
-        self.tv_elenco_atual.heading("condicao", text="Condição", command=lambda c="condicao": self._ordenar_coluna_elenco(c))
+        self.tv_elenco_atual.heading("posicao", text="Posição")
+        self.tv_elenco_atual.heading("jogador", text="Jogador")
+        self.tv_elenco_atual.heading("condicao", text="Condição")
         self.tv_elenco_atual.column("posicao", width=180, anchor="w")
         self.tv_elenco_atual.column("jogador", width=340, anchor="w")
         self.tv_elenco_atual.column("condicao", width=150, anchor="center")
@@ -1285,8 +1283,6 @@ class App:
         self.tv_elenco_atual.bind("<Double-1>", self._iniciar_edicao_jogador_elenco)
         self.tv_elenco_atual.bind("<Button-3>", self._abrir_menu_contexto_elenco_atual)
         self.tv_elenco_atual.bind("<Control-Button-1>", self._abrir_menu_contexto_elenco_atual)
-        self._elenco_sort_col = "condicao"
-        self._elenco_sort_reverse = False
 
         sy = ttk.Scrollbar(list_wrap, orient="vertical", command=self.tv_elenco_atual.yview)
         sy.grid(row=0, column=1, sticky="ns")
@@ -1314,11 +1310,7 @@ class App:
             return
         for iid in self.tv_elenco_atual.get_children():
             self.tv_elenco_atual.delete(iid)
-        jogadores = sorted(
-            list(self.elenco_atual.get("jogadores", [])),
-            key=lambda j: self._chave_ordenacao_elenco(j, self._elenco_sort_col),
-            reverse=self._elenco_sort_reverse
-        )
+        jogadores = list(self.elenco_atual.get("jogadores", []))
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
             if condicao == "Titular":
@@ -1410,16 +1402,54 @@ class App:
         self._sincronizar_jogadores_vasco_com_elenco()
 
     def _sincronizar_jogadores_vasco_com_elenco(self):
-        atuais = [j.get("nome", "") for j in self.elenco_atual.get("jogadores", []) if j.get("nome")]
-        self.listas["jogadores_vasco"] = atuais
-        salvar_listas(self.listas)
-        if hasattr(self, "entry_gol_vasco"):
-            self.entry_gol_vasco["values"] = atuais
+        self._atualizar_opcoes_gol_vasco(persistir=True)
         if hasattr(self, "_render_elenco_atual"):
             self._render_elenco_atual()
         self._atualizar_elenco_disponivel_partida()
         if hasattr(self, "escalacao_partida"):
             self._inicializar_escalacao_partida()
+
+    def _ordenar_opcoes_gol_vasco(self):
+        opcoes = []
+        vistos = set()
+
+        def add_nome(nome):
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                return
+            cf = nome_limpo.casefold()
+            if cf in vistos:
+                return
+            vistos.add(cf)
+            opcoes.append(nome_limpo)
+
+        esc = getattr(self, "escalacao_partida", self._escalacao_partida_base())
+        titulares_por_posicao = esc.get("titulares_por_posicao", {}) if isinstance(esc, dict) else {}
+        # Ordem para lista de gols: do ataque para trás.
+        ordem_titulares_gols = [
+            "Atacante",
+            "Meio-Campista",
+            "Volante",
+            "Lateral-Esquerdo",
+            "Zagueiro",
+            "Lateral-Direito",
+            "Goleiro",
+        ]
+        for pos in ordem_titulares_gols:
+            for nome in titulares_por_posicao.get(pos, []):
+                add_nome(nome)
+        # Reservas sempre no fim.
+        for nome in esc.get("reservas", []) if isinstance(esc, dict) else []:
+            add_nome(nome)
+        return opcoes
+
+    def _atualizar_opcoes_gol_vasco(self, persistir=False):
+        opcoes = self._ordenar_opcoes_gol_vasco()
+        self.listas["jogadores_vasco"] = opcoes
+        if hasattr(self, "entry_gol_vasco"):
+            self.entry_gol_vasco["values"] = opcoes
+        if persistir:
+            salvar_listas(self.listas)
 
     def _on_notebook_tab_changed(self, event):
         if event.widget is not self.notebook:
@@ -1605,6 +1635,51 @@ class App:
 
         self.tv_elenco_atual.item(iid, values=(nova_posicao, nome, nova_condicao))
         self._salvar_elenco_da_interface()
+
+    def _grupo_reordenacao_elenco(self, values):
+        if len(values) < 3:
+            return None
+        posicao, _nome, condicao = values
+        cond_norm = _normalizar_condicao_elenco(condicao)
+        if cond_norm == "Titular":
+            return (cond_norm, _normalizar_posicao_elenco(posicao))
+        return (cond_norm, None)
+
+    def _drag_elenco_start(self, event):
+        iid = self.tv_elenco_atual.identify_row(event.y)
+        if not iid:
+            self._drag_elenco_state = None
+            return
+        grupo = self._grupo_reordenacao_elenco(self.tv_elenco_atual.item(iid, "values"))
+        if not grupo:
+            self._drag_elenco_state = None
+            return
+        self._drag_elenco_state = {"iid": iid, "grupo": grupo}
+
+    def _drag_elenco_motion(self, event):
+        st = getattr(self, "_drag_elenco_state", None)
+        if not st:
+            return
+        origem = st.get("iid")
+        alvo = self.tv_elenco_atual.identify_row(event.y)
+        if not origem or not alvo or origem == alvo:
+            return
+        grupo_origem = st.get("grupo")
+        grupo_alvo = self._grupo_reordenacao_elenco(self.tv_elenco_atual.item(alvo, "values"))
+        if grupo_origem != grupo_alvo:
+            return
+        filhos = list(self.tv_elenco_atual.get_children(""))
+        if origem not in filhos or alvo not in filhos:
+            return
+        idx_alvo = filhos.index(alvo)
+        self.tv_elenco_atual.move(origem, "", idx_alvo)
+        self.tv_elenco_atual.selection_set(origem)
+        self.tv_elenco_atual.focus(origem)
+
+    def _drag_elenco_end(self, _event):
+        if getattr(self, "_drag_elenco_state", None):
+            self._drag_elenco_state = None
+            self._salvar_elenco_da_interface()
 
     # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
@@ -2018,7 +2093,8 @@ class App:
                     continue
                 vistos.add(cf)
                 filtrados.append(nome)
-            base["titulares_por_posicao"][pos] = self._ordenar_nomes_escalacao(filtrados)
+            # Preserva a ordem manual definida na modal/campinho.
+            base["titulares_por_posicao"][pos] = filtrados
         for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
             filtrados = []
             for nome in base[chave]:
@@ -2027,7 +2103,8 @@ class App:
                     continue
                 vistos.add(cf)
                 filtrados.append(nome)
-            base[chave] = self._ordenar_nomes_escalacao(filtrados)
+            # Preserva a ordem manual das listas da escalação.
+            base[chave] = filtrados
         return base
 
     def _atualizar_resumo_escalacao(self):
@@ -2064,9 +2141,12 @@ class App:
 
     def _validar_escalacao_partida(self, escalacao):
         titulares = sum(len(escalacao["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
+        goleiros_titulares = len(escalacao["titulares_por_posicao"].get("Goleiro", []))
         reservas = len(escalacao.get("reservas", []))
         if titulares != 11:
             return False, "A escalação precisa ter exatamente 11 titulares."
+        if goleiros_titulares != 1:
+            return False, "A escalação precisa ter exatamente 1 goleiro titular."
         if reservas < 4:
             return False, "A escalação precisa ter pelo menos 4 reservas."
 
@@ -2096,6 +2176,7 @@ class App:
         self.escalacao_partida = self._normalizar_escalacao_partida(escalacao)
         self._atualizar_resumo_escalacao()
         self._render_preview_escalacao()
+        self._atualizar_opcoes_gol_vasco()
 
     def _abrir_modal_escalacao_partida(self):
         existente = getattr(self, "_modal_escalacao_partida", None)
@@ -2199,6 +2280,8 @@ class App:
         )
         self._modal_canvas_campinho.grid(row=0, column=0, sticky="nsew")
         self._modal_canvas_campinho.bind("<Configure>", lambda _e: self._modal_render_campinho())
+        self._modal_canvas_campinho.bind("<ButtonPress-1>", self._modal_campinho_drag_start)
+        self._modal_canvas_campinho.bind("<ButtonRelease-1>", self._modal_campinho_drag_end)
         self._modal_canvas_campinho.bind("<Button-3>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
         self._modal_canvas_campinho.bind("<Control-Button-1>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
         self._modal_titulares_por_posicao = {pos: [] for pos in POSICOES_ELENCO}
@@ -2320,10 +2403,81 @@ class App:
                 self._modal_campinho_hits.append({
                     "nome": nome,
                     "linha": sigla,
+                    "idx": i,
+                    "n": n,
                     "x": x,
                     "y": y,
                     "r": r,
                 })
+
+    def _modal_campinho_drag_start(self, event):
+        hit = None
+        for item in getattr(self, "_modal_campinho_hits", []):
+            dx = event.x - item["x"]
+            dy = event.y - item["y"]
+            if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
+                hit = item
+                break
+        self._modal_campinho_drag_state = hit
+        if hit:
+            self._modal_canvas_campinho.configure(cursor="hand2")
+
+    def _modal_campinho_drag_end(self, event):
+        state = getattr(self, "_modal_campinho_drag_state", None)
+        self._modal_campinho_drag_state = None
+        self._modal_canvas_campinho.configure(cursor="")
+        if not state:
+            return
+        if state["n"] < 2:
+            return
+
+        linha = state["linha"]
+        origem = state["idx"]
+        n = state["n"]
+        mesmos = sorted(
+            [p for p in getattr(self, "_modal_campinho_hits", []) if p.get("linha") == linha],
+            key=lambda p: p.get("idx", 0),
+        )
+        if len(mesmos) != n:
+            return
+        alvo = min(range(n), key=lambda i: abs(event.x - mesmos[i]["x"]))
+        if alvo == origem:
+            return
+
+        if linha == "DEF":
+            le = list(self._modal_titulares_por_posicao.get("Lateral-Esquerdo", []))
+            zag = list(self._modal_titulares_por_posicao.get("Zagueiro", []))
+            ld = list(self._modal_titulares_por_posicao.get("Lateral-Direito", []))
+            combinado = le + zag + ld
+            if len(combinado) != n:
+                return
+            jogador = combinado.pop(origem)
+            combinado.insert(alvo, jogador)
+            n_le = len(le)
+            n_zag = len(zag)
+            self._modal_titulares_por_posicao["Lateral-Esquerdo"] = combinado[:n_le]
+            self._modal_titulares_por_posicao["Zagueiro"] = combinado[n_le:n_le + n_zag]
+            self._modal_titulares_por_posicao["Lateral-Direito"] = combinado[n_le + n_zag:]
+        else:
+            mapa = {
+                "ATA": "Atacante",
+                "MEI": "Meio-Campista",
+                "VOL": "Volante",
+                "GOL": "Goleiro",
+            }
+            pos = mapa.get(linha)
+            if not pos:
+                return
+            lista = list(self._modal_titulares_por_posicao.get(pos, []))
+            if len(lista) != n:
+                return
+            jogador = lista.pop(origem)
+            lista.insert(alvo, jogador)
+            self._modal_titulares_por_posicao[pos] = lista
+
+        self._modal_render_campinho()
+        self._modal_atualizar_resumo()
+        self._modal_atualizar_lista_geral_com_status()
 
     def _modal_status_por_jogador(self):
         esc = self._modal_coletar_escalacao()
@@ -2419,8 +2573,26 @@ class App:
         nome = str(nome).strip()
         if not nome:
             return
-        self._modal_remover_nome_de_tudo(nome)
         tipo, chave = destino
+        if tipo == "titulares":
+            total_titulares = sum(len(self._modal_titulares_por_posicao.get(pos, [])) for pos in POSICOES_ELENCO)
+            ja_era_titular = any(
+                str(n).strip().casefold() == nome.casefold()
+                for pos in POSICOES_ELENCO
+                for n in self._modal_titulares_por_posicao.get(pos, [])
+            )
+            if not ja_era_titular and total_titulares >= 11:
+                messagebox.showerror("Escalação inválida", "Não é possível escalar mais de 11 titulares.")
+                return
+            if chave == "Goleiro":
+                goleiros_titulares = len(self._modal_titulares_por_posicao.get("Goleiro", []))
+                if goleiros_titulares >= 1 and not any(
+                    str(n).strip().casefold() == nome.casefold()
+                    for n in self._modal_titulares_por_posicao.get("Goleiro", [])
+                ):
+                    messagebox.showerror("Escalação inválida", "Só é permitido 1 goleiro titular.")
+                    return
+        self._modal_remover_nome_de_tudo(nome)
         if tipo == "titulares":
             lista = self._modal_titulares_por_posicao.setdefault(chave, [])
             lista.append(nome)
@@ -2432,7 +2604,7 @@ class App:
             itens = list(lb.get(0, tk.END))
             itens.append(nome)
             lb.delete(0, tk.END)
-            for item in self._ordenar_nomes_escalacao(itens):
+            for item in itens:
                 lb.insert(tk.END, item)
         self._modal_atualizar_resumo()
         self._modal_atualizar_lista_geral_com_status()
@@ -2520,7 +2692,7 @@ class App:
                 if nome_removido.casefold() not in {n.casefold() for n in atuais}:
                     atuais.append(nome_removido)
                     lb_nao_rel.delete(0, tk.END)
-                    for item in self._ordenar_nomes_escalacao(atuais):
+                    for item in atuais:
                         lb_nao_rel.insert(tk.END, item)
         self._modal_atualizar_resumo()
         self._modal_atualizar_lista_geral_com_status()
@@ -2659,8 +2831,7 @@ class App:
         self.lista_gols_vasco.insert(tk.END, jogador)
         if jogador not in self.listas["jogadores_vasco"]:
             self.listas["jogadores_vasco"].append(jogador)
-            self.listas["jogadores_vasco"] = sorted(self.listas["jogadores_vasco"], key=lambda s: s.casefold())
-            self.entry_gol_vasco['values'] = self.listas["jogadores_vasco"]
+            self._atualizar_opcoes_gol_vasco()
         self.entry_gol_vasco.delete(0, tk.END)
 
     def adicionar_gol_contra(self, event):
