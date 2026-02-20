@@ -1210,9 +1210,10 @@ class App:
 
     # --------------------- Elenco Atual ---------------------
     def _criar_aba_elenco_atual(self, frame):
-        frame.columnconfigure(0, weight=3)
-        frame.columnconfigure(1, weight=2)
-        frame.rowconfigure(2, weight=1)
+        frame.columnconfigure(0, weight=2)
+        frame.columnconfigure(1, weight=3, minsize=620)
+        frame.rowconfigure(2, weight=0)
+        frame.rowconfigure(3, weight=1)
 
         ttk.Label(
             frame,
@@ -1307,6 +1308,8 @@ class App:
         self.canvas_campinho_elenco.bind("<Configure>", lambda _e: self._render_campinho_elenco())
         self.canvas_campinho_elenco.bind("<ButtonPress-1>", self._elenco_campinho_drag_start)
         self.canvas_campinho_elenco.bind("<ButtonRelease-1>", self._elenco_campinho_drag_end)
+        self.canvas_campinho_elenco.bind("<Button-3>", self._abrir_menu_contexto_campinho_elenco)
+        self.canvas_campinho_elenco.bind("<Control-Button-1>", self._abrir_menu_contexto_campinho_elenco)
 
         botoes = ttk.Frame(frame)
         botoes.grid(row=4, column=0, columnspan=2, sticky="e", pady=(8, 0))
@@ -1421,6 +1424,7 @@ class App:
                     "x": x,
                     "y": y,
                     "r": r,
+                    "nome": nome,
                 })
 
     def _elenco_reordenar_linha(self, linha, origem, alvo, n):
@@ -1491,6 +1495,51 @@ class App:
         if alvo == origem:
             return
         self._elenco_reordenar_linha(linha, origem, alvo, n)
+
+    def _abrir_menu_contexto_campinho_elenco(self, event):
+        hit = None
+        for item in getattr(self, "_elenco_campinho_hits", []):
+            dx = event.x - item["x"]
+            dy = event.y - item["y"]
+            if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
+                hit = item
+                break
+        if not hit:
+            return
+
+        nome = str(hit.get("nome", "")).strip()
+        if not nome:
+            return
+
+        iid_encontrado = None
+        alvo_cf = nome.casefold()
+        for iid in self.tv_elenco_atual.get_children():
+            _pos, nome_iid, _cond = self.tv_elenco_atual.item(iid, "values")
+            if str(nome_iid).strip().casefold() == alvo_cf:
+                iid_encontrado = iid
+                break
+        if not iid_encontrado:
+            return
+
+        self.tv_elenco_atual.selection_set(iid_encontrado)
+        self.tv_elenco_atual.focus(iid_encontrado)
+
+        menu = tk.Menu(self.root, tearoff=0)
+        submenu_tit = tk.Menu(menu, tearoff=0)
+        for pos in POSICOES_ELENCO:
+            submenu_tit.add_command(
+                label=f"Titular - {pos}",
+                command=lambda p=pos: self._enviar_jogador_elenco_para(("titulares", p))
+            )
+        menu.add_cascade(label="Enviar para Titulares", menu=submenu_tit)
+        menu.add_separator()
+        menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
+        menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
+        menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
 
     def _chave_ordenacao_elenco(self, jogador, coluna):
         ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
