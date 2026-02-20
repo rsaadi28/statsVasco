@@ -48,6 +48,7 @@ ARQUIVO_JOGOS = os.path.join(DATA_DIR, "jogos_vasco.json")
 ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
 ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
+ARQUIVO_JOGADORES_HISTORICO = os.path.join(DATA_DIR, "jogadores_historico.json")
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 POSICOES_ELENCO = [
     "Goleiro",
@@ -64,6 +65,8 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
 )
+ELENCO_POSICAO_PLACEHOLDER = "Selecione..."
+ELENCO_CONDICAO_PLACEHOLDER = "Selecione..."
 ICONE_STATUS_ESCALACAO = {
     "titulares": "T",
     "reservas": "R",
@@ -100,6 +103,7 @@ def _bootstrap_jsons():
         "jogos_vasco.json": [],
         "jogos_futuros.json": [],
         "elenco_atual.json": {"jogadores": []},
+        "jogadores_historico.json": {"jogadores": []},
         "listas_auxiliares.json": {
             "clubes_adversarios": [],
             "jogadores_vasco": [],
@@ -110,7 +114,7 @@ def _bootstrap_jsons():
         },
     }
 
-    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json", "elenco_atual.json"):
+    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json", "elenco_atual.json", "jogadores_historico.json"):
         destino = os.path.join(DATA_DIR, nome)
         if _json_tem_dados(destino):
             continue
@@ -139,6 +143,7 @@ def _gerar_backup_jsons_inicio():
         ("jogos_futuros", ARQUIVO_FUTUROS),
         ("listas_auxiliares", ARQUIVO_LISTAS),
         ("elenco_atual", ARQUIVO_ELENCO_ATUAL),
+        ("jogadores_historico", ARQUIVO_JOGADORES_HISTORICO),
     )
     for prefixo, origem in arquivos:
         if not os.path.exists(origem):
@@ -342,6 +347,96 @@ def salvar_elenco_atual(dados):
         json.dump({"jogadores": jogadores_limpos}, f, ensure_ascii=False, indent=2)
 
 
+def _normalizar_jogador_historico(item):
+    if isinstance(item, str):
+        nome = item.strip()
+        if not nome:
+            return None
+        return {
+            "nome": nome,
+            "posicao": "Meio-Campista",
+        }
+    if not isinstance(item, dict):
+        return None
+    nome = str(item.get("nome", "")).strip()
+    if not nome:
+        return None
+    return {
+        "nome": nome,
+        "posicao": _normalizar_posicao_elenco(item.get("posicao")),
+    }
+
+
+def _ordenar_jogadores_historico(jogadores):
+    ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+    return sorted(
+        jogadores,
+        key=lambda j: (
+            ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
+            str(j.get("nome", "")).casefold(),
+        ),
+    )
+
+
+def carregar_jogadores_historico():
+    dados = _load_json_safe(ARQUIVO_JOGADORES_HISTORICO, {"jogadores": []})
+    if isinstance(dados, list):
+        dados = {"jogadores": dados}
+    if not isinstance(dados, dict):
+        dados = {"jogadores": []}
+    jogadores = dados.get("jogadores", [])
+    if not isinstance(jogadores, list):
+        jogadores = []
+
+    normalizados = []
+    vistos = set()
+    for item in jogadores:
+        jogador = _normalizar_jogador_historico(item)
+        if not jogador:
+            continue
+        chave = jogador["nome"].casefold()
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(jogador)
+
+    return {"jogadores": _ordenar_jogadores_historico(normalizados)}
+
+
+def salvar_jogadores_historico(dados):
+    if isinstance(dados, list):
+        dados = {"jogadores": dados}
+    if not isinstance(dados, dict):
+        dados = {"jogadores": []}
+    jogadores = dados.get("jogadores", [])
+    if not isinstance(jogadores, list):
+        jogadores = []
+
+    normalizados = []
+    vistos = set()
+    for item in jogadores:
+        jogador = _normalizar_jogador_historico(item)
+        if not jogador:
+            continue
+        chave = jogador["nome"].casefold()
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(jogador)
+
+    with open(ARQUIVO_JOGADORES_HISTORICO, "w", encoding="utf-8") as f:
+        json.dump({"jogadores": _ordenar_jogadores_historico(normalizados)}, f, ensure_ascii=False, indent=2)
+
+
+def _chave_nome_jogador(nome):
+    nome_limpo = re.sub(r"\s+", " ", str(nome or "").strip())
+    nome_sem_acentos = "".join(
+        ch for ch in unicodedata.normalize("NFKD", nome_limpo)
+        if not unicodedata.combining(ch)
+    )
+    return nome_sem_acentos.casefold()
+
+
 def _parse_data_ptbr(s: str) -> datetime:
     # dd/mm/aaaa
     return datetime.strptime(s, "%d/%m/%Y")
@@ -532,6 +627,7 @@ class App:
 
         self.listas = carregar_listas()
         self.elenco_atual = carregar_elenco_atual()
+        self.jogadores_historico = carregar_jogadores_historico()
         jogadores_elenco = [j.get("nome", "") for j in self.elenco_atual.get("jogadores", []) if j.get("nome")]
         jogadores_vasco = list(self.listas.get("jogadores_vasco", []))
         if jogadores_elenco:
@@ -563,6 +659,7 @@ class App:
         self.frame_comparativo = ttk.Frame(self.notebook, padding=10)
         self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
+        self.frame_jogadores_historico = ttk.Frame(self.notebook, padding=10)
 
         self.notebook.insert(0, self.frame_futuros, text="Jogos Futuros")
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
@@ -572,10 +669,13 @@ class App:
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
         self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
+        self.notebook.add(self.frame_jogadores_historico, text="Jogadores")
 
         self._criar_aba_futuros(self.frame_futuros)
         self._criar_aba_elenco_atual(self.frame_elenco_atual)
+        self._criar_aba_jogadores_historico(self.frame_jogadores_historico)
         self._criar_formulario(self.frame_registro)
+        self._sincronizar_jogadores_historico()
         self._carregar_temporadas()
         self._carregar_geral()
         self._carregar_comparativo()
@@ -1225,8 +1325,8 @@ class App:
         entrada_wrap.columnconfigure(3, weight=1)
 
         self.elenco_nome_var = tk.StringVar()
-        self.elenco_posicao_var = tk.StringVar(value=POSICOES_ELENCO[0])
-        self.elenco_condicao_var = tk.StringVar(value=CONDICOES_ELENCO[0])
+        self.elenco_posicao_var = tk.StringVar(value=ELENCO_POSICAO_PLACEHOLDER)
+        self.elenco_condicao_var = tk.StringVar(value=ELENCO_CONDICAO_PLACEHOLDER)
         self.elenco_modo_var = tk.StringVar(value="")
         self.elenco_botao_var = tk.StringVar(value="Adicionar")
         self.elenco_resumo_var = tk.StringVar(value="")
@@ -1236,7 +1336,7 @@ class App:
         self.elenco_posicao_entry = ttk.Combobox(
             entrada_wrap,
             textvariable=self.elenco_posicao_var,
-            values=POSICOES_ELENCO,
+            values=[ELENCO_POSICAO_PLACEHOLDER] + POSICOES_ELENCO,
             state="readonly",
             width=18
         )
@@ -1252,7 +1352,7 @@ class App:
         self.elenco_condicao_entry = ttk.Combobox(
             entrada_wrap,
             textvariable=self.elenco_condicao_var,
-            values=CONDICOES_ELENCO,
+            values=[ELENCO_CONDICAO_PLACEHOLDER] + CONDICOES_ELENCO,
             state="readonly",
             width=16
         )
@@ -1596,8 +1696,8 @@ class App:
     def _cancelar_edicao_jogador_elenco(self):
         self._resetar_modo_edicao_elenco()
         self.elenco_nome_var.set("")
-        self.elenco_posicao_var.set(POSICOES_ELENCO[0])
-        self.elenco_condicao_var.set(CONDICOES_ELENCO[0])
+        self.elenco_posicao_var.set(ELENCO_POSICAO_PLACEHOLDER)
+        self.elenco_condicao_var.set(ELENCO_CONDICAO_PLACEHOLDER)
 
     def _salvar_elenco_da_interface(self):
         jogadores = []
@@ -1614,8 +1714,11 @@ class App:
 
     def _sincronizar_jogadores_vasco_com_elenco(self):
         self._atualizar_opcoes_gol_vasco(persistir=True)
+        self._sincronizar_jogadores_historico()
         if hasattr(self, "_render_elenco_atual"):
             self._render_elenco_atual()
+        if hasattr(self, "_render_aba_jogadores_historico"):
+            self._render_aba_jogadores_historico()
         self._atualizar_elenco_disponivel_partida()
         if hasattr(self, "escalacao_partida"):
             self._inicializar_escalacao_partida()
@@ -1721,11 +1824,19 @@ class App:
 
     def _adicionar_jogador_elenco(self, _event=None):
         nome = self.elenco_nome_var.get().strip()
-        posicao = _normalizar_posicao_elenco(self.elenco_posicao_var.get())
-        condicao = _normalizar_condicao_elenco(self.elenco_condicao_var.get())
+        posicao_raw = self.elenco_posicao_var.get().strip()
+        condicao_raw = self.elenco_condicao_var.get().strip()
         if not nome:
             messagebox.showwarning("Campo obrigatório", "Informe o nome do jogador.")
             return
+        if posicao_raw == ELENCO_POSICAO_PLACEHOLDER or posicao_raw not in POSICOES_ELENCO:
+            messagebox.showwarning("Campo obrigatório", "Selecione a posição do jogador.")
+            return
+        if condicao_raw == ELENCO_CONDICAO_PLACEHOLDER or condicao_raw not in CONDICOES_ELENCO:
+            messagebox.showwarning("Campo obrigatório", "Selecione a condição do jogador.")
+            return
+        posicao = _normalizar_posicao_elenco(posicao_raw)
+        condicao = _normalizar_condicao_elenco(condicao_raw)
         nomes_atuais = {}
         titulares_atuais = 0
         condicao_jogador_editando = None
@@ -1764,15 +1875,16 @@ class App:
 
         self._resetar_modo_edicao_elenco()
         self.elenco_nome_var.set("")
-        self.elenco_posicao_var.set(POSICOES_ELENCO[0])
-        self.elenco_condicao_var.set(CONDICOES_ELENCO[0])
+        self.elenco_posicao_var.set(ELENCO_POSICAO_PLACEHOLDER)
+        self.elenco_condicao_var.set(ELENCO_CONDICAO_PLACEHOLDER)
         self._salvar_elenco_da_interface()
 
     def _remover_jogador_elenco(self, _event=None):
         selecao = self.tv_elenco_atual.selection()
         if not selecao:
             return
-        _, nome_removido, _ = self.tv_elenco_atual.item(selecao[0], "values")
+        pos_removida, nome_removido, _ = self.tv_elenco_atual.item(selecao[0], "values")
+        self._adicionar_jogadores_historico([{"nome": str(nome_removido).strip(), "posicao": str(pos_removida).strip()}])
         self.tv_elenco_atual.delete(selecao[0])
         if self._elenco_edit_nome_cf and str(nome_removido).strip().casefold() == self._elenco_edit_nome_cf:
             self._cancelar_edicao_jogador_elenco()
@@ -1783,10 +1895,340 @@ class App:
             return
         if not messagebox.askyesno("Limpar elenco", "Deseja remover todos os jogadores da lista do elenco atual?"):
             return
+        removidos = []
+        for iid in self.tv_elenco_atual.get_children():
+            posicao, nome, _cond = self.tv_elenco_atual.item(iid, "values")
+            removidos.append({"nome": str(nome).strip(), "posicao": str(posicao).strip()})
+        self._adicionar_jogadores_historico(removidos)
         for iid in self.tv_elenco_atual.get_children():
             self.tv_elenco_atual.delete(iid)
         self._cancelar_edicao_jogador_elenco()
         self._salvar_elenco_da_interface()
+
+    def _adicionar_jogadores_historico(self, jogadores):
+        if not isinstance(jogadores, list):
+            return
+        base = list(self.jogadores_historico.get("jogadores", []))
+        mapa = {str(j.get("nome", "")).strip().casefold(): dict(j) for j in base if isinstance(j, dict) and str(j.get("nome", "")).strip()}
+        alterou = False
+        for item in jogadores:
+            jogador = _normalizar_jogador_historico(item)
+            if not jogador:
+                continue
+            chave = jogador["nome"].casefold()
+            atual = mapa.get(chave)
+            if not atual:
+                mapa[chave] = jogador
+                alterou = True
+                continue
+            pos_atual = _normalizar_posicao_elenco(atual.get("posicao"))
+            pos_nova = _normalizar_posicao_elenco(jogador.get("posicao"))
+            if pos_atual == "Meio-Campista" and pos_nova != "Meio-Campista":
+                atual["posicao"] = pos_nova
+                mapa[chave] = atual
+                alterou = True
+        if not alterou:
+            return
+        self.jogadores_historico = {"jogadores": _ordenar_jogadores_historico(list(mapa.values()))}
+        salvar_jogadores_historico(self.jogadores_historico)
+
+    def _sincronizar_jogadores_historico(self):
+        candidatos = []
+        for jogador in self.elenco_atual.get("jogadores", []):
+            if not isinstance(jogador, dict):
+                continue
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            candidatos.append({"nome": nome, "posicao": jogador.get("posicao", "Meio-Campista")})
+        self._adicionar_jogadores_historico(candidatos)
+        if hasattr(self, "_render_aba_jogadores_historico"):
+            self._render_aba_jogadores_historico()
+
+    def _criar_aba_jogadores_historico(self, frame):
+        frame.columnconfigure(0, weight=2)
+        frame.columnconfigure(1, weight=3)
+        frame.rowconfigure(1, weight=1)
+        ttk.Label(
+            frame,
+            text="Todos os jogadores que já passaram pelo Vasco (incluindo elenco atual).",
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+
+        esquerda = ttk.Labelframe(frame, text="Jogadores", padding=8)
+        esquerda.grid(row=1, column=0, sticky="nsew", padx=(0, 6))
+        esquerda.columnconfigure(0, weight=1)
+        esquerda.rowconfigure(1, weight=1)
+
+        filtros = ttk.Frame(esquerda)
+        filtros.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        ttk.Label(filtros, text="Buscar:").pack(side="left")
+        self.jogadores_hist_busca_var = tk.StringVar(value="")
+        self.entry_jogadores_hist_busca = ttk.Entry(filtros, textvariable=self.jogadores_hist_busca_var, width=24)
+        self.entry_jogadores_hist_busca.pack(side="left", padx=(6, 6))
+        ttk.Button(filtros, text="Limpar", command=self._limpar_busca_jogadores_historico).pack(side="left")
+        self.jogadores_hist_busca_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
+
+        cols = ("posicao", "jogador", "status")
+        self.tv_jogadores_historico = ttk.Treeview(esquerda, columns=cols, show="headings", height=16)
+        self.tv_jogadores_historico.heading("posicao", text="Posição")
+        self.tv_jogadores_historico.heading("jogador", text="Jogador")
+        self.tv_jogadores_historico.heading("status", text="Status")
+        self.tv_jogadores_historico.column("posicao", width=150, anchor="w")
+        self.tv_jogadores_historico.column("jogador", width=280, anchor="w")
+        self.tv_jogadores_historico.column("status", width=130, anchor="center")
+        self.tv_jogadores_historico.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_jogadores_historico.grid(row=1, column=0, sticky="nsew")
+        self.tv_jogadores_historico.bind("<<TreeviewSelect>>", self._ao_selecionar_jogador_historico)
+
+        sy = ttk.Scrollbar(esquerda, orient="vertical", command=self.tv_jogadores_historico.yview)
+        sy.grid(row=1, column=1, sticky="ns")
+        self.tv_jogadores_historico.configure(yscrollcommand=sy.set)
+
+        direita = ttk.Labelframe(frame, text="Detalhes do Jogador", padding=8)
+        direita.grid(row=1, column=1, sticky="nsew", padx=(6, 0))
+        direita.columnconfigure(0, weight=1)
+        direita.rowconfigure(1, weight=1)
+
+        self.jogador_hist_titulo_var = tk.StringVar(value="Selecione um jogador na lista.")
+        ttk.Label(direita, textvariable=self.jogador_hist_titulo_var).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        self.tv_detalhes_jogador_historico = ttk.Treeview(
+            direita,
+            columns=("metrica", "valor"),
+            show="headings",
+            height=16,
+        )
+        self.tv_detalhes_jogador_historico.heading("metrica", text="Métrica")
+        self.tv_detalhes_jogador_historico.heading("valor", text="Valor")
+        self.tv_detalhes_jogador_historico.column("metrica", width=320, anchor="w")
+        self.tv_detalhes_jogador_historico.column("valor", width=180, anchor="w")
+        self.tv_detalhes_jogador_historico.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_detalhes_jogador_historico.grid(row=1, column=0, sticky="nsew")
+
+        botoes = ttk.Frame(direita)
+        botoes.grid(row=2, column=0, sticky="e", pady=(8, 0))
+        ttk.Button(
+            botoes,
+            text="Voltar ao Elenco Atual",
+            command=self._retornar_jogador_ao_elenco_atual,
+        ).pack(side="left")
+
+        self._render_aba_jogadores_historico()
+
+    def _render_aba_jogadores_historico(self):
+        if not hasattr(self, "tv_jogadores_historico"):
+            return
+        selecionado_cf = None
+        sel = self.tv_jogadores_historico.selection()
+        if sel:
+            vals = self.tv_jogadores_historico.item(sel[0], "values")
+            if len(vals) >= 2:
+                selecionado_cf = str(vals[1]).strip().casefold()
+        termo = ""
+        if hasattr(self, "jogadores_hist_busca_var"):
+            termo = self.jogadores_hist_busca_var.get().strip().casefold()
+
+        atuais = {
+            str(j.get("nome", "")).strip().casefold(): _normalizar_condicao_elenco(j.get("condicao"))
+            for j in self.elenco_atual.get("jogadores", [])
+            if isinstance(j, dict) and str(j.get("nome", "")).strip()
+        }
+        self.tv_jogadores_historico.delete(*self.tv_jogadores_historico.get_children())
+        novo_sel = None
+        for i, jogador in enumerate(_ordenar_jogadores_historico(list(self.jogadores_historico.get("jogadores", []))), start=1):
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            posicao = _normalizar_posicao_elenco(jogador.get("posicao"))
+            cond = atuais.get(nome.casefold())
+            status = cond if cond else "Ex-jogador"
+            if termo:
+                haystack = f"{posicao} {nome} {status}".casefold()
+                if termo not in haystack:
+                    continue
+            iid = self.tv_jogadores_historico.insert(
+                "",
+                "end",
+                values=(posicao, nome, status),
+                tags=("odd",) if i % 2 else (),
+            )
+            if selecionado_cf and nome.casefold() == selecionado_cf:
+                novo_sel = iid
+        if novo_sel:
+            self.tv_jogadores_historico.selection_set(novo_sel)
+            self.tv_jogadores_historico.focus(novo_sel)
+            self._ao_selecionar_jogador_historico()
+
+    def _limpar_busca_jogadores_historico(self):
+        if hasattr(self, "jogadores_hist_busca_var"):
+            self.jogadores_hist_busca_var.set("")
+
+    def _ao_selecionar_jogador_historico(self, _event=None):
+        if not hasattr(self, "tv_jogadores_historico") or not hasattr(self, "tv_detalhes_jogador_historico"):
+            return
+        sel = self.tv_jogadores_historico.selection()
+        if not sel:
+            return
+        vals = self.tv_jogadores_historico.item(sel[0], "values")
+        if len(vals) < 2:
+            return
+        nome = str(vals[1]).strip()
+        if not nome:
+            return
+
+        detalhes = self._coletar_detalhes_jogador_historico(nome)
+        self.jogador_hist_titulo_var.set(f"Jogador: {nome}")
+        tv = self.tv_detalhes_jogador_historico
+        tv.delete(*tv.get_children())
+        for i, (metrica, valor) in enumerate(detalhes, start=1):
+            tv.insert("", "end", values=(metrica, valor), tags=("odd",) if i % 2 else ())
+
+    def _coletar_detalhes_jogador_historico(self, nome):
+        alvo = _chave_nome_jogador(nome)
+        jogos = carregar_dados_jogos()
+        jogos_total = len(jogos)
+        jogos_com_escalacao = 0
+        jogos_com_participacao = 0
+        jogos_titular = 0
+        jogos_reserva = 0
+        jogos_nao_rel = 0
+        jogos_lesionado = 0
+        gols = 0
+        partidas_com_gol = 0
+        gols_banco = 0
+        gols_titular = 0
+        vitorias = empates = derrotas = 0
+
+        for jogo in jogos:
+            participou = False
+            gol_no_jogo = 0
+            gol_banco_jogo = 0
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    nome_g = str(g.get("nome", "")).strip()
+                    if _chave_nome_jogador(nome_g) != alvo:
+                        continue
+                    try:
+                        qtd = int(g.get("gols", 0))
+                    except Exception:
+                        qtd = 0
+                    if qtd <= 0:
+                        continue
+                    gol_no_jogo += qtd
+                    if bool(g.get("saiu_do_banco", False)):
+                        gol_banco_jogo += qtd
+                elif isinstance(g, str):
+                    nome_g = g.strip()
+                    if _chave_nome_jogador(nome_g) == alvo:
+                        gol_no_jogo += 1
+
+            if gol_no_jogo > 0:
+                participou = True
+                gols += gol_no_jogo
+                partidas_com_gol += 1
+                gols_banco += gol_banco_jogo
+                gols_titular += max(0, gol_no_jogo - gol_banco_jogo)
+
+            esc = jogo.get("escalacao")
+            if isinstance(esc, dict):
+                jogos_com_escalacao += 1
+                em_titulares = False
+                tit_por_pos = esc.get("titulares_por_posicao", {})
+                if isinstance(tit_por_pos, dict):
+                    for pos in POSICOES_ELENCO:
+                        for nm in tit_por_pos.get(pos, []):
+                            if _chave_nome_jogador(nm) == alvo:
+                                em_titulares = True
+                                break
+                        if em_titulares:
+                            break
+                if not em_titulares:
+                    for nm in esc.get("titulares", []):
+                        if _chave_nome_jogador(nm) == alvo:
+                            em_titulares = True
+                            break
+                if em_titulares:
+                    jogos_titular += 1
+                    participou = True
+                elif any(_chave_nome_jogador(nm) == alvo for nm in esc.get("reservas", [])):
+                    jogos_reserva += 1
+                    participou = True
+                elif any(_chave_nome_jogador(nm) == alvo for nm in esc.get("nao_relacionados", [])):
+                    jogos_nao_rel += 1
+                elif any(_chave_nome_jogador(nm) == alvo for nm in esc.get("lesionados", [])):
+                    jogos_lesionado += 1
+
+            if participou:
+                jogos_com_participacao += 1
+                placar = jogo.get("placar", {})
+                try:
+                    vasco = int(placar.get("vasco", 0))
+                    adv = int(placar.get("adversario", 0))
+                except Exception:
+                    vasco = adv = 0
+                if vasco > adv:
+                    vitorias += 1
+                elif vasco == adv:
+                    empates += 1
+                else:
+                    derrotas += 1
+
+        media_gols = round(gols / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
+        detalhes = [
+            ("Jogos do Vasco registrados", jogos_total),
+            ("Jogos com participação do jogador", jogos_com_participacao),
+            ("Jogos como titular (com escalação salva)", jogos_titular),
+            ("Jogos como reserva (com escalação salva)", jogos_reserva),
+            ("Jogos como não relacionado", jogos_nao_rel),
+            ("Jogos como lesionado", jogos_lesionado),
+            ("Gols pelo Vasco", gols),
+            ("Partidas em que marcou", partidas_com_gol),
+            ("Gols como titular", gols_titular),
+            ("Gols saindo do banco", gols_banco),
+            ("Média de gols por jogo com participação", media_gols),
+            ("Participação (V/E/D)", f"{vitorias}/{empates}/{derrotas}"),
+            ("Jogos com escalação disponível", jogos_com_escalacao),
+        ]
+        return detalhes
+
+    def _retornar_jogador_ao_elenco_atual(self):
+        if not hasattr(self, "tv_jogadores_historico"):
+            return
+        sel = self.tv_jogadores_historico.selection()
+        if not sel:
+            messagebox.showwarning("Jogadores", "Selecione um jogador para voltar ao elenco atual.")
+            return
+        vals = self.tv_jogadores_historico.item(sel[0], "values")
+        if len(vals) < 3:
+            return
+        posicao, nome, status = vals
+        nome = str(nome).strip()
+        if not nome:
+            return
+        if str(status).strip() != "Ex-jogador":
+            messagebox.showinfo("Jogadores", f"'{nome}' já está no elenco atual.")
+            return
+
+        nomes_atuais_cf = {
+            str(j.get("nome", "")).strip().casefold()
+            for j in self.elenco_atual.get("jogadores", [])
+            if isinstance(j, dict) and str(j.get("nome", "")).strip()
+        }
+        if nome.casefold() in nomes_atuais_cf:
+            messagebox.showinfo("Jogadores", f"'{nome}' já está no elenco atual.")
+            return
+
+        self.elenco_atual.setdefault("jogadores", []).append(
+            {
+                "nome": nome,
+                "posicao": _normalizar_posicao_elenco(posicao),
+                "condicao": "Reserva",
+            }
+        )
+        salvar_elenco_atual(self.elenco_atual)
+        self.elenco_atual = carregar_elenco_atual()
+        self._sincronizar_jogadores_vasco_com_elenco()
+        self._render_aba_jogadores_historico()
 
     def _abrir_menu_contexto_elenco_atual(self, event):
         iid = self.tv_elenco_atual.identify_row(event.y)
@@ -3376,12 +3818,15 @@ class App:
 
     def _atualizar_abas(self):
         self.elenco_atual = carregar_elenco_atual()
+        self.jogadores_historico = carregar_jogadores_historico()
+        self._sincronizar_jogadores_historico()
         self._atualizar_elenco_disponivel_partida()
         self._carregar_temporadas()
         self._carregar_geral()
         self._carregar_comparativo()
         self._carregar_tecnicos()
         self._carregar_graficos()
+        self._render_aba_jogadores_historico()
 
     # --------------------- Menu de contexto ---------------------
     def mostrar_menu_contexto(self, event, tipo):
@@ -3835,30 +4280,66 @@ class App:
         tables = ttk.Frame(self.frame_geral)
         tables.pack(fill="both", expand=True)
 
-        frame_art = ttk.Labelframe(tables, text="Artilheiros do Vasco", padding=8)
-        frame_art.pack(side="left", fill="both", expand=True, padx=(0, 6))
-        tv_art = ttk.Treeview(frame_art, columns=("jogador", "gols"), show="headings", height=12)
-        tv_art.heading("jogador", text="Jogador")
-        tv_art.heading("gols", text="Gols")
-        tv_art.column("jogador", anchor="w", width=240)
-        tv_art.column("gols", anchor="center", width=80)
-        tv_art.tag_configure("odd", background=self.colors["row_alt_bg"]) 
-        tv_art.pack(fill="both", expand=True)
+        def _criar_lista_filtravel(parent, titulo, heading_jogador, largura_jogador, dados, padx):
+            frame = ttk.Labelframe(parent, text=titulo, padding=8)
+            frame.pack(side="left", fill="both", expand=True, padx=padx)
 
-        frame_carr = ttk.Labelframe(tables, text="Carrascos (Gols contra o Vasco)", padding=8)
-        frame_carr.pack(side="left", fill="both", expand=True, padx=(6, 0))
-        tv_carr = ttk.Treeview(frame_carr, columns=("jogador", "gols"), show="headings", height=12)
-        tv_carr.heading("jogador", text="Jogador (Adversário)")
-        tv_carr.heading("gols", text="Gols")
-        tv_carr.column("jogador", anchor="w", width=260)
-        tv_carr.column("gols", anchor="center", width=80)
-        tv_carr.tag_configure("odd", background=self.colors["row_alt_bg"]) 
-        tv_carr.pack(fill="both", expand=True)
+            filtros = ttk.Frame(frame)
+            filtros.pack(fill="x", pady=(0, 6))
+            ttk.Label(filtros, text="Buscar:").pack(side="left")
+            termo_var = tk.StringVar()
+            entry_busca = ttk.Entry(filtros, textvariable=termo_var, width=24)
+            entry_busca.pack(side="left", padx=(6, 6))
 
-        for i, (nome, qtd) in enumerate(artilheiros.most_common(), start=1):
-            tv_art.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
-        for i, (nome, qtd) in enumerate(carrascos.most_common(), start=1):
-            tv_carr.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
+            tv = ttk.Treeview(frame, columns=("jogador", "gols"), show="headings", height=12)
+            tv.heading("jogador", text=heading_jogador)
+            tv.heading("gols", text="Gols")
+            tv.column("jogador", anchor="w", width=largura_jogador)
+            tv.column("gols", anchor="center", width=80)
+            tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+            tv.pack(fill="both", expand=True)
+
+            def _render(lista):
+                tv.delete(*tv.get_children())
+                for i, (nome, qtd) in enumerate(lista, start=1):
+                    tv.insert("", "end", values=(nome, qtd), tags=("odd" if i % 2 else "",))
+
+            def _aplicar_filtro(*_):
+                termo = termo_var.get().strip().casefold()
+                if not termo:
+                    _render(dados)
+                    return
+                filtrados = [(nome, qtd) for nome, qtd in dados if termo in str(nome).casefold()]
+                _render(filtrados)
+
+            def _limpar_filtro():
+                termo_var.set("")
+                _render(dados)
+
+            ttk.Button(filtros, text="Limpar", command=_limpar_filtro).pack(side="left")
+            termo_var.trace_add("write", _aplicar_filtro)
+
+            _render(dados)
+
+        artilheiros_lista = artilheiros.most_common()
+        carrascos_lista = carrascos.most_common()
+
+        _criar_lista_filtravel(
+            tables,
+            "Artilheiros do Vasco",
+            "Jogador",
+            240,
+            artilheiros_lista,
+            (0, 6),
+        )
+        _criar_lista_filtravel(
+            tables,
+            "Carrascos (Gols contra o Vasco)",
+            "Jogador (Adversário)",
+            260,
+            carrascos_lista,
+            (6, 0),
+        )
 
     # --------------------- Comparativo ---------------------
     def _carregar_comparativo(self):

@@ -10,6 +10,7 @@ a = Analysis(
         ('jogos_futuros.json', '.'),
         ('listas_auxiliares.json', '.'),
         ('elenco_atual.json', '.'),
+        ('jogadores_historico.json', '.'),
     ],
     hiddenimports=[],
     hookspath=[],
