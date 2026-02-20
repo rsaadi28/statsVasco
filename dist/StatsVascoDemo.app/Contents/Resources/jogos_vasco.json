@@ -1,5 +1,8154 @@
 [
   {
+    "data": "18/01/2018",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "21/01/2018",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Evander",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "24/01/2018",
+    "adversario": "Cabofriense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "27/01/2018",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "31/01/2018",
+    "adversario": "Universidad de Concepción-CHI",
+    "competicao": "Copa Libertadores",
+    "local": "fora",
+    "placar": {
+      "vasco": 4,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Evander",
+        "gols": 2
+      },
+      {
+        "nome": "Rildo",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "04/02/2018",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno Cosendey",
+        "gols": 1
+      },
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "07/02/2018",
+    "adversario": "Universidad de Concepción-CHI",
+    "competicao": "Copa Libertadores",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "14/02/2018",
+    "adversario": "Jorge Wilstermann-BOL",
+    "competicao": "Copa Libertadores",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulão",
+        "gols": 1
+      },
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      },
+      {
+        "nome": "Rildo",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "21/02/2018",
+    "adversario": "Jorge Wilstermann-BOL",
+    "competicao": "Copa Libertadores",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "25/02/2018",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "01/03/2018",
+    "adversario": "Macaé",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Riascos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "04/03/2018",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Erazo",
+        "gols": 1
+      },
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      },
+      {
+        "nome": "Wagner",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "07/03/2018",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "10/03/2018",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Evander",
+        "gols": 1
+      },
+      {
+        "nome": "Rildo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "13/03/2018",
+    "adversario": "Universidad de Chile-CHI",
+    "competicao": "Copa Libertadores",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "18/03/2018",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      },
+      {
+        "nome": "Riascos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "21/03/2018",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Erazo",
+        "gols": 1
+      },
+      {
+        "nome": "Riascos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "29/03/2018",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fabrício",
+        "gols": 1
+      },
+      {
+        "nome": "Giovanni Augusto",
+        "gols": 1
+      },
+      {
+        "nome": "Paulinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "01/04/2018",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 2
+      },
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "04/04/2018",
+    "adversario": "Cruzeiro",
+    "competicao": "Copa Libertadores",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "08/04/2018",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "15/04/2018",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Wagner",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "19/04/2018",
+    "adversario": "Racing-ARG",
+    "competicao": "Copa Libertadores",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "22/04/2018",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "26/04/2018",
+    "adversario": "Racing-ARG",
+    "competicao": "Copa Libertadores",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Wagner",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "02/05/2018",
+    "adversario": "Cruzeiro",
+    "competicao": "Copa Libertadores",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "05/05/2018",
+    "adversario": "América-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Bruno Cosendey",
+        "gols": 1
+      },
+      {
+        "nome": "Caio Monteiro",
+        "gols": 1
+      },
+      {
+        "nome": "Kelvin",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "13/05/2018",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "19/05/2018",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Wagner",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "27/05/2018",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "30/05/2018",
+    "adversario": "Paraná",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "02/06/2018",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "06/06/2018",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "09/06/2018",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 2
+      },
+      {
+        "nome": "Ramon",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "13/06/2018",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "19/07/2018",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "22/07/2018",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "29/07/2018",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "05/08/2018",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "12/08/2018",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "20/08/2018",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Wagner",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "23/08/2018",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "26/08/2018",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      },
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      },
+      {
+        "nome": "Wagner",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "29/08/2018",
+    "adversario": "Atlético-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "01/09/2018",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "06/09/2018",
+    "adversario": "América-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "09/09/2018",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "15/09/2018",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "24/09/2018",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "27/09/2018",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrés Ríos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "01/10/2018",
+    "adversario": "Paraná",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "09/10/2018",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "14/10/2018",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "20/10/2018",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fabrício",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "26/10/2018",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "03/11/2018",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "11/11/2018",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "14/11/2018",
+    "adversario": "Atlético-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "17/11/2018",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "22/11/2018",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "25/11/2018",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "02/12/2018",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "19/01/2019",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "23/01/2019",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 5,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 2
+      },
+      {
+        "nome": "Danilo Barcelos",
+        "gols": 1
+      },
+      {
+        "nome": "Dudu",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Mineiro",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "27/01/2019",
+    "adversario": "Americano",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "30/01/2019",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "02/02/2019",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "06/02/2019",
+    "adversario": "Juazeirense-BA",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      },
+      {
+        "nome": "Yan Sasse",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "13/02/2019",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Lucas Mineiro",
+        "gols": 1
+      },
+      {
+        "nome": "Marrony",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "17/02/2019",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Danilo Barcelos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "20/02/2019",
+    "adversario": "Serra-ES",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Lucas Mineiro",
+        "gols": 1
+      },
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "23/02/2019",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "02/03/2019",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      },
+      {
+        "nome": "Rossi",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "09/03/2019",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "14/03/2019",
+    "adversario": "Avaí",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Danilo Barcelos",
+        "gols": 1
+      },
+      {
+        "nome": "Rossi",
+        "gols": 1
+      },
+      {
+        "nome": "Thiago Galhardo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "17/03/2019",
+    "adversario": "Cabofriense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "20/03/2019",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno César",
+        "gols": 1
+      },
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "23/03/2019",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "28/03/2019",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "31/03/2019",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "07/04/2019",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno César",
+        "gols": 1
+      },
+      {
+        "nome": "Yan Sasse",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "10/04/2019",
+    "adversario": "Avaí",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "14/04/2019",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "17/04/2019",
+    "adversario": "Santos",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Alberto Valentim"
+  },
+  {
+    "data": "21/04/2019",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "24/04/2019",
+    "adversario": "Santos",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raul",
+        "gols": 1
+      },
+      {
+        "nome": "Ricardo Graça",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "28/04/2019",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno César",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "01/05/2019",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "04/05/2019",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Maxi López",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "12/05/2019",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "19/05/2019",
+    "adversario": "Avaí",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ricardo Graça",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "26/05/2019",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "02/06/2019",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "07/06/2019",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "13/06/2019",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Danilo Barcelos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "13/07/2019",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "20/07/2019",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno César",
+        "gols": 1
+      },
+      {
+        "nome": "Leandro Castan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "27/07/2019",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "04/08/2019",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "11/08/2019",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marcos Júnior",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "17/08/2019",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Leandro Castan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "25/08/2019",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fellipe Bastos",
+        "gols": 1
+      },
+      {
+        "nome": "Talles Magno",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "01/09/2019",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "07/09/2019",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "14/09/2019",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      },
+      {
+        "nome": "Talles Magno",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "22/09/2019",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Danilo Barcelos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "29/09/2019",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "02/10/2019",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marcos Júnior",
+        "gols": 1
+      },
+      {
+        "nome": "Rossi",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "05/10/2019",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "10/10/2019",
+    "adversario": "Avaí",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "13/10/2019",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "16/10/2019",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno Gomes",
+        "gols": 1
+      },
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "20/10/2019",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "26/10/2019",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rossi",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "30/10/2019",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fredy Guarín",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "02/11/2019",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "06/11/2019",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "10/11/2019",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Oswaldo Henríquez",
+        "gols": 1
+      },
+      {
+        "nome": "Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "13/11/2019",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 4,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marcos Júnior",
+        "gols": 1
+      },
+      {
+        "nome": "Marrony",
+        "gols": 1
+      },
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "18/11/2019",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fredy Guarín",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "28/11/2019",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "02/12/2019",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fredy Guarín",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "05/12/2019",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marrony",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "08/12/2019",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Vanderlei Luxemburgo"
+  },
+  {
+    "data": "07/01/2020",
+    "adversario": "Atlético-GO",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "10/01/2020",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Talles Magno",
+        "gols": 1
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "16/01/2020",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "19/01/2020",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "20/01/2020",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "22/01/2020",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "23/01/2020",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 2
+      },
+      {
+        "nome": "Yago Pikachu",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "25/01/2020",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "26/01/2020",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Martín Benítez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "31/01/2020",
+    "adversario": "Cabofriense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "31/01/2020",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "02/02/2020",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "04/02/2020",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "05/02/2020",
+    "adversario": "Oriente Petrolero-BOL",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "09/02/2020",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Werley",
+        "gols": 2
+      },
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "10/02/2020",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "12/02/2020",
+    "adversario": "Altos-PI",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "14/02/2020",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "19/02/2020",
+    "adversario": "Oriente Petrolero-BOL",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "21/02/2020",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "25/02/2020",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ricardo Graça",
+        "gols": 2
+      },
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "29/02/2020",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "05/03/2020",
+    "adversario": "ABC-RN",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "08/03/2020",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "12/03/2020",
+    "adversario": "Goiás",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "15/03/2020",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Abel Braga"
+  },
+  {
+    "data": "28/06/2020",
+    "adversario": "Macaé",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 3
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "02/07/2020",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "13/08/2020",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fellipe Bastos",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "16/08/2020",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "20/08/2020",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fellipe Bastos",
+        "gols": 1
+      },
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "23/08/2020",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "26/08/2020",
+    "adversario": "Goiás",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Henrique",
+        "gols": 1
+      },
+      {
+        "nome": "Martín Benítez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "29/08/2020",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Talles Magno",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "02/09/2020",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fellipe Bastos",
+        "gols": 1
+      },
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "06/09/2020",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "10/09/2020",
+    "adversario": "Atlético-GO",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "13/09/2020",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      },
+      {
+        "nome": "Ygor Catatau",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "17/09/2020",
+    "adversario": "Botafogo",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "20/09/2020",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "23/09/2020",
+    "adversario": "Botafogo",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "27/09/2020",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Vinícius",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "04/10/2020",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Martín Benítez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "07/10/2020",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramon Menezes"
+  },
+  {
+    "data": "10/10/2020",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Talles Magno",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "18/10/2020",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "21/10/2020",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "28/10/2020",
+    "adversario": "Caracas-VEN",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Tiago Reis",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "01/11/2020",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "04/11/2020",
+    "adversario": "Caracas-VEN",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "08/11/2020",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "14/11/2020",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "19/11/2020",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "22/11/2020",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "26/11/2020",
+    "adversario": "Defensa y Justicia-ARG",
+    "competicao": "Copa Sul-Americana",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "30/11/2020",
+    "adversario": "Ceará",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Ribamar",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "03/12/2020",
+    "adversario": "Defensa y Justicia-ARG",
+    "competicao": "Copa Sul-Americana",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "06/12/2020",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "13/12/2020",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "20/12/2020",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Carlinhos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "27/12/2020",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ricardo Sá Pinto"
+  },
+  {
+    "data": "03/03/2021",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "06/03/2021",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "13/03/2021",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "18/03/2021",
+    "adversario": "Caldense-MG",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "21/03/2021",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Carlinhos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "24/03/2021",
+    "adversario": "Macaé",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      },
+      {
+        "nome": "Matías Galarza",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "27/03/2021",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Matías Galarza",
+        "gols": 1
+      },
+      {
+        "nome": "Zeca",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "30/03/2021",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "03/04/2021",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Tiago Reis",
+        "gols": 3
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "07/04/2021",
+    "adversario": "Tombense-MG",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "15/04/2021",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      },
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "18/04/2021",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "24/04/2021",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 2
+      },
+      {
+        "nome": "Bruno Gomes",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "01/05/2021",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "08/05/2021",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "16/05/2021",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "22/05/2021",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "29/05/2021",
+    "adversario": "Operário-PR",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "01/06/2021",
+    "adversario": "Boavista",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Sarrafiore",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "06/06/2021",
+    "adversario": "Ponte Preta",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "09/06/2021",
+    "adversario": "Boavista",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "12/06/2021",
+    "adversario": "Brasil de Pelotas",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Daniel Amorim",
+        "gols": 1
+      },
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "16/06/2021",
+    "adversario": "Avaí",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "19/06/2021",
+    "adversario": "CRB",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Léo Jabá",
+        "gols": 1
+      },
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "24/06/2021",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "27/06/2021",
+    "adversario": "Brusque",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "30/06/2021",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "03/07/2021",
+    "adversario": "Confiança",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "MT",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "09/07/2021",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "13/07/2021",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "18/07/2021",
+    "adversario": "Náutico",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Marcelo Cabo"
+  },
+  {
+    "data": "21/07/2021",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Daniel Amorim",
+        "gols": 1
+      },
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "24/07/2021",
+    "adversario": "Guarani",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Léo Jabá",
+        "gols": 1
+      },
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "28/07/2021",
+    "adversario": "São Paulo",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "31/07/2021",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "04/08/2021",
+    "adversario": "São Paulo",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "07/08/2021",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Sarrafiore",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "10/08/2021",
+    "adversario": "Vila Nova",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo Jabá",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "13/08/2021",
+    "adversario": "Remo",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Sarrafiore",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "18/08/2021",
+    "adversario": "Londrina",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Marquinhos Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "21/08/2021",
+    "adversario": "Operário-PR",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "29/08/2021",
+    "adversario": "Ponte Preta",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey",
+        "gols": 1
+      },
+      {
+        "nome": "Caio Lopes",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "03/09/2021",
+    "adversario": "Brasil de Pelotas",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Daniel Amorim",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "06/09/2021",
+    "adversario": "Avaí",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Lisca"
+  },
+  {
+    "data": "16/09/2021",
+    "adversario": "CRB",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "19/09/2021",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "24/09/2021",
+    "adversario": "Brusque",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "27/09/2021",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "03/10/2021",
+    "adversario": "Confiança",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Ricardo Graça",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "09/10/2021",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "16/10/2021",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "24/10/2021",
+    "adversario": "Náutico",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "29/10/2021",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Germán Cano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "04/11/2021",
+    "adversario": "Guarani",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "07/11/2021",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 4
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "10/11/2021",
+    "adversario": "Vitória",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "15/11/2021",
+    "adversario": "Vila Nova",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Daniel Amorim",
+        "gols": 1
+      },
+      {
+        "nome": "Morato",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "19/11/2021",
+    "adversario": "Remo",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      },
+      {
+        "nome": "Matías Galarza",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "28/11/2021",
+    "adversario": "Londrina",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Fernando Diniz"
+  },
+  {
+    "data": "26/01/2022",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 4,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Juninho",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      },
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "29/01/2022",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "02/02/2022",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 2
+      },
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "06/02/2022",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Getúlio",
+        "gols": 2
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "09/02/2022",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "13/02/2022",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "17/02/2022",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      },
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "20/02/2022",
+    "adversario": "Audax",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "26/02/2022",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "02/03/2022",
+    "adversario": "Ferroviária",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "06/03/2022",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "09/03/2022",
+    "adversario": "Juazeirense",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno Nazário",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Classificação definida nos pênaltis (Juazeirense 4 x 2 Vasco).",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "13/03/2022",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Bruno Nazário",
+        "gols": 1
+      },
+      {
+        "nome": "Vinícius",
+        "gols": 1
+      },
+      {
+        "nome": "Vitinho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "16/03/2022",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "20/03/2022",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "08/04/2022",
+    "adversario": "Vila Nova",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "16/04/2022",
+    "adversario": "CRB",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "22/04/2022",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "27/04/2022",
+    "adversario": "Ponte Preta",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "01/05/2022",
+    "adversario": "Tombense",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Desconhecido (contra)",
+        "gols": 1,
+        "clube": "Tombense"
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "07/05/2022",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "15/05/2022",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Figueiredo",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "19/05/2022",
+    "adversario": "Guarani",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "26/05/2022",
+    "adversario": "Brusque",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 2
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "02/06/2022",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Zé Ricardo"
+  },
+  {
+    "data": "07/06/2022",
+    "adversario": "Náutico",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 1
+      },
+      {
+        "nome": "Figueiredo",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "12/06/2022",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Getúlio",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "18/06/2022",
+    "adversario": "Londrina",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "24/06/2022",
+    "adversario": "Operário",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      },
+      {
+        "nome": "Palacios",
+        "gols": 1
+      },
+      {
+        "nome": "Quintero",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "29/06/2022",
+    "adversario": "Novorizontino",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "03/07/2022",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "09/07/2022",
+    "adversario": "Criciúma",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "16/07/2022",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Erick",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "19/07/2022",
+    "adversario": "Ituano",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "23/07/2022",
+    "adversario": "Vila Nova",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Souza"
+  },
+  {
+    "data": "28/07/2022",
+    "adversario": "CRB",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 2
+      },
+      {
+        "nome": "Eguinaldo",
+        "gols": 1
+      },
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "31/07/2022",
+    "adversario": "Chapecoense",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "09/08/2022",
+    "adversario": "Ponte Preta",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "13/08/2022",
+    "adversario": "Tombense",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 2
+      },
+      {
+        "nome": "Marlon Gomes",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "18/08/2022",
+    "adversario": "CSA",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "28/08/2022",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Desconhecido (contra)",
+        "gols": 1,
+        "clube": "Bahia"
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "31/08/2022",
+    "adversario": "Guarani",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Eguinaldo",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "03/09/2022",
+    "adversario": "Brusque",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Emílio Faro (interino)"
+  },
+  {
+    "data": "11/09/2022",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "16/09/2022",
+    "adversario": "Náutico",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 1
+      },
+      {
+        "nome": "Eguinaldo",
+        "gols": 1
+      },
+      {
+        "nome": "Figueiredo",
+        "gols": 1
+      },
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "21/09/2022",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "29/09/2022",
+    "adversario": "Londrina",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "04/10/2022",
+    "adversario": "Operário",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 2
+      },
+      {
+        "nome": "Bruno Tubarão",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "08/10/2022",
+    "adversario": "Novorizontino",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Figueiredo",
+        "gols": 1
+      },
+      {
+        "nome": "Léo Matos",
+        "gols": 1
+      },
+      {
+        "nome": "Marlon Gomes",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "16/10/2022",
+    "adversario": "Sport",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Raniel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "22/10/2022",
+    "adversario": "Criciúma",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Fábio Gomes",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "27/10/2022",
+    "adversario": "Sampaio Corrêa",
+    "competicao": "Brasileirão Série B",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Anderson Conceição",
+        "gols": 1
+      },
+      {
+        "nome": "Andrey Santos",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "06/11/2022",
+    "adversario": "Ituano",
+    "competicao": "Brasileirão Série B",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Jorginho"
+  },
+  {
+    "data": "14/01/2023",
+    "adversario": "Madureira",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "17/01/2023",
+    "adversario": "River Plate",
+    "competicao": "Amistoso",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 3
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "19/01/2023",
+    "adversario": "Audax",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Galarza",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "21/01/2023",
+    "adversario": "Inter Miami",
+    "competicao": "Amistoso",
+    "local": "fora",
+    "placar": {
+      "vasco": 3,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      },
+      {
+        "nome": "Figueiredo",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "25/01/2023",
+    "adversario": "Portuguesa",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "30/01/2023",
+    "adversario": "Volta Redonda",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "02/02/2023",
+    "adversario": "Resende",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 5,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pedro Raul",
+        "gols": 2
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Léo",
+        "gols": 1
+      },
+      {
+        "nome": "Lucas Piton",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "07/02/2023",
+    "adversario": "Nova Iguaçu",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Jair",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "12/02/2023",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "16/02/2023",
+    "adversario": "Botafogo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      },
+      {
+        "nome": "Pedro Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "23/02/2023",
+    "adversario": "Trem-AP",
+    "competicao": "Copa do Brasil",
+    "local": "fora",
+    "placar": {
+      "vasco": 4,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Erick Marcus",
+        "gols": 1
+      },
+      {
+        "nome": "Jair",
+        "gols": 1
+      },
+      {
+        "nome": "Nenê",
+        "gols": 1
+      },
+      {
+        "nome": "Pedro Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "27/02/2023",
+    "adversario": "Boavista",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pedro Raul",
+        "gols": 2
+      },
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      },
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "05/03/2023",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "09/03/2023",
+    "adversario": "Bangu",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Pedro Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "13/03/2023",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "16/03/2023",
+    "adversario": "ABC",
+    "competicao": "Copa do Brasil",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "Vasco foi eliminado nos pênaltis: 5 x 6 (após 0 x 0 no tempo normal).",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "19/03/2023",
+    "adversario": "Flamengo",
+    "competicao": "Campeonato Carioca",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Capasso",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "31/03/2023",
+    "adversario": "Athletic-MG",
+    "competicao": "Amistoso",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "15/04/2023",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Andrey Santos",
+        "gols": 1
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "23/04/2023",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Pedro Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "01/05/2023",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "06/05/2023",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pedro Raul",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "11/05/2023",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Erick Marcus",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "14/05/2023",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "20/05/2023",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Barros",
+        "gols": 1
+      },
+      {
+        "nome": "Galarza",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "27/05/2023",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "05/06/2023",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Jair",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "11/06/2023",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Rayan",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "22/06/2023",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Maurício Barbieri"
+  },
+  {
+    "data": "26/06/2023",
+    "adversario": "Cuiabá",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Jair",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "William Batista (interino)"
+  },
+  {
+    "data": "02/07/2023",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "William Batista (interino)"
+  },
+  {
+    "data": "08/07/2023",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "William Batista (interino)"
+  },
+  {
+    "data": "23/07/2023",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 2
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "29/07/2023",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 3
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "06/08/2023",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "14/08/2023",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "20/08/2023",
+    "adversario": "Atlético-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Serginho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "27/08/2023",
+    "adversario": "Palmeiras",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "03/09/2023",
+    "adversario": "Bahia",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "16/09/2023",
+    "adversario": "Fluminense",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 4,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 2
+      },
+      {
+        "nome": "Praxedes",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "21/09/2023",
+    "adversario": "Coritiba",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 5,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 2
+      },
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Rossi",
+        "gols": 1
+      },
+      {
+        "nome": "Zé Gabriel",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "25/09/2023",
+    "adversario": "América-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Jair",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "01/10/2023",
+    "adversario": "Santos",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "07/10/2023",
+    "adversario": "São Paulo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "18/10/2023",
+    "adversario": "Fortaleza",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "22/10/2023",
+    "adversario": "Flamengo",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "26/10/2023",
+    "adversario": "Internacional",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Alex Teixeira",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "29/10/2023",
+    "adversario": "Goiás",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 1,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "02/11/2023",
+    "adversario": "Cuiabá",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Orellano",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "06/11/2023",
+    "adversario": "Botafogo",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 1,
+      "adversario": 0
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulo Henrique",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "12/11/2023",
+    "adversario": "América-MG",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Payet",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "22/11/2023",
+    "adversario": "Cruzeiro",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 2,
+      "adversario": 2
+    },
+    "gols_vasco": [
+      {
+        "nome": "Gabriel Pec",
+        "gols": 1
+      },
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "25/11/2023",
+    "adversario": "Athletico-PR",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 0
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "28/11/2023",
+    "adversario": "Corinthians",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 4
+    },
+    "gols_vasco": [
+      {
+        "nome": "Puma Rodríguez",
+        "gols": 1
+      },
+      {
+        "nome": "Pablo Vegetti",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "03/12/2023",
+    "adversario": "Grêmio",
+    "competicao": "Brasileirão Série A",
+    "local": "fora",
+    "placar": {
+      "vasco": 0,
+      "adversario": 1
+    },
+    "gols_vasco": [],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
+    "data": "06/12/2023",
+    "adversario": "Red Bull Bragantino",
+    "competicao": "Brasileirão Série A",
+    "local": "casa",
+    "placar": {
+      "vasco": 2,
+      "adversario": 1
+    },
+    "gols_vasco": [
+      {
+        "nome": "Paulinho Paula",
+        "gols": 1
+      },
+      {
+        "nome": "Serginho",
+        "gols": 1
+      }
+    ],
+    "gols_adversario": [],
+    "gols_anulados": {
+      "vasco": [],
+      "adversario": []
+    },
+    "observacao": "",
+    "tecnico": "Ramón Díaz"
+  },
+  {
     "data": "18/01/2024",
     "adversario": "Boavista",
     "competicao": "Campeonato Carioca",
@@ -3036,7 +11185,7 @@
         "gols": 1
       },
       {
-        "nome": "Luciano Juba (Contra)",
+        "nome": "Luciano Juba (contra)",
         "gols": 1
       }
     ],
@@ -3627,7 +11776,7 @@
         "gols": 2
       },
       {
-        "nome": "Andrés Gomez",
+        "nome": "Andrés Gómez",
         "gols": 1
       }
     ],
@@ -3653,7 +11802,7 @@
     ],
     "gols_adversario": [
       {
-        "nome": "Carlos Cuesta (Contra)",
+        "nome": "Carlos Cuesta (contra)",
         "clube": "Mirassol",
         "gols": 1
       },
