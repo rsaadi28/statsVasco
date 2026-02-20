@@ -1,24 +1,9 @@
 {
   "jogadores": [
     {
-      "nome": "Allan Vitor",
-      "posicao": "Goleiro",
-      "condicao": "Não Relacionado"
-    },
-    {
-      "nome": "Daniel Fuzato",
-      "posicao": "Goleiro",
-      "condicao": "Reserva"
-    },
-    {
       "nome": "Léo Jardim",
       "posicao": "Goleiro",
       "condicao": "Titular"
-    },
-    {
-      "nome": "Pablo",
-      "posicao": "Goleiro",
-      "condicao": "Não Relacionado"
     },
     {
       "nome": "Paulo Henrique",
@@ -26,24 +11,64 @@
       "condicao": "Titular"
     },
     {
-      "nome": "Puma Rodríguez",
-      "posicao": "Lateral-Direito",
-      "condicao": "Reserva"
-    },
-    {
       "nome": "Carlos Cuesta",
       "posicao": "Zagueiro",
       "condicao": "Titular"
     },
     {
-      "nome": "Lucas Freitas",
-      "posicao": "Zagueiro",
-      "condicao": "Reserva"
-    },
-    {
       "nome": "Robert Renan",
       "posicao": "Zagueiro",
       "condicao": "Titular"
+    },
+    {
+      "nome": "Lucas Piton",
+      "posicao": "Lateral-Esquerdo",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Cauan Barros",
+      "posicao": "Volante",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Thiago Mendes",
+      "posicao": "Volante",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Johan Rojas",
+      "posicao": "Meio-Campista",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Andrés Gómez",
+      "posicao": "Atacante",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Brenner",
+      "posicao": "Atacante",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Nuno Moreira",
+      "posicao": "Atacante",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Daniel Fuzato",
+      "posicao": "Goleiro",
+      "condicao": "Reserva"
+    },
+    {
+      "nome": "Puma Rodríguez",
+      "posicao": "Lateral-Direito",
+      "condicao": "Reserva"
+    },
+    {
+      "nome": "Lucas Freitas",
+      "posicao": "Zagueiro",
+      "condicao": "Reserva"
     },
     {
       "nome": "Saldivia",
@@ -56,19 +81,9 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Lucas Piton",
-      "posicao": "Lateral-Esquerdo",
-      "condicao": "Titular"
-    },
-    {
       "nome": "Victor Luís",
       "posicao": "Lateral-Esquerdo",
       "condicao": "Reserva"
-    },
-    {
-      "nome": "Cauan Barros",
-      "posicao": "Volante",
-      "condicao": "Titular"
     },
     {
       "nome": "Hugo Moura",
@@ -76,32 +91,12 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Jair",
-      "posicao": "Volante",
-      "condicao": "Lesionado"
-    },
-    {
-      "nome": "Mateus Carvalho",
-      "posicao": "Volante",
-      "condicao": "Lesionado"
-    },
-    {
       "nome": "Tche Tche",
       "posicao": "Volante",
       "condicao": "Reserva"
     },
     {
-      "nome": "Thiago Mendes",
-      "posicao": "Volante",
-      "condicao": "Titular"
-    },
-    {
       "nome": "Guilherme Estrella",
-      "posicao": "Meio-Campista",
-      "condicao": "Reserva"
-    },
-    {
-      "nome": "Johan Rojas",
       "posicao": "Meio-Campista",
       "condicao": "Reserva"
     },
@@ -111,24 +106,9 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Philippe Coutinho",
-      "posicao": "Meio-Campista",
-      "condicao": "Titular"
-    },
-    {
       "nome": "Adson",
       "posicao": "Atacante",
       "condicao": "Reserva"
-    },
-    {
-      "nome": "Andrés Gómez",
-      "posicao": "Atacante",
-      "condicao": "Titular"
-    },
-    {
-      "nome": "Brenner",
-      "posicao": "Atacante",
-      "condicao": "Titular"
     },
     {
       "nome": "Claudio Spinelli",
@@ -156,9 +136,29 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Nuno Moreira",
-      "posicao": "Atacante",
-      "condicao": "Titular"
+      "nome": "Allan Vitor",
+      "posicao": "Goleiro",
+      "condicao": "Não Relacionado"
+    },
+    {
+      "nome": "Pablo",
+      "posicao": "Goleiro",
+      "condicao": "Não Relacionado"
+    },
+    {
+      "nome": "Philippe Coutinho",
+      "posicao": "Meio-Campista",
+      "condicao": "Não Relacionado"
+    },
+    {
+      "nome": "Jair",
+      "posicao": "Volante",
+      "condicao": "Lesionado"
+    },
+    {
+      "nome": "Mateus Carvalho",
+      "posicao": "Volante",
+      "condicao": "Lesionado"
     }
   ]
 }

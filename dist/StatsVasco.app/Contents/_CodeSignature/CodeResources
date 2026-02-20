@@ -5582,7 +5582,7 @@
 		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		zE43ugafY9G8KxSCsp/NsFu3i+I=
+		lMlVvitgUoD0lrSmPJ2LaBDOXOk=
 		</data>
 		<key>Resources/dateutil/zoneinfo/dateutil-zoneinfo.tar.gz</key>
 		<data>
@@ -5590,7 +5590,11 @@
 		</data>
 		<key>Resources/elenco_atual.json</key>
 		<data>
-		+nlMzNL19+Wy8WpV0QXP4/gZ1FI=
+		7Ae/c2f6He4crZi0lPonEmHHt9Y=
+		</data>
+		<key>Resources/jogadores_historico.json</key>
+		<data>
+		Afsxyb/kYk1Yo1a5/a5ejCzlGpk=
 		</data>
 		<key>Resources/jogos_futuros.json</key>
 		<data>
@@ -5602,7 +5606,7 @@
 		</data>
 		<key>Resources/listas_auxiliares.json</key>
 		<data>
-		QcMz3JZ1u9uPTj3B/xVfIvbVKns=
+		76uVhhoX7j6zileN/gGGlW0vU/I=
 		</data>
 		<key>Resources/matplotlib/mpl-data/fonts/afm/cmex10.afm</key>
 		<data>
@@ -6724,6 +6728,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/elenco_atual.json</string>
+		</dict>
+		<key>Frameworks/jogadores_historico.json</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/jogadores_historico.json</string>
 		</dict>
 		<key>Frameworks/jogos_futuros.json</key>
 		<dict>
@@ -17350,7 +17359,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			LMffPTOQmNYANZzKUFmGugXBzFdPUZeBukeGB7caz8g=
+			88pmfNIm/zdbW4sHfyHG5A+3eq0kVup1b66UxgPV7as=
 			</data>
 		</dict>
 		<key>Resources/contourpy</key>
@@ -17369,7 +17378,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			maR57JC+UMp/qsH1qVN0UbBKwT/hlhdvf/vfrQdLlEE=
+			wtXWU/rpJCGntrEHCeLiR/gdQixGQ/xtJRstZEB1WZ0=
+			</data>
+		</dict>
+		<key>Resources/jogadores_historico.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			8jBwVRyoF+1LnKyZ8S2TartexJLKzCUcfYqhqeoZtcI=
 			</data>
 		</dict>
 		<key>Resources/jogos_futuros.json</key>
@@ -17490,7 +17506,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			nb1dQzQfXBUjvTHpSXSvy4bh8wQvaKw/wppoqE+VVIA=
+			6Ao+xrQYaTu7zWqqcOkUEZ/7EYpK4N7q1rrCUSCVaDA=
 			</data>
 		</dict>
 		<key>Resources/matplotlib/_c_internal_utils.cpython-312-darwin.so</key>
