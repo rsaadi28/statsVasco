@@ -1282,6 +1282,8 @@ class App:
         self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
         self.tv_elenco_atual.bind("<Delete>", self._remover_jogador_elenco)
         self.tv_elenco_atual.bind("<Double-1>", self._iniciar_edicao_jogador_elenco)
+        self.tv_elenco_atual.bind("<Button-3>", self._abrir_menu_contexto_elenco_atual)
+        self.tv_elenco_atual.bind("<Control-Button-1>", self._abrir_menu_contexto_elenco_atual)
         self._elenco_sort_col = "condicao"
         self._elenco_sort_reverse = False
 
@@ -1530,6 +1532,65 @@ class App:
         for iid in self.tv_elenco_atual.get_children():
             self.tv_elenco_atual.delete(iid)
         self._cancelar_edicao_jogador_elenco()
+        self._salvar_elenco_da_interface()
+
+    def _abrir_menu_contexto_elenco_atual(self, event):
+        iid = self.tv_elenco_atual.identify_row(event.y)
+        if not iid:
+            return
+        self.tv_elenco_atual.selection_set(iid)
+        self.tv_elenco_atual.focus(iid)
+
+        menu = tk.Menu(self.root, tearoff=0)
+        submenu_tit = tk.Menu(menu, tearoff=0)
+        for pos in POSICOES_ELENCO:
+            submenu_tit.add_command(
+                label=f"Titular - {pos}",
+                command=lambda p=pos: self._enviar_jogador_elenco_para(("titulares", p))
+            )
+        menu.add_cascade(label="Enviar para Titulares", menu=submenu_tit)
+        menu.add_separator()
+        menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
+        menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
+        menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _enviar_jogador_elenco_para(self, destino):
+        sel = self.tv_elenco_atual.selection()
+        if not sel:
+            return
+        iid = sel[0]
+        posicao_atual, nome, condicao_atual = self.tv_elenco_atual.item(iid, "values")
+        nome = str(nome).strip()
+        if not nome:
+            return
+
+        tipo, chave = destino
+        nova_posicao = str(posicao_atual).strip()
+        nova_condicao = _normalizar_condicao_elenco(condicao_atual)
+        if tipo == "titulares":
+            nova_posicao = _normalizar_posicao_elenco(chave)
+            nova_condicao = "Titular"
+            titulares_atuais = 0
+            for row_iid in self.tv_elenco_atual.get_children():
+                _p, row_nome, row_cond = self.tv_elenco_atual.item(row_iid, "values")
+                if _normalizar_condicao_elenco(row_cond) == "Titular" and str(row_nome).strip().casefold() != nome.casefold():
+                    titulares_atuais += 1
+            if titulares_atuais >= 11:
+                messagebox.showerror("Limite de titulares", "Não é possível ter mais de 11 titulares no elenco atual.")
+                return
+        else:
+            if chave == "reservas":
+                nova_condicao = "Reserva"
+            elif chave == "nao_relacionados":
+                nova_condicao = "Não Relacionado"
+            elif chave == "lesionados":
+                nova_condicao = "Lesionado"
+
+        self.tv_elenco_atual.item(iid, values=(nova_posicao, nome, nova_condicao))
         self._salvar_elenco_da_interface()
 
     # --------------------- Formulário ---------------------
@@ -1791,7 +1852,7 @@ class App:
                 r = 14
                 canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
                 canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
-                nome_curto = nome if len(nome) <= 16 else (nome[:20] + "…")
+                nome_curto = nome if len(nome) <= 21 else (nome[:20] + "…")
                 canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
                 self._preview_hit_players.append({
                     "linha": chave_linha,
@@ -2241,7 +2302,7 @@ class App:
                 r = 14
                 canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
                 canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
-                nome_curto = nome if len(nome) <= 16 else (nome[:20] + "…")
+                nome_curto = nome if len(nome) <= 21 else (nome[:20] + "…")
                 canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
                 self._modal_campinho_hits.append({
                     "nome": nome,
