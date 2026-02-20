@@ -1760,23 +1760,24 @@ class App:
             top.geometry("1200x780")
         self._modal_escalacao_partida = top
 
-        top.columnconfigure(0, weight=1)
-        top.columnconfigure(1, weight=2)
+        largura_esquerda = max(360, min(440, int(modal_w * 0.30)))
+        top.columnconfigure(0, weight=0, minsize=largura_esquerda)
+        top.columnconfigure(1, weight=1)
         top.rowconfigure(0, weight=1)
 
         esquerda = ttk.Labelframe(top, text="Elenco Atual (lista geral)", padding=8)
         esquerda.grid(row=0, column=0, sticky="nsew", padx=(10, 6), pady=10)
+        esquerda.grid_propagate(False)
         esquerda.columnconfigure(0, weight=1)
         esquerda.rowconfigure(0, weight=1)
 
         self._modal_tv_elenco = ttk.Treeview(esquerda, columns=("nome", "posicao"), show="headings")
         self._modal_tv_elenco.heading("nome", text="Jogador")
         self._modal_tv_elenco.heading("posicao", text="Posição")
-        largura_esquerda = max(360, int(modal_w * 0.28))
-        largura_nome = max(220, int(largura_esquerda * 0.68))
-        largura_posicao = max(130, largura_esquerda - largura_nome - 24)
-        self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=200, anchor="w", stretch=True)
-        self._modal_tv_elenco.column("posicao", width=largura_posicao, minwidth=120, anchor="w", stretch=True)
+        largura_nome = 220
+        largura_posicao = 120
+        self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=200, anchor="w", stretch=False)
+        self._modal_tv_elenco.column("posicao", width=largura_posicao, minwidth=120, anchor="w", stretch=False)
         self._modal_tv_elenco.grid(row=0, column=0, sticky="nsew")
         sy = ttk.Scrollbar(esquerda, orient="vertical", command=self._modal_tv_elenco.yview)
         sy.grid(row=0, column=1, sticky="ns")
