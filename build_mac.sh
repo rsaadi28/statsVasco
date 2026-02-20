@@ -47,17 +47,18 @@ tell application "Finder"
       set bounds to {110, 90, 760, 500}
     end tell
     tell icon view options of container window
-      set arrangement to not arranged
+      -- Keep icons fixed on first click by pre-aligning to Finder grid.
+      set arrangement to snap to grid
       set icon size to 144
       set text size to 13
     end tell
     set position of item "$app_name" of container window to {215, 205}
     set position of item "Applications" of container window to {515, 205}
-    update without registering applications
-    delay 1
+    update
+    delay 2
     close
     open
-    delay 1
+    delay 2
   end tell
 end tell
 EOF
