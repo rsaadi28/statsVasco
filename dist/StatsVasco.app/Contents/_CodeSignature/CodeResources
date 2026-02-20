@@ -5582,11 +5582,15 @@
 		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		6YGUZfO94/z5tDddt9SmZy65yto=
+		Zd47O7xrNzjflss02xn1vKwa/HA=
 		</data>
 		<key>Resources/dateutil/zoneinfo/dateutil-zoneinfo.tar.gz</key>
 		<data>
 		c+JCO8FU6iR/UDl+lpaYpwphJ6s=
+		</data>
+		<key>Resources/elenco_atual.json</key>
+		<data>
+		+nlMzNL19+Wy8WpV0QXP4/gZ1FI=
 		</data>
 		<key>Resources/jogos_futuros.json</key>
 		<data>
@@ -5594,11 +5598,11 @@
 		</data>
 		<key>Resources/jogos_vasco.json</key>
 		<data>
-		NIqMLwLCFwNrva56BrSBmxn9uXY=
+		Jq5G6OD9rvBqbdUtrEPE/QQBo34=
 		</data>
 		<key>Resources/listas_auxiliares.json</key>
 		<data>
-		X2Fl/n6Hp6N2qV0gTyXycSwWQZ8=
+		QcMz3JZ1u9uPTj3B/xVfIvbVKns=
 		</data>
 		<key>Resources/matplotlib/mpl-data/fonts/afm/cmex10.afm</key>
 		<data>
@@ -6715,6 +6719,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/dateutil</string>
+		</dict>
+		<key>Frameworks/elenco_atual.json</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/elenco_atual.json</string>
 		</dict>
 		<key>Frameworks/jogos_futuros.json</key>
 		<dict>
@@ -17341,7 +17350,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			YgLus0Z55jWK4PXBobOK0hOnjRX3DTn4MVNEhy3W0WQ=
+			d1NlIZtUgH3zHDf4bWnCdGygbbXy1sI3OnSB8QkvwDM=
 			</data>
 		</dict>
 		<key>Resources/contourpy</key>
@@ -17356,6 +17365,13 @@
 			0+pS57bpaN4NiE3xKIGTWW+pW4A9tPkqGCeac5gARHU=
 			</data>
 		</dict>
+		<key>Resources/elenco_atual.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			maR57JC+UMp/qsH1qVN0UbBKwT/hlhdvf/vfrQdLlEE=
+			</data>
+		</dict>
 		<key>Resources/jogos_futuros.json</key>
 		<dict>
 			<key>hash2</key>
@@ -17367,7 +17383,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			91dQvjY5N2Tn+DdP6NXwzCYoGnIpKgnWH2Y8d+0DgHM=
+			SWiAFqIoTU6Rz+ZjjDNimEEq1uBE0kMtIkneobq6vnU=
 			</data>
 		</dict>
 		<key>Resources/kiwisolver</key>
@@ -17474,7 +17490,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			boo3CvHrwh+iXjmHZR+X9SE/1T3jwX7jn+0/ccHu+go=
+			nb1dQzQfXBUjvTHpSXSvy4bh8wQvaKw/wppoqE+VVIA=
 			</data>
 		</dict>
 		<key>Resources/matplotlib/_c_internal_utils.cpython-312-darwin.so</key>
