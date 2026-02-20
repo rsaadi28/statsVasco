@@ -272,6 +272,17 @@ def _ordenar_jogadores_elenco(jogadores):
     )
 
 
+def _ordenar_jogadores_por_posicao(jogadores):
+    ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+    return sorted(
+        jogadores,
+        key=lambda j: (
+            ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
+            str(j.get("nome", "")).casefold()
+        )
+    )
+
+
 def carregar_elenco_atual():
     dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": []})
     if isinstance(dados, list):
@@ -1378,7 +1389,56 @@ class App:
         salvar_listas(self.listas)
         if hasattr(self, "entry_gol_vasco"):
             self.entry_gol_vasco["values"] = atuais
+        if hasattr(self, "_render_elenco_atual"):
+            self._render_elenco_atual()
         self._atualizar_elenco_disponivel_partida()
+
+    def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
+        if not isinstance(escalacao_partida, dict):
+            return
+
+        nomes_por_condicao = {}
+        titulares_por_posicao = escalacao_partida.get("titulares_por_posicao", {})
+        if isinstance(titulares_por_posicao, dict):
+            for nomes in titulares_por_posicao.values():
+                if isinstance(nomes, list):
+                    for nome in nomes:
+                        nome_limpo = str(nome).strip()
+                        if nome_limpo:
+                            nomes_por_condicao[nome_limpo.casefold()] = "Titular"
+
+        for chave, condicao in (
+            ("reservas", "Reserva"),
+            ("nao_relacionados", "Não Relacionado"),
+            ("lesionados", "Lesionado"),
+        ):
+            nomes = escalacao_partida.get(chave, [])
+            if not isinstance(nomes, list):
+                continue
+            for nome in nomes:
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    nomes_por_condicao[nome_limpo.casefold()] = condicao
+
+        if not nomes_por_condicao:
+            return
+
+        alterou = False
+        for jogador in self.elenco_atual.get("jogadores", []):
+            if not isinstance(jogador, dict):
+                continue
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            nova_condicao = nomes_por_condicao.get(nome.casefold())
+            if nova_condicao and jogador.get("condicao") != nova_condicao:
+                jogador["condicao"] = nova_condicao
+                alterou = True
+
+        if alterou:
+            salvar_elenco_atual(self.elenco_atual)
+            self.elenco_atual = carregar_elenco_atual()
+            self._sincronizar_jogadores_vasco_com_elenco()
 
     def _adicionar_jogador_elenco(self, _event=None):
         nome = self.elenco_nome_var.get().strip()
@@ -1775,15 +1835,15 @@ class App:
         self._modal_tv_elenco.heading("nome", text="Jogador")
         self._modal_tv_elenco.heading("posicao", text="Posição")
         largura_nome = 220
-        largura_posicao = 120
-        self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=200, anchor="w", stretch=False)
+        largura_posicao = 150
+        self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=220, anchor="w", stretch=False)
         self._modal_tv_elenco.column("posicao", width=largura_posicao, minwidth=120, anchor="w", stretch=False)
         self._modal_tv_elenco.grid(row=0, column=0, sticky="nsew")
         sy = ttk.Scrollbar(esquerda, orient="vertical", command=self._modal_tv_elenco.yview)
         sy.grid(row=0, column=1, sticky="ns")
         self._modal_tv_elenco.configure(yscrollcommand=sy.set)
 
-        for jogador in _ordenar_jogadores_elenco(list(self.elenco_atual.get("jogadores", []))):
+        for jogador in _ordenar_jogadores_por_posicao(list(self.elenco_atual.get("jogadores", []))):
             nome = str(jogador.get("nome", "")).strip()
             if not nome:
                 continue
@@ -2228,6 +2288,7 @@ class App:
             salvar_lista_jogos(jogos)
             msg = "Partida registrada com sucesso!"
 
+        self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
         self._limpar_formulario()
         self._atualizar_abas()
         self.notebook.select(self.frame_temporadas)
