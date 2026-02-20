@@ -1744,6 +1744,7 @@ class App:
             return
         canvas = self.canvas_campinho_preview
         canvas.delete("all")
+        self._preview_hit_players = []
 
         w = max(300, canvas.winfo_width())
         h = max(220, canvas.winfo_height())
@@ -1765,18 +1766,21 @@ class App:
         linha_ataque = _lista("Atacante")
         linha_meio = _lista("Meio-Campista")
         linha_vol = _lista("Volante")
-        linha_def = _lista("Lateral-Esquerdo") + _lista("Zagueiro") + _lista("Lateral-Direito")
+        defesa_le = _lista("Lateral-Esquerdo")
+        defesa_zag = _lista("Zagueiro")
+        defesa_ld = _lista("Lateral-Direito")
+        linha_def = defesa_le + defesa_zag + defesa_ld
         linha_gol = _lista("Goleiro")
 
         linhas = [
-            ("ATA", linha_ataque, 0.16),
-            ("MEI", linha_meio, 0.34),
-            ("VOL", linha_vol, 0.50),
-            ("DEF", linha_def, 0.68),
-            ("GOL", linha_gol, 0.84),
+            ("ATA", "Atacante", linha_ataque, 0.16),
+            ("MEI", "Meio-Campista", linha_meio, 0.34),
+            ("VOL", "Volante", linha_vol, 0.50),
+            ("DEF", "Defesa", linha_def, 0.68),
+            ("GOL", "Goleiro", linha_gol, 0.84),
         ]
 
-        for setor, nomes, rel_y in linhas:
+        for setor, chave_linha, nomes, rel_y in linhas:
             y = m + (h - 2 * m) * rel_y
             canvas.create_text(m + 16, y, text=setor, fill="#d8f0de", font=("Segoe UI", 9, "bold"))
             if not nomes:
@@ -1789,6 +1793,17 @@ class App:
                 canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
                 nome_curto = nome if len(nome) <= 16 else (nome[:15] + "…")
                 canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 8))
+                self._preview_hit_players.append({
+                    "linha": chave_linha,
+                    "idx": i,
+                    "n": n,
+                    "x": x,
+                    "y": y,
+                    "r": r,
+                    "m": m,
+                    "w": w,
+                    "nome": nome,
+                })
 
         if hasattr(self, "lista_reservas_preview"):
             self.lista_reservas_preview.delete(0, tk.END)
@@ -1796,6 +1811,67 @@ class App:
                 nome_limpo = str(nome).strip()
                 if nome_limpo:
                     self.lista_reservas_preview.insert(tk.END, nome_limpo)
+
+    def _preview_drag_start(self, event):
+        hit = None
+        for item in getattr(self, "_preview_hit_players", []):
+            dx = event.x - item["x"]
+            dy = event.y - item["y"]
+            if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
+                hit = item
+                break
+        self._preview_drag_state = hit
+        if hit:
+            self.canvas_campinho_preview.configure(cursor="hand2")
+
+    def _preview_drag_end(self, event):
+        state = getattr(self, "_preview_drag_state", None)
+        self._preview_drag_state = None
+        self.canvas_campinho_preview.configure(cursor="")
+        if not state:
+            return
+        if state["n"] < 2:
+            return
+
+        # Calcula o alvo pelo jogador mais próximo no eixo X da mesma linha.
+        linha = state["linha"]
+        origem = state["idx"]
+        n = state["n"]
+        mesmos = sorted(
+            [p for p in getattr(self, "_preview_hit_players", []) if p.get("linha") == linha],
+            key=lambda p: p.get("idx", 0)
+        )
+        if len(mesmos) != n:
+            return
+        alvo = min(range(n), key=lambda i: abs(event.x - mesmos[i]["x"]))
+        origem = state["idx"]
+        if alvo == origem:
+            return
+
+        esc = self._coletar_escalacao_partida()
+        if linha == "Defesa":
+            le = list(esc["titulares_por_posicao"].get("Lateral-Esquerdo", []))
+            zag = list(esc["titulares_por_posicao"].get("Zagueiro", []))
+            ld = list(esc["titulares_por_posicao"].get("Lateral-Direito", []))
+            combinado = le + zag + ld
+            if len(combinado) != n:
+                return
+            jogador = combinado.pop(origem)
+            combinado.insert(alvo, jogador)
+            n_le = len(le)
+            n_zag = len(zag)
+            esc["titulares_por_posicao"]["Lateral-Esquerdo"] = combinado[:n_le]
+            esc["titulares_por_posicao"]["Zagueiro"] = combinado[n_le:n_le + n_zag]
+            esc["titulares_por_posicao"]["Lateral-Direito"] = combinado[n_le + n_zag:]
+        else:
+            lista = list(esc["titulares_por_posicao"].get(linha, []))
+            if len(lista) != n:
+                return
+            jogador = lista.pop(origem)
+            lista.insert(alvo, jogador)
+            esc["titulares_por_posicao"][linha] = lista
+
+        self._carregar_escalacao_partida(esc)
 
     def _atualizar_elenco_disponivel_partida(self):
         self._elenco_info_por_nome_cf = {}
@@ -2035,40 +2111,22 @@ class App:
         conteudo.rowconfigure(1, weight=1)
         conteudo.rowconfigure(2, weight=1)
 
-        titulares_frame = ttk.Labelframe(conteudo, text="Titulares por Posição", padding=8)
+        titulares_frame = ttk.Labelframe(conteudo, text="Titulares no Campinho", padding=8)
         titulares_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=(0, 8))
-        for i in range(4):
-            titulares_frame.columnconfigure(i, weight=1)
+        titulares_frame.columnconfigure(0, weight=1)
         titulares_frame.rowconfigure(0, weight=1)
-        titulares_frame.rowconfigure(1, weight=1)
 
-        self._modal_lb_titulares = {}
-        for idx, pos in enumerate(POSICOES_ELENCO):
-            r, c = divmod(idx, 4)
-            bloco = ttk.Labelframe(titulares_frame, text=pos, padding=6)
-            bloco.grid(
-                row=r,
-                column=c,
-                sticky="nsew",
-                padx=(6 if c == 0 else 10, 6 if c == 3 else 10),
-                pady=(6 if r == 0 else 10, 6 if r == 1 else 10),
-            )
-            bloco.columnconfigure(0, weight=1)
-            bloco.rowconfigure(0, weight=1)
-            lb = tk.Listbox(
-                bloco, height=5,
-                bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
-                selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
-            )
-            lb.grid(row=0, column=0, sticky="nsew")
-            lb.bind("<Delete>", lambda _e, p=pos: self._modal_remover_jogador(("titulares", p)))
-            lb.bind("<Button-3>", lambda e, p=pos: self._abrir_menu_contexto_escalacao_modal(e, ("titulares", p)))
-            lb.bind("<Control-Button-1>", lambda e, p=pos: self._abrir_menu_contexto_escalacao_modal(e, ("titulares", p)))
-            botoes = ttk.Frame(bloco)
-            botoes.grid(row=1, column=0, sticky="ew", pady=(6, 0))
-            ttk.Button(botoes, text="Adicionar", command=lambda p=pos: self._modal_adicionar_jogador(("titulares", p))).pack(side="left")
-            ttk.Button(botoes, text="Remover", command=lambda p=pos: self._modal_remover_jogador(("titulares", p))).pack(side="right")
-            self._modal_lb_titulares[pos] = lb
+        self._modal_canvas_campinho = tk.Canvas(
+            titulares_frame,
+            background="#0f6a35",
+            highlightthickness=1,
+            highlightbackground="#1a1a1a",
+        )
+        self._modal_canvas_campinho.grid(row=0, column=0, sticky="nsew")
+        self._modal_canvas_campinho.bind("<Configure>", lambda _e: self._modal_render_campinho())
+        self._modal_canvas_campinho.bind("<Button-3>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
+        self._modal_canvas_campinho.bind("<Control-Button-1>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
+        self._modal_titulares_por_posicao = {pos: [] for pos in POSICOES_ELENCO}
 
         self._modal_lb_extras = {}
         for idx, (chave, titulo) in enumerate(CATEGORIAS_ESCALACAO_EXTRAS):
@@ -2108,9 +2166,10 @@ class App:
 
     def _modal_coletar_escalacao(self):
         base = self._escalacao_partida_base()
+        titulares = getattr(self, "_modal_titulares_por_posicao", {})
         for pos in POSICOES_ELENCO:
-            lb = self._modal_lb_titulares.get(pos)
-            base["titulares_por_posicao"][pos] = list(lb.get(0, tk.END)) if lb else []
+            nomes = titulares.get(pos, [])
+            base["titulares_por_posicao"][pos] = list(nomes) if isinstance(nomes, list) else []
         for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
             lb = self._modal_lb_extras.get(chave)
             base[chave] = list(lb.get(0, tk.END)) if lb else []
@@ -2118,13 +2177,10 @@ class App:
 
     def _modal_carregar_escalacao(self, escalacao):
         data = self._normalizar_escalacao_partida(escalacao)
-        for pos in POSICOES_ELENCO:
-            lb = self._modal_lb_titulares.get(pos)
-            if not lb:
-                continue
-            lb.delete(0, tk.END)
-            for nome in data["titulares_por_posicao"].get(pos, []):
-                lb.insert(tk.END, nome)
+        self._modal_titulares_por_posicao = {
+            pos: list(data["titulares_por_posicao"].get(pos, []))
+            for pos in POSICOES_ELENCO
+        }
         for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
             lb = self._modal_lb_extras.get(chave)
             if not lb:
@@ -2132,6 +2188,61 @@ class App:
             lb.delete(0, tk.END)
             for nome in data.get(chave, []):
                 lb.insert(tk.END, nome)
+        self._modal_render_campinho()
+
+    def _modal_render_campinho(self):
+        canvas = getattr(self, "_modal_canvas_campinho", None)
+        if canvas is None:
+            return
+        canvas.delete("all")
+        self._modal_campinho_hits = []
+
+        w = max(360, canvas.winfo_width())
+        h = max(240, canvas.winfo_height())
+        m = 16
+        canvas.create_rectangle(0, 0, w, h, fill="#0f6a35", outline="")
+        canvas.create_rectangle(m, m, w - m, h - m, outline="#e9f7ed", width=2)
+        meio_y = h / 2
+        canvas.create_line(m, meio_y, w - m, meio_y, fill="#e9f7ed", width=2)
+        canvas.create_oval(w / 2 - 36, meio_y - 36, w / 2 + 36, meio_y + 36, outline="#e9f7ed", width=2)
+
+        tit = getattr(self, "_modal_titulares_por_posicao", {})
+        linhas = [
+            ("ATA", "Atacante", 0.16),
+            ("MEI", "Meio-Campista", 0.34),
+            ("VOL", "Volante", 0.50),
+            ("DEF", "Lateral-Esquerdo", 0.68),
+            ("GOL", "Goleiro", 0.84),
+        ]
+
+        for sigla, chave, rel_y in linhas:
+            y = m + (h - 2 * m) * rel_y
+            canvas.create_text(m + 18, y, text=sigla, fill="#d8f0de", font=("Segoe UI", 9, "bold"))
+            if sigla == "DEF":
+                nomes = (
+                    list(tit.get("Lateral-Esquerdo", []))
+                    + list(tit.get("Zagueiro", []))
+                    + list(tit.get("Lateral-Direito", []))
+                )
+            else:
+                nomes = list(tit.get(chave, []))
+            if not nomes:
+                continue
+            n = len(nomes)
+            for i, nome in enumerate(nomes):
+                x = m + (w - 2 * m) * ((i + 1) / (n + 1))
+                r = 14
+                canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
+                canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
+                nome_curto = nome if len(nome) <= 16 else (nome[:15] + "…")
+                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 8))
+                self._modal_campinho_hits.append({
+                    "nome": nome,
+                    "linha": sigla,
+                    "x": x,
+                    "y": y,
+                    "r": r,
+                })
 
     def _modal_status_por_jogador(self):
         esc = self._modal_coletar_escalacao()
@@ -2196,13 +2307,10 @@ class App:
     def _modal_remover_nome_de_tudo(self, nome):
         alvo = nome.casefold()
         for pos in POSICOES_ELENCO:
-            lb = self._modal_lb_titulares.get(pos)
-            if not lb:
-                continue
-            itens = [i for i in lb.get(0, tk.END) if str(i).strip().casefold() != alvo]
-            lb.delete(0, tk.END)
-            for item in itens:
-                lb.insert(tk.END, item)
+            atuais = list(getattr(self, "_modal_titulares_por_posicao", {}).get(pos, []))
+            self._modal_titulares_por_posicao[pos] = [
+                i for i in atuais if str(i).strip().casefold() != alvo
+            ]
         for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
             lb = self._modal_lb_extras.get(chave)
             if not lb:
@@ -2211,6 +2319,7 @@ class App:
             lb.delete(0, tk.END)
             for item in itens:
                 lb.insert(tk.END, item)
+        self._modal_render_campinho()
 
     def _modal_adicionar_jogador(self, destino):
         sel = self._modal_tv_elenco.selection()
@@ -2232,16 +2341,18 @@ class App:
         self._modal_remover_nome_de_tudo(nome)
         tipo, chave = destino
         if tipo == "titulares":
-            lb = self._modal_lb_titulares.get(chave)
+            lista = self._modal_titulares_por_posicao.setdefault(chave, [])
+            lista.append(nome)
+            self._modal_render_campinho()
         else:
             lb = self._modal_lb_extras.get(chave)
-        if not lb:
-            return
-        itens = list(lb.get(0, tk.END))
-        itens.append(nome)
-        lb.delete(0, tk.END)
-        for item in self._ordenar_nomes_escalacao(itens):
-            lb.insert(tk.END, item)
+            if not lb:
+                return
+            itens = list(lb.get(0, tk.END))
+            itens.append(nome)
+            lb.delete(0, tk.END)
+            for item in self._ordenar_nomes_escalacao(itens):
+                lb.insert(tk.END, item)
         self._modal_atualizar_resumo()
         self._modal_atualizar_lista_geral_com_status()
 
@@ -2259,16 +2370,18 @@ class App:
             values = self._modal_tv_elenco.item(iid, "values")
             if len(values) >= 1:
                 nome = self._modal_extrair_nome_raw(values[0])
-        elif tipo == "titulares":
-            lb = self._modal_lb_titulares.get(chave)
-            if not lb:
+        elif tipo == "campinho":
+            hits = getattr(self, "_modal_campinho_hits", [])
+            hit = None
+            for item in hits:
+                dx = event.x - item["x"]
+                dy = event.y - item["y"]
+                if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
+                    hit = item
+                    break
+            if not hit:
                 return
-            idx = lb.nearest(event.y)
-            if idx < 0 or idx >= lb.size():
-                return
-            lb.selection_clear(0, tk.END)
-            lb.selection_set(idx)
-            nome = str(lb.get(idx)).strip()
+            nome = str(hit.get("nome", "")).strip()
         elif tipo == "extras":
             lb = self._modal_lb_extras.get(chave)
             if not lb:
@@ -2311,10 +2424,7 @@ class App:
 
     def _modal_remover_jogador(self, origem):
         tipo, chave = origem
-        if tipo == "titulares":
-            lb = self._modal_lb_titulares.get(chave)
-        else:
-            lb = self._modal_lb_extras.get(chave)
+        lb = self._modal_lb_extras.get(chave) if tipo == "extras" else None
         if not lb:
             return
         sel = lb.curselection()
@@ -2322,29 +2432,6 @@ class App:
             return
         nome_removido = str(lb.get(sel[0])).strip()
         lb.delete(sel[0])
-        if tipo == "titulares" and nome_removido:
-            lb_res = self._modal_lb_extras.get("reservas")
-            if lb_res:
-                reservas = [str(n).strip() for n in lb_res.get(0, tk.END) if str(n).strip()]
-                if reservas:
-                    promovido = reservas.pop(0)
-                    lb_res.delete(0, tk.END)
-                    for item in self._ordenar_nomes_escalacao(reservas + [nome_removido]):
-                        lb_res.insert(tk.END, item)
-                    titulares_atuais = [str(n).strip() for n in lb.get(0, tk.END) if str(n).strip()]
-                    titulares_atuais.append(promovido)
-                    lb.delete(0, tk.END)
-                    for item in self._ordenar_nomes_escalacao(titulares_atuais):
-                        lb.insert(tk.END, item)
-                else:
-                    lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
-                    if lb_nao_rel:
-                        atuais = [str(n).strip() for n in lb_nao_rel.get(0, tk.END) if str(n).strip()]
-                        if nome_removido.casefold() not in {n.casefold() for n in atuais}:
-                            atuais.append(nome_removido)
-                            lb_nao_rel.delete(0, tk.END)
-                            for item in self._ordenar_nomes_escalacao(atuais):
-                                lb_nao_rel.insert(tk.END, item)
         if tipo == "extras" and chave == "reservas" and nome_removido:
             lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
             if lb_nao_rel:
