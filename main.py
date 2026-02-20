@@ -64,6 +64,13 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
 )
+ICONE_STATUS_ESCALACAO = {
+    "titulares": "T",
+    "reservas": "R",
+    "nao_relacionados": "N",
+    "lesionados": "L",
+    "sem_lista": "!",
+}
 
 
 def _json_tem_dados(path):
@@ -274,10 +281,12 @@ def _ordenar_jogadores_elenco(jogadores):
 
 def _ordenar_jogadores_por_posicao(jogadores):
     ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+    ordem_condicao = {cond: idx for idx, cond in enumerate(CONDICOES_ELENCO)}
     return sorted(
         jogadores,
         key=lambda j: (
             ordem_posicao.get(j.get("posicao", ""), len(POSICOES_ELENCO)),
+            ordem_condicao.get(_normalizar_condicao_elenco(j.get("condicao")), len(CONDICOES_ELENCO)),
             str(j.get("nome", "")).casefold()
         )
     )
@@ -1265,7 +1274,11 @@ class App:
         self.tv_elenco_atual.column("posicao", width=180, anchor="w")
         self.tv_elenco_atual.column("jogador", width=340, anchor="w")
         self.tv_elenco_atual.column("condicao", width=150, anchor="center")
-        self.tv_elenco_atual.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_elenco_atual.tag_configure("status_titulares", background="#dff5e6", foreground="#173a23")
+        self.tv_elenco_atual.tag_configure("status_reservas", background="#fff4cf", foreground="#4a3a06")
+        self.tv_elenco_atual.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
+        self.tv_elenco_atual.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
+        self.tv_elenco_atual.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
         self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
         self.tv_elenco_atual.bind("<Delete>", self._remover_jogador_elenco)
         self.tv_elenco_atual.bind("<Double-1>", self._iniciar_edicao_jogador_elenco)
@@ -1303,13 +1316,23 @@ class App:
             key=lambda j: self._chave_ordenacao_elenco(j, self._elenco_sort_col),
             reverse=self._elenco_sort_reverse
         )
-        for i, jogador in enumerate(jogadores):
-            tags = ("odd",) if i % 2 == 1 else ()
+        for jogador in jogadores:
+            condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
+            if condicao == "Titular":
+                tag = "status_titulares"
+            elif condicao == "Reserva":
+                tag = "status_reservas"
+            elif condicao == "Não Relacionado":
+                tag = "status_nao_relacionados"
+            elif condicao == "Lesionado":
+                tag = "status_lesionados"
+            else:
+                tag = "status_sem_lista"
             self.tv_elenco_atual.insert(
                 "",
                 "end",
                 values=(jogador.get("posicao", ""), jogador.get("nome", ""), jogador.get("condicao", "")),
-                tags=tags
+                tags=(tag,)
             )
 
     def _chave_ordenacao_elenco(self, jogador, coluna):
@@ -1448,11 +1471,26 @@ class App:
             messagebox.showwarning("Campo obrigatório", "Informe o nome do jogador.")
             return
         nomes_atuais = {}
+        titulares_atuais = 0
+        condicao_jogador_editando = None
         for iid in self.tv_elenco_atual.get_children():
-            _, nome_atual, _ = self.tv_elenco_atual.item(iid, "values")
-            nomes_atuais[str(nome_atual).casefold()] = iid
+            _pos_atual, nome_atual, cond_atual = self.tv_elenco_atual.item(iid, "values")
+            nome_cf = str(nome_atual).casefold()
+            nomes_atuais[nome_cf] = iid
+            if _normalizar_condicao_elenco(cond_atual) == "Titular":
+                titulares_atuais += 1
+            if self._elenco_edit_nome_cf and nome_cf == self._elenco_edit_nome_cf:
+                condicao_jogador_editando = _normalizar_condicao_elenco(cond_atual)
 
         editando = self._elenco_edit_nome_cf is not None
+        # Regra: não permitir mais de 11 titulares no elenco atual.
+        if condicao == "Titular":
+            if editando and condicao_jogador_editando == "Titular":
+                pass
+            elif titulares_atuais >= 11:
+                messagebox.showerror("Limite de titulares", "Não é possível ter mais de 11 titulares no elenco atual.")
+                return
+
         if editando:
             if nome.casefold() != self._elenco_edit_nome_cf and nome.casefold() in nomes_atuais:
                 messagebox.showwarning("Duplicado", f"'{nome}' já está no elenco atual.")
@@ -1557,7 +1595,7 @@ class App:
         placar_card = ttk.Labelframe(frame, text="Placar", padding=10)
         placar_card.grid(row=1, column=0, sticky="ew", pady=(10, 0))
         placar_card.columnconfigure(0, weight=1)
-        placar_card.columnconfigure(4, weight=1)
+        placar_card.columnconfigure(6, weight=1)
         ttk.Label(placar_card, text="Vasco").grid(row=0, column=1, sticky="e")
         self.placar_vasco = ttk.Entry(placar_card, width=6)
         self.placar_vasco.grid(row=0, column=2, padx=(8, 6))
@@ -1566,7 +1604,7 @@ class App:
         self.placar_adversario = ttk.Entry(placar_card, width=6)
         self.placar_adversario.grid(row=0, column=4, padx=(6, 8), sticky="w")
         self._forcar_cursor_visivel(self.placar_adversario)
-        ttk.Label(placar_card, textvariable=self.adversario_var).grid(row=0, column=5, sticky="w")
+        ttk.Label(placar_card, textvariable=self.adversario_var).grid(row=0, column=5, sticky="w", padx=(2, 0))
 
         meio = ttk.Frame(frame)
         meio.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
@@ -1631,6 +1669,7 @@ class App:
         escalacao_card = ttk.Labelframe(meio, text="Escalação da Partida", padding=10)
         escalacao_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
         escalacao_card.columnconfigure(0, weight=1)
+        escalacao_card.rowconfigure(3, weight=1)
 
         ttk.Label(
             escalacao_card,
@@ -1643,6 +1682,33 @@ class App:
         ).grid(row=1, column=0, sticky="w", pady=(8, 10))
         self.escalacao_resumo_var = tk.StringVar(value="")
         ttk.Label(escalacao_card, textvariable=self.escalacao_resumo_var).grid(row=2, column=0, sticky="w")
+
+        preview_wrap = ttk.Frame(escalacao_card)
+        preview_wrap.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
+        preview_wrap.columnconfigure(0, weight=1)
+        preview_wrap.columnconfigure(1, weight=0)
+        preview_wrap.rowconfigure(0, weight=1)
+
+        self.canvas_campinho_preview = tk.Canvas(
+            preview_wrap,
+            background="#0f6a35",
+            highlightthickness=1,
+            highlightbackground="#1a1a1a"
+        )
+        self.canvas_campinho_preview.grid(row=0, column=0, sticky="nsew")
+        self.canvas_campinho_preview.bind("<Configure>", lambda _e: self._render_preview_escalacao())
+
+        reservas_wrap = ttk.Labelframe(preview_wrap, text="Reservas", padding=6)
+        reservas_wrap.grid(row=0, column=1, sticky="ns", padx=(10, 0))
+        reservas_wrap.columnconfigure(0, weight=1)
+        reservas_wrap.rowconfigure(0, weight=1)
+        self.lista_reservas_preview = tk.Listbox(
+            reservas_wrap,
+            width=24,
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
+        )
+        self.lista_reservas_preview.grid(row=0, column=0, sticky="ns")
 
         # Observações
         obs_card = ttk.Labelframe(frame, text="Observações da Partida", padding=10)
@@ -1672,6 +1738,64 @@ class App:
         ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
 
         self._inicializar_escalacao_partida()
+
+    def _render_preview_escalacao(self):
+        if not hasattr(self, "canvas_campinho_preview"):
+            return
+        canvas = self.canvas_campinho_preview
+        canvas.delete("all")
+
+        w = max(300, canvas.winfo_width())
+        h = max(220, canvas.winfo_height())
+        m = 14
+
+        # Campo
+        canvas.create_rectangle(0, 0, w, h, fill="#0f6a35", outline="")
+        canvas.create_rectangle(m, m, w - m, h - m, outline="#e9f7ed", width=2)
+        meio_y = h / 2
+        canvas.create_line(m, meio_y, w - m, meio_y, fill="#e9f7ed", width=2)
+        canvas.create_oval(w / 2 - 34, meio_y - 34, w / 2 + 34, meio_y + 34, outline="#e9f7ed", width=2)
+
+        esc = getattr(self, "escalacao_partida", self._escalacao_partida_base())
+        titulares_por_posicao = esc.get("titulares_por_posicao", {})
+
+        def _lista(pos):
+            return [str(n).strip() for n in titulares_por_posicao.get(pos, []) if str(n).strip()]
+
+        linha_ataque = _lista("Atacante")
+        linha_meio = _lista("Meio-Campista")
+        linha_vol = _lista("Volante")
+        linha_def = _lista("Lateral-Esquerdo") + _lista("Zagueiro") + _lista("Lateral-Direito")
+        linha_gol = _lista("Goleiro")
+
+        linhas = [
+            ("ATA", linha_ataque, 0.16),
+            ("MEI", linha_meio, 0.34),
+            ("VOL", linha_vol, 0.50),
+            ("DEF", linha_def, 0.68),
+            ("GOL", linha_gol, 0.84),
+        ]
+
+        for setor, nomes, rel_y in linhas:
+            y = m + (h - 2 * m) * rel_y
+            canvas.create_text(m + 16, y, text=setor, fill="#d8f0de", font=("Segoe UI", 9, "bold"))
+            if not nomes:
+                continue
+            n = len(nomes)
+            for i, nome in enumerate(nomes):
+                x = m + (w - 2 * m) * ((i + 1) / (n + 1))
+                r = 14
+                canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
+                canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
+                nome_curto = nome if len(nome) <= 16 else (nome[:15] + "…")
+                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 8))
+
+        if hasattr(self, "lista_reservas_preview"):
+            self.lista_reservas_preview.delete(0, tk.END)
+            for nome in esc.get("reservas", []):
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    self.lista_reservas_preview.insert(tk.END, nome_limpo)
 
     def _atualizar_elenco_disponivel_partida(self):
         self._elenco_info_por_nome_cf = {}
@@ -1788,9 +1912,40 @@ class App:
     def _coletar_escalacao_partida(self):
         return self._normalizar_escalacao_partida(getattr(self, "escalacao_partida", self._escalacao_partida_base()))
 
+    def _validar_escalacao_partida(self, escalacao):
+        titulares = sum(len(escalacao["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
+        reservas = len(escalacao.get("reservas", []))
+        if titulares != 11:
+            return False, "A escalação precisa ter exatamente 11 titulares."
+        if reservas < 4:
+            return False, "A escalação precisa ter pelo menos 4 reservas."
+
+        nomes_elenco = {
+            str(j.get("nome", "")).strip().casefold()
+            for j in self.elenco_atual.get("jogadores", [])
+            if isinstance(j, dict) and str(j.get("nome", "")).strip()
+        }
+        nomes_escalados = set()
+        for pos in POSICOES_ELENCO:
+            for nome in escalacao["titulares_por_posicao"].get(pos, []):
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    nomes_escalados.add(nome_limpo.casefold())
+        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+            for nome in escalacao.get(chave, []):
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    nomes_escalados.add(nome_limpo.casefold())
+
+        faltando = sorted(nomes_elenco - nomes_escalados)
+        if faltando:
+            return False, "Todos os jogadores do elenco precisam estar em alguma lista da escalação."
+        return True, ""
+
     def _carregar_escalacao_partida(self, escalacao):
         self.escalacao_partida = self._normalizar_escalacao_partida(escalacao)
         self._atualizar_resumo_escalacao()
+        self._render_preview_escalacao()
 
     def _abrir_modal_escalacao_partida(self):
         existente = getattr(self, "_modal_escalacao_partida", None)
@@ -1840,6 +1995,12 @@ class App:
         largura_posicao = 150
         self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=220, anchor="w", stretch=False)
         self._modal_tv_elenco.column("posicao", width=largura_posicao, minwidth=120, anchor="w", stretch=False)
+        self._modal_tv_elenco.tag_configure("status_titulares", background="#dff5e6", foreground="#173a23")
+        self._modal_tv_elenco.tag_configure("status_reservas", background="#fff4cf", foreground="#4a3a06")
+        self._modal_tv_elenco.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
+        self._modal_tv_elenco.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
+        self._modal_tv_elenco.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
+        self._modal_tv_elenco.tag_configure("sep_posicao", background=self.colors["bg2"], foreground=self.colors["bg2"])
         self._modal_tv_elenco.grid(row=0, column=0, sticky="nsew")
         sy = ttk.Scrollbar(esquerda, orient="vertical", command=self._modal_tv_elenco.yview)
         sy.grid(row=0, column=1, sticky="ns")
@@ -1853,15 +2014,7 @@ class App:
             lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("elenco", None))
         )
 
-        for jogador in _ordenar_jogadores_por_posicao(list(self.elenco_atual.get("jogadores", []))):
-            nome = str(jogador.get("nome", "")).strip()
-            if not nome:
-                continue
-            self._modal_tv_elenco.insert(
-                "",
-                "end",
-                values=(nome, jogador.get("posicao", "")),
-            )
+        self._modal_tv_elenco.delete(*self._modal_tv_elenco.get_children())
 
         direita = ttk.Frame(top)
         direita.grid(row=0, column=1, sticky="nsew", padx=(6, 10), pady=10)
@@ -1893,7 +2046,13 @@ class App:
         for idx, pos in enumerate(POSICOES_ELENCO):
             r, c = divmod(idx, 4)
             bloco = ttk.Labelframe(titulares_frame, text=pos, padding=6)
-            bloco.grid(row=r, column=c, sticky="nsew", padx=4, pady=4)
+            bloco.grid(
+                row=r,
+                column=c,
+                sticky="nsew",
+                padx=(6 if c == 0 else 10, 6 if c == 3 else 10),
+                pady=(6 if r == 0 else 10, 6 if r == 1 else 10),
+            )
             bloco.columnconfigure(0, weight=1)
             bloco.rowconfigure(0, weight=1)
             lb = tk.Listbox(
@@ -1944,6 +2103,7 @@ class App:
 
         self._modal_carregar_escalacao(draft)
         self._modal_atualizar_resumo()
+        self._modal_atualizar_lista_geral_com_status()
         top.protocol("WM_DELETE_WINDOW", self._fechar_modal_escalacao_partida)
 
     def _modal_coletar_escalacao(self):
@@ -1973,6 +2133,66 @@ class App:
             for nome in data.get(chave, []):
                 lb.insert(tk.END, nome)
 
+    def _modal_status_por_jogador(self):
+        esc = self._modal_coletar_escalacao()
+        status = {}
+        for pos in POSICOES_ELENCO:
+            for nome in esc["titulares_por_posicao"].get(pos, []):
+                status[str(nome).strip().casefold()] = "titulares"
+        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+            for nome in esc.get(chave, []):
+                status[str(nome).strip().casefold()] = chave
+        return status
+
+    def _modal_formatar_nome_com_status(self, nome, status):
+        icone = ICONE_STATUS_ESCALACAO.get(status or "sem_lista", ICONE_STATUS_ESCALACAO["sem_lista"])
+        return f"{icone} {nome}"
+
+    def _modal_extrair_nome_raw(self, texto):
+        txt = str(texto or "").strip()
+        if len(txt) >= 2 and txt[1] == " " and txt[0] in set(ICONE_STATUS_ESCALACAO.values()):
+            return txt[2:].strip()
+        return txt
+
+    def _modal_atualizar_lista_geral_com_status(self):
+        if not hasattr(self, "_modal_tv_elenco"):
+            return
+        status_por_nome = self._modal_status_por_jogador()
+        selecionado_cf = None
+        self._modal_iids_separador = set()
+        sel = self._modal_tv_elenco.selection()
+        if sel:
+            vals_sel = self._modal_tv_elenco.item(sel[0], "values")
+            if vals_sel:
+                selecionado_cf = self._modal_extrair_nome_raw(vals_sel[0]).casefold()
+
+        self._modal_tv_elenco.delete(*self._modal_tv_elenco.get_children())
+        novo_iid_selecionado = None
+        posicao_anterior = None
+        for jogador in _ordenar_jogadores_por_posicao(list(self.elenco_atual.get("jogadores", []))):
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            posicao_atual = str(jogador.get("posicao", "")).strip()
+            if posicao_anterior is not None and posicao_atual != posicao_anterior:
+                iid_sep = self._modal_tv_elenco.insert("", "end", values=("", ""), tags=("sep_posicao",))
+                self._modal_iids_separador.add(iid_sep)
+            cf = nome.casefold()
+            status = status_por_nome.get(cf, "sem_lista")
+            tag = f"status_{status}"
+            iid = self._modal_tv_elenco.insert(
+                "",
+                "end",
+                values=(self._modal_formatar_nome_com_status(nome, status), posicao_atual),
+                tags=(tag,),
+            )
+            if selecionado_cf and cf == selecionado_cf:
+                novo_iid_selecionado = iid
+            posicao_anterior = posicao_atual
+        if novo_iid_selecionado:
+            self._modal_tv_elenco.selection_set(novo_iid_selecionado)
+            self._modal_tv_elenco.focus(novo_iid_selecionado)
+
     def _modal_remover_nome_de_tudo(self, nome):
         alvo = nome.casefold()
         for pos in POSICOES_ELENCO:
@@ -2000,7 +2220,7 @@ class App:
         vals = self._modal_tv_elenco.item(sel[0], "values")
         if len(vals) < 2:
             return
-        nome = str(vals[0]).strip()
+        nome = self._modal_extrair_nome_raw(vals[0])
         if not nome:
             return
         self._modal_enviar_jogador_para(nome, destino)
@@ -2023,6 +2243,7 @@ class App:
         for item in self._ordenar_nomes_escalacao(itens):
             lb.insert(tk.END, item)
         self._modal_atualizar_resumo()
+        self._modal_atualizar_lista_geral_com_status()
 
     def _abrir_menu_contexto_escalacao_modal(self, event, origem):
         nome = ""
@@ -2031,11 +2252,13 @@ class App:
             iid = self._modal_tv_elenco.identify_row(event.y)
             if not iid:
                 return
+            if iid in getattr(self, "_modal_iids_separador", set()):
+                return
             self._modal_tv_elenco.selection_set(iid)
             self._modal_tv_elenco.focus(iid)
             values = self._modal_tv_elenco.item(iid, "values")
             if len(values) >= 1:
-                nome = str(values[0]).strip()
+                nome = self._modal_extrair_nome_raw(values[0])
         elif tipo == "titulares":
             lb = self._modal_lb_titulares.get(chave)
             if not lb:
@@ -2099,6 +2322,29 @@ class App:
             return
         nome_removido = str(lb.get(sel[0])).strip()
         lb.delete(sel[0])
+        if tipo == "titulares" and nome_removido:
+            lb_res = self._modal_lb_extras.get("reservas")
+            if lb_res:
+                reservas = [str(n).strip() for n in lb_res.get(0, tk.END) if str(n).strip()]
+                if reservas:
+                    promovido = reservas.pop(0)
+                    lb_res.delete(0, tk.END)
+                    for item in self._ordenar_nomes_escalacao(reservas + [nome_removido]):
+                        lb_res.insert(tk.END, item)
+                    titulares_atuais = [str(n).strip() for n in lb.get(0, tk.END) if str(n).strip()]
+                    titulares_atuais.append(promovido)
+                    lb.delete(0, tk.END)
+                    for item in self._ordenar_nomes_escalacao(titulares_atuais):
+                        lb.insert(tk.END, item)
+                else:
+                    lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
+                    if lb_nao_rel:
+                        atuais = [str(n).strip() for n in lb_nao_rel.get(0, tk.END) if str(n).strip()]
+                        if nome_removido.casefold() not in {n.casefold() for n in atuais}:
+                            atuais.append(nome_removido)
+                            lb_nao_rel.delete(0, tk.END)
+                            for item in self._ordenar_nomes_escalacao(atuais):
+                                lb_nao_rel.insert(tk.END, item)
         if tipo == "extras" and chave == "reservas" and nome_removido:
             lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
             if lb_nao_rel:
@@ -2109,6 +2355,7 @@ class App:
                     for item in self._ordenar_nomes_escalacao(atuais):
                         lb_nao_rel.insert(tk.END, item)
         self._modal_atualizar_resumo()
+        self._modal_atualizar_lista_geral_com_status()
 
     def _modal_atualizar_resumo(self):
         esc = self._modal_coletar_escalacao()
@@ -2118,13 +2365,9 @@ class App:
 
     def _salvar_modal_escalacao_partida(self):
         escalacao = self._modal_coletar_escalacao()
-        titulares = sum(len(escalacao["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
-        reservas = len(escalacao.get("reservas", []))
-        if titulares != 11:
-            messagebox.showerror("Escalação inválida", "A escalação precisa ter exatamente 11 titulares.")
-            return
-        if reservas < 4:
-            messagebox.showerror("Escalação inválida", "A escalação precisa ter pelo menos 4 reservas.")
+        ok, msg = self._validar_escalacao_partida(escalacao)
+        if not ok:
+            messagebox.showerror("Escalação inválida", msg)
             return
         self._carregar_escalacao_partida(escalacao)
         self._fechar_modal_escalacao_partida()
@@ -2319,17 +2562,13 @@ class App:
         contagem_contra = Counter(nomes_contra)
         gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
         escalacao_partida = self._coletar_escalacao_partida()
-        total_titulares = sum(len(escalacao_partida["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
-        total_reservas = len(escalacao_partida.get("reservas", []))
+        escalacao_ok, escalacao_msg = self._validar_escalacao_partida(escalacao_partida)
 
         if not (data and adversario and placar_vasco and placar_adv and competicao and tecnico):
             messagebox.showerror("Erro", "Preencha todos os campos obrigatórios.")
             return
-        if total_titulares != 11:
-            messagebox.showerror("Escalação inválida", "Só é possível salvar com exatamente 11 titulares.")
-            return
-        if total_reservas < 4:
-            messagebox.showerror("Escalação inválida", "Só é possível salvar com no mínimo 4 reservas.")
+        if not escalacao_ok:
+            messagebox.showerror("Escalação inválida", escalacao_msg)
             return
 
         if adversario not in self.listas["clubes_adversarios"]:
