@@ -1430,8 +1430,8 @@ class App:
             nome = str(jogador.get("nome", "")).strip()
             if not nome:
                 continue
-            nova_condicao = nomes_por_condicao.get(nome.casefold())
-            if nova_condicao and jogador.get("condicao") != nova_condicao:
+            nova_condicao = nomes_por_condicao.get(nome.casefold(), "Não Relacionado")
+            if jogador.get("condicao") != nova_condicao:
                 jogador["condicao"] = nova_condicao
                 alterou = True
 
@@ -1589,6 +1589,7 @@ class App:
         self.entry_gol_vasco = ttk.Combobox(col_vasco)
         self.entry_gol_vasco["values"] = self.listas["jogadores_vasco"]
         self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
+        self.entry_gol_vasco.bind("<<ComboboxSelected>>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_vasco)
@@ -1611,6 +1612,7 @@ class App:
         self.entry_gol_contra = ttk.Combobox(col_contra)
         self.entry_gol_contra["values"] = self.listas["jogadores_contra"]
         self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
+        self.entry_gol_contra.bind("<<ComboboxSelected>>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_contra)
@@ -1842,6 +1844,14 @@ class App:
         sy = ttk.Scrollbar(esquerda, orient="vertical", command=self._modal_tv_elenco.yview)
         sy.grid(row=0, column=1, sticky="ns")
         self._modal_tv_elenco.configure(yscrollcommand=sy.set)
+        self._modal_tv_elenco.bind(
+            "<Button-3>",
+            lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("elenco", None))
+        )
+        self._modal_tv_elenco.bind(
+            "<Control-Button-1>",
+            lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("elenco", None))
+        )
 
         for jogador in _ordenar_jogadores_por_posicao(list(self.elenco_atual.get("jogadores", []))):
             nome = str(jogador.get("nome", "")).strip()
@@ -1893,6 +1903,8 @@ class App:
             )
             lb.grid(row=0, column=0, sticky="nsew")
             lb.bind("<Delete>", lambda _e, p=pos: self._modal_remover_jogador(("titulares", p)))
+            lb.bind("<Button-3>", lambda e, p=pos: self._abrir_menu_contexto_escalacao_modal(e, ("titulares", p)))
+            lb.bind("<Control-Button-1>", lambda e, p=pos: self._abrir_menu_contexto_escalacao_modal(e, ("titulares", p)))
             botoes = ttk.Frame(bloco)
             botoes.grid(row=1, column=0, sticky="ew", pady=(6, 0))
             ttk.Button(botoes, text="Adicionar", command=lambda p=pos: self._modal_adicionar_jogador(("titulares", p))).pack(side="left")
@@ -1917,6 +1929,8 @@ class App:
             )
             lb.grid(row=0, column=0, sticky="nsew")
             lb.bind("<Delete>", lambda _e, k=chave: self._modal_remover_jogador(("extras", k)))
+            lb.bind("<Button-3>", lambda e, k=chave: self._abrir_menu_contexto_escalacao_modal(e, ("extras", k)))
+            lb.bind("<Control-Button-1>", lambda e, k=chave: self._abrir_menu_contexto_escalacao_modal(e, ("extras", k)))
             botoes = ttk.Frame(bloco)
             botoes.grid(row=1, column=0, sticky="ew", pady=(6, 0))
             ttk.Button(botoes, text="Adicionar", command=lambda k=chave: self._modal_adicionar_jogador(("extras", k))).pack(side="left")
@@ -1989,7 +2003,12 @@ class App:
         nome = str(vals[0]).strip()
         if not nome:
             return
+        self._modal_enviar_jogador_para(nome, destino)
 
+    def _modal_enviar_jogador_para(self, nome, destino):
+        nome = str(nome).strip()
+        if not nome:
+            return
         self._modal_remover_nome_de_tudo(nome)
         tipo, chave = destino
         if tipo == "titulares":
@@ -2005,6 +2024,68 @@ class App:
             lb.insert(tk.END, item)
         self._modal_atualizar_resumo()
 
+    def _abrir_menu_contexto_escalacao_modal(self, event, origem):
+        nome = ""
+        tipo, chave = origem
+        if tipo == "elenco":
+            iid = self._modal_tv_elenco.identify_row(event.y)
+            if not iid:
+                return
+            self._modal_tv_elenco.selection_set(iid)
+            self._modal_tv_elenco.focus(iid)
+            values = self._modal_tv_elenco.item(iid, "values")
+            if len(values) >= 1:
+                nome = str(values[0]).strip()
+        elif tipo == "titulares":
+            lb = self._modal_lb_titulares.get(chave)
+            if not lb:
+                return
+            idx = lb.nearest(event.y)
+            if idx < 0 or idx >= lb.size():
+                return
+            lb.selection_clear(0, tk.END)
+            lb.selection_set(idx)
+            nome = str(lb.get(idx)).strip()
+        elif tipo == "extras":
+            lb = self._modal_lb_extras.get(chave)
+            if not lb:
+                return
+            idx = lb.nearest(event.y)
+            if idx < 0 or idx >= lb.size():
+                return
+            lb.selection_clear(0, tk.END)
+            lb.selection_set(idx)
+            nome = str(lb.get(idx)).strip()
+
+        if not nome:
+            return
+
+        menu = tk.Menu(self._modal_escalacao_partida, tearoff=0)
+        submenu_tit = tk.Menu(menu, tearoff=0)
+        for pos in POSICOES_ELENCO:
+            submenu_tit.add_command(
+                label=f"Titular - {pos}",
+                command=lambda n=nome, p=pos: self._modal_enviar_jogador_para(n, ("titulares", p))
+            )
+        menu.add_cascade(label="Enviar para Titulares", menu=submenu_tit)
+        menu.add_separator()
+        menu.add_command(
+            label="Enviar para Reservas",
+            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "reservas"))
+        )
+        menu.add_command(
+            label="Enviar para Não Relacionados",
+            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "nao_relacionados"))
+        )
+        menu.add_command(
+            label="Enviar para Lesionados",
+            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "lesionados"))
+        )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
     def _modal_remover_jogador(self, origem):
         tipo, chave = origem
         if tipo == "titulares":
@@ -2016,7 +2097,17 @@ class App:
         sel = lb.curselection()
         if not sel:
             return
+        nome_removido = str(lb.get(sel[0])).strip()
         lb.delete(sel[0])
+        if tipo == "extras" and chave == "reservas" and nome_removido:
+            lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
+            if lb_nao_rel:
+                atuais = [str(n).strip() for n in lb_nao_rel.get(0, tk.END) if str(n).strip()]
+                if nome_removido.casefold() not in {n.casefold() for n in atuais}:
+                    atuais.append(nome_removido)
+                    lb_nao_rel.delete(0, tk.END)
+                    for item in self._ordenar_nomes_escalacao(atuais):
+                        lb_nao_rel.insert(tk.END, item)
         self._modal_atualizar_resumo()
 
     def _modal_atualizar_resumo(self):
