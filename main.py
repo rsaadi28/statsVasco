@@ -2892,14 +2892,6 @@ class App:
         elif hasattr(self, "posicao_var"):
             self.posicao_var.set("")
 
-        # Gols (contados)
-        nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
-        contagem_vasco = Counter(nomes_vasco)
-        gols_vasco = [{"nome": nome, "gols": qtd} for nome, qtd in contagem_vasco.items()]
-
-        nomes_contra = list(self.lista_gols_contra.get(0, tk.END))
-        contagem_contra = Counter(nomes_contra)
-        gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
         escalacao_partida = self._coletar_escalacao_partida()
         escalacao_ok, escalacao_msg = self._validar_escalacao_partida(escalacao_partida)
 
@@ -2909,6 +2901,37 @@ class App:
         if not escalacao_ok:
             messagebox.showerror("Escalação inválida", escalacao_msg)
             return
+
+        # Gols (contados)
+        nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
+        contagem_vasco = Counter(nomes_vasco)
+        titulares_cf = set()
+        reservas_cf = set()
+        tit_por_pos = escalacao_partida.get("titulares_por_posicao", {})
+        if isinstance(tit_por_pos, dict):
+            for pos in POSICOES_ELENCO:
+                for nome_tit in tit_por_pos.get(pos, []):
+                    nome_limpo = str(nome_tit).strip()
+                    if nome_limpo:
+                        titulares_cf.add(nome_limpo.casefold())
+        for nome_res in escalacao_partida.get("reservas", []):
+            nome_limpo = str(nome_res).strip()
+            if nome_limpo:
+                reservas_cf.add(nome_limpo.casefold())
+
+        gols_vasco = []
+        for nome, qtd in contagem_vasco.items():
+            nome_cf = str(nome).strip().casefold()
+            saiu_do_banco = nome_cf in reservas_cf and nome_cf not in titulares_cf
+            gols_vasco.append({
+                "nome": nome,
+                "gols": qtd,
+                "saiu_do_banco": saiu_do_banco,
+            })
+
+        nomes_contra = list(self.lista_gols_contra.get(0, tk.END))
+        contagem_contra = Counter(nomes_contra)
+        gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
 
         if adversario not in self.listas["clubes_adversarios"]:
             self.listas["clubes_adversarios"].append(adversario)
@@ -3510,7 +3533,9 @@ class App:
                 if isinstance(g, dict):
                     nome = g.get("nome", "Desconhecido")
                     qtd = int(g.get("gols", 0))
-                    partes.append(f"{nome} x{qtd}" if qtd > 1 else nome)
+                    saiu_banco = bool(g.get("saiu_do_banco", False))
+                    nome_fmt = f"🪑 {nome}" if saiu_banco else str(nome)
+                    partes.append(f"{nome_fmt} x{qtd}" if qtd > 1 else nome_fmt)
                 elif isinstance(g, str):
                     partes.append(g)
             return ", ".join(partes)
