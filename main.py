@@ -583,6 +583,7 @@ class App:
         self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
         self.notebook.select(self.frame_registro)
 
     # --------------------- Jogos Futuros ---------------------
@@ -1417,6 +1418,18 @@ class App:
         if hasattr(self, "_render_elenco_atual"):
             self._render_elenco_atual()
         self._atualizar_elenco_disponivel_partida()
+        if hasattr(self, "escalacao_partida"):
+            self._inicializar_escalacao_partida()
+
+    def _on_notebook_tab_changed(self, event):
+        if event.widget is not self.notebook:
+            return
+        atual = self.notebook.select()
+        if str(atual) != str(self.frame_registro):
+            return
+        # Sempre espelha o que estiver salvo no Elenco Atual ao entrar na aba de registro.
+        self.elenco_atual = carregar_elenco_atual()
+        self._sincronizar_jogadores_vasco_com_elenco()
 
     def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
         if not isinstance(escalacao_partida, dict):
