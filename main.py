@@ -1791,8 +1791,8 @@ class App:
                 r = 14
                 canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
                 canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
-                nome_curto = nome if len(nome) <= 16 else (nome[:15] + "…")
-                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 8))
+                nome_curto = nome if len(nome) <= 16 else (nome[:20] + "…")
+                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
                 self._preview_hit_players.append({
                     "linha": chave_linha,
                     "idx": i,
@@ -2241,8 +2241,8 @@ class App:
                 r = 14
                 canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
                 canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
-                nome_curto = nome if len(nome) <= 16 else (nome[:15] + "…")
-                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 8))
+                nome_curto = nome if len(nome) <= 16 else (nome[:20] + "…")
+                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
                 self._modal_campinho_hits.append({
                     "nome": nome,
                     "linha": sigla,
