@@ -2107,12 +2107,12 @@ class App:
         conteudo.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         conteudo.columnconfigure(0, weight=1)
         conteudo.columnconfigure(1, weight=1)
-        conteudo.rowconfigure(0, weight=1)
-        conteudo.rowconfigure(1, weight=1)
-        conteudo.rowconfigure(2, weight=1)
+        conteudo.rowconfigure(0, weight=5, minsize=320)
+        conteudo.rowconfigure(1, weight=1, minsize=140)
+        conteudo.rowconfigure(2, weight=1, minsize=140)
 
-        titulares_frame = ttk.Labelframe(conteudo, text="Titulares no Campinho", padding=8)
-        titulares_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=(0, 8))
+        titulares_frame = ttk.Labelframe(conteudo, text="Titulares no Campinho", padding=10)
+        titulares_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=(4, 4), pady=(4, 10))
         titulares_frame.columnconfigure(0, weight=1)
         titulares_frame.rowconfigure(0, weight=1)
 
@@ -2121,6 +2121,7 @@ class App:
             background="#0f6a35",
             highlightthickness=1,
             highlightbackground="#1a1a1a",
+            height=340,
         )
         self._modal_canvas_campinho.grid(row=0, column=0, sticky="nsew")
         self._modal_canvas_campinho.bind("<Configure>", lambda _e: self._modal_render_campinho())
@@ -2131,17 +2132,23 @@ class App:
         self._modal_lb_extras = {}
         for idx, (chave, titulo) in enumerate(CATEGORIAS_ESCALACAO_EXTRAS):
             r, c = divmod(idx, 2)
-            bloco = ttk.Labelframe(conteudo, text=titulo, padding=8)
+            bloco = ttk.Labelframe(conteudo, text=titulo, padding=10)
             bloco.grid(
                 row=1 + r, column=c, sticky="nsew",
-                padx=(0 if c == 0 else 4, 4 if c == 0 else 0),
-                pady=(0, 8 if r == 0 else 0)
+                padx=(4 if c == 0 else 6, 6 if c == 0 else 4),
+                pady=(4, 10 if r == 0 else 4)
             )
             bloco.columnconfigure(0, weight=1)
             bloco.rowconfigure(0, weight=1)
+            if chave == "reservas":
+                lb_bg, lb_fg = "#fff4cf", "#4a3a06"
+            elif chave == "nao_relacionados":
+                lb_bg, lb_fg = "#ffe3c2", "#4f2a09"
+            else:  # lesionados
+                lb_bg, lb_fg = "#ffd6d6", "#5a1414"
             lb = tk.Listbox(
-                bloco, height=8,
-                bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+                bloco, height=6,
+                bg=lb_bg, fg=lb_fg,
                 selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
             )
             lb.grid(row=0, column=0, sticky="nsew")
