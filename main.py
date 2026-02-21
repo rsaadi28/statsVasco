@@ -29,17 +29,25 @@ except Exception:
 # Diretórios e arquivos (robusto ao diretório atual de execução)
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 APP_NAME = "StatsVasco"
-APP_SUPPORT_DIR = os.path.join(
-    os.path.expanduser("~/Library/Application Support"),
-    APP_NAME
-)
+
+
+def _diretorio_dados_por_plataforma():
+    """Retorna a pasta de dados do usuário conforme o sistema operacional."""
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~\\AppData\\Local")
+    elif sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Application Support")
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    return os.path.join(base, APP_NAME)
 
 
 def _definir_diretorio_dados():
-    """Usa Application Support quando empacotado (PyInstaller)."""
-    if sys.platform == "darwin" and getattr(sys, "frozen", False):
-        os.makedirs(APP_SUPPORT_DIR, exist_ok=True)
-        return APP_SUPPORT_DIR
+    """Usa pasta de dados do usuário quando empacotado (PyInstaller)."""
+    if getattr(sys, "frozen", False):
+        app_support_dir = _diretorio_dados_por_plataforma()
+        os.makedirs(app_support_dir, exist_ok=True)
+        return app_support_dir
     return PROJECT_ROOT
 
 
