@@ -541,7 +541,10 @@ class Tooltip:
             return
         tw = tk.Toplevel(self.master)
         tw.wm_overrideredirect(True)
-        tw.attributes("-topmost", True)
+        try:
+            tw.attributes("-topmost", True)
+        except tk.TclError:
+            pass
         tw.wm_geometry(f"+{x_root + 18}+{y_root + 16}")
         ttk.Label(tw, text=text, justify="left",
                   relief="solid", borderwidth=1, padding=(8, 6)).pack()
@@ -669,7 +672,7 @@ class App:
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
         self.frame_jogadores_historico = ttk.Frame(self.notebook, padding=10)
 
-        self.notebook.insert(0, self.frame_futuros, text="Jogos Futuros")
+        self.notebook.add(self.frame_futuros, text="Jogos Futuros")
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
         self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
@@ -3420,7 +3423,10 @@ class App:
         top.transient(self.root)
         top.grab_set()
         top.lift()
-        top.attributes("-topmost", True)
+        try:
+            top.attributes("-topmost", True)
+        except tk.TclError:
+            pass
         self._calendar_popup = top
         self._calendar_target_var = target_var or self.data_var
 
@@ -4186,7 +4192,11 @@ class App:
 
 
 
-        nb.select(indice_atual)
+        try:
+            if nb.tabs():
+                nb.select(indice_atual)
+        except tk.TclError:
+            pass
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):
