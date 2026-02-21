@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Build artifacts (PyInstaller)
+build/
+dist/
+*.spec.bak
+
+# Installers/packages
+*.dmg
+*.pkg
+*.msi
+*.exe
+
+# App runtime backups
+*.backup_*.json
+
+# Logs
+*.log
