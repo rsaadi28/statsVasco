@@ -1,8 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+from PyInstaller.utils.hooks import collect_data_files
 
 icon_path = "app.ico" if os.path.exists("app.ico") else None
+matplotlib_datas = collect_data_files("matplotlib")
 
 a = Analysis(
     ['main_demo.py'],
@@ -14,8 +16,12 @@ a = Analysis(
         ('listas_auxiliares.json', '.'),
         ('elenco_atual.json', '.'),
         ('jogadores_historico.json', '.'),
+    ] + matplotlib_datas,
+    hiddenimports=[
+        'matplotlib',
+        'matplotlib.backends.backend_tkagg',
+        'matplotlib.backends._backend_tk',
     ],
-    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

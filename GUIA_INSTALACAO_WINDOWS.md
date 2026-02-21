@@ -13,7 +13,7 @@ Passos:
    `python -m venv .venv`
    `.venv\Scripts\activate`
 3. Instale o PyInstaller:
-   `pip install pyinstaller`
+   `pip install pyinstaller matplotlib`
 4. Rode o script de build:
    `build_windows.bat`
 
@@ -28,6 +28,8 @@ Observacoes:
 3. No primeiro uso, o app copia os dados para:
    `%LOCALAPPDATA%\StatsVasco`
    Exemplo: `C:\Users\SeuUsuario\AppData\Local\StatsVasco`
+4. Se quiser habilitar o calendario popup no executavel, instale tambem:
+   `pip install tkcalendar`
 
 ## 2) Como o usuario final executa
 

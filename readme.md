@@ -11,7 +11,7 @@
 ### Windows (Prompt de Comando)
 1. `python -m venv .venv`
 2. `.venv\Scripts\activate`
-3. `pip install --upgrade pip pyinstaller`
+3. `pip install --upgrade pip pyinstaller matplotlib`
 4. `python main.py`
 
 ## Gerar builds
