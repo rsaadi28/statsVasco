@@ -110,7 +110,7 @@ def _bootstrap_jsons():
     defaults = {
         "jogos_vasco.json": [],
         "jogos_futuros.json": [],
-        "elenco_atual.json": {"jogadores": []},
+        "elenco_atual.json": {"jogadores": [], "tecnico": ""},
         "jogadores_historico.json": {"jogadores": []},
         "listas_auxiliares.json": {
             "clubes_adversarios": [],
@@ -304,14 +304,15 @@ def _ordenar_jogadores_por_posicao(jogadores):
 
 
 def carregar_elenco_atual():
-    dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": []})
+    dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": [], "tecnico": ""})
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
-        dados = {"jogadores": []}
+        dados = {"jogadores": [], "tecnico": ""}
     jogadores = dados.get("jogadores", [])
     if not isinstance(jogadores, list):
         jogadores = []
+    tecnico = str(dados.get("tecnico", "") or "").strip()
 
     normalizados = []
     vistos = set()
@@ -326,17 +327,18 @@ def carregar_elenco_atual():
         normalizados.append(jogador)
 
     normalizados = _ordenar_jogadores_elenco(normalizados)
-    return {"jogadores": normalizados}
+    return {"jogadores": normalizados, "tecnico": tecnico}
 
 
 def salvar_elenco_atual(dados):
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
-        dados = {"jogadores": []}
+        dados = {"jogadores": [], "tecnico": ""}
     jogadores = dados.get("jogadores", [])
     if not isinstance(jogadores, list):
         jogadores = []
+    tecnico = str(dados.get("tecnico", "") or "").strip()
 
     normalizados = []
     vistos = set()
@@ -352,7 +354,7 @@ def salvar_elenco_atual(dados):
 
     jogadores_limpos = _ordenar_jogadores_elenco(normalizados)
     with open(ARQUIVO_ELENCO_ATUAL, "w", encoding="utf-8") as f:
-        json.dump({"jogadores": jogadores_limpos}, f, ensure_ascii=False, indent=2)
+        json.dump({"jogadores": jogadores_limpos, "tecnico": tecnico}, f, ensure_ascii=False, indent=2)
 
 
 def _normalizar_jogador_historico(item):
@@ -646,6 +648,7 @@ class App:
             salvar_listas(self.listas)
         elif jogadores_vasco:
             self.elenco_atual = {
+                "tecnico": self.listas.get("tecnico_atual", "Fernando Diniz"),
                 "jogadores": [
                     {"nome": nome, "posicao": "Meio-Campista", "condicao": "Reserva"}
                     for nome in jogadores_vasco
@@ -1334,6 +1337,7 @@ class App:
         entrada_wrap = ttk.Frame(frame)
         entrada_wrap.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 8))
         entrada_wrap.columnconfigure(3, weight=1)
+        entrada_wrap.columnconfigure(9, weight=1)
 
         self.elenco_nome_var = tk.StringVar()
         self.elenco_posicao_var = tk.StringVar(value=ELENCO_POSICAO_PLACEHOLDER)
@@ -1372,6 +1376,24 @@ class App:
         ttk.Button(
             entrada_wrap, textvariable=self.elenco_botao_var, command=self._adicionar_jogador_elenco
         ).grid(row=0, column=6)
+
+        self.elenco_tecnico_var = tk.StringVar(
+            value=self.elenco_atual.get("tecnico", "") or self.listas.get("tecnico_atual", "Fernando Diniz")
+        )
+        ttk.Label(entrada_wrap, text="Técnico:").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.elenco_tecnico_entry = ttk.Combobox(
+            entrada_wrap,
+            textvariable=self.elenco_tecnico_var,
+            width=24
+        )
+        self.elenco_tecnico_entry["values"] = self.listas.get("tecnicos", [])
+        self.elenco_tecnico_entry.grid(row=1, column=1, columnspan=3, sticky="ew", padx=(6, 10), pady=(8, 0))
+        self.elenco_tecnico_entry.bind("<Return>", self._salvar_tecnico_elenco_atual)
+        self.elenco_tecnico_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "tecnicos"))
+        self._forcar_cursor_visivel(self.elenco_tecnico_entry)
+        ttk.Button(
+            entrada_wrap, text="Salvar Técnico", command=self._salvar_tecnico_elenco_atual
+        ).grid(row=1, column=4, sticky="w", pady=(8, 0))
 
         ttk.Label(frame, textvariable=self.elenco_resumo_var).grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(0, 6)
@@ -1717,11 +1739,34 @@ class App:
             jogadores.append(
                 {"nome": str(nome).strip(), "posicao": str(posicao).strip(), "condicao": str(condicao).strip()}
             )
-        self.elenco_atual = {"jogadores": jogadores}
+        self.elenco_atual = {
+            "jogadores": jogadores,
+            "tecnico": str(self.elenco_atual.get("tecnico", "")).strip(),
+        }
         salvar_elenco_atual(self.elenco_atual)
         self.elenco_atual = carregar_elenco_atual()
         self._render_elenco_atual()
         self._sincronizar_jogadores_vasco_com_elenco()
+
+    def _salvar_tecnico_elenco_atual(self, _event=None):
+        tecnico = self.elenco_tecnico_var.get().strip() if hasattr(self, "elenco_tecnico_var") else ""
+        if not tecnico:
+            messagebox.showwarning("Campo obrigatório", "Informe o nome do técnico.")
+            return
+        self.elenco_atual["tecnico"] = tecnico
+        salvar_elenco_atual(self.elenco_atual)
+        self.elenco_atual = carregar_elenco_atual()
+        lista_tecnicos = self.listas.setdefault("tecnicos", [])
+        if tecnico not in lista_tecnicos:
+            lista_tecnicos.append(tecnico)
+            self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
+        self.listas["tecnico_atual"] = tecnico
+        salvar_listas(self.listas)
+        if hasattr(self, "elenco_tecnico_var"):
+            self.elenco_tecnico_var.set(tecnico)
+        if hasattr(self, "tecnico_var"):
+            self.tecnico_var.set(tecnico)
+        self._atualizar_combo_tecnicos()
 
     def _sincronizar_jogadores_vasco_com_elenco(self):
         self._atualizar_opcoes_gol_vasco(persistir=True)
@@ -1784,6 +1829,17 @@ class App:
             return
         # Sempre espelha o que estiver salvo no Elenco Atual ao entrar na aba de registro.
         self.elenco_atual = carregar_elenco_atual()
+        tecnico_elenco = str(self.elenco_atual.get("tecnico", "") or "").strip()
+        if tecnico_elenco:
+            lista_tecnicos = self.listas.setdefault("tecnicos", [])
+            if tecnico_elenco not in lista_tecnicos:
+                lista_tecnicos.append(tecnico_elenco)
+                self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
+            self.listas["tecnico_atual"] = tecnico_elenco
+            if hasattr(self, "tecnico_var"):
+                self.tecnico_var.set(tecnico_elenco)
+            salvar_listas(self.listas)
+            self._atualizar_combo_tecnicos()
         self._sincronizar_jogadores_vasco_com_elenco()
 
     def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
@@ -3178,15 +3234,11 @@ class App:
 
         self._modal_tv_elenco.delete(*self._modal_tv_elenco.get_children())
         novo_iid_selecionado = None
-        posicao_anterior = None
-        for jogador in _ordenar_jogadores_por_posicao(list(self.elenco_atual.get("jogadores", []))):
+        for jogador in list(self.elenco_atual.get("jogadores", [])):
             nome = str(jogador.get("nome", "")).strip()
             if not nome:
                 continue
             posicao_atual = str(jogador.get("posicao", "")).strip()
-            if posicao_anterior is not None and posicao_atual != posicao_anterior:
-                iid_sep = self._modal_tv_elenco.insert("", "end", values=("", ""), tags=("sep_posicao",))
-                self._modal_iids_separador.add(iid_sep)
             cf = nome.casefold()
             status = status_por_nome.get(cf, "sem_lista")
             tag = f"status_{status}"
@@ -3198,7 +3250,6 @@ class App:
             )
             if selecionado_cf and cf == selecionado_cf:
                 novo_iid_selecionado = iid
-            posicao_anterior = posicao_atual
         if novo_iid_selecionado:
             self._modal_tv_elenco.selection_set(novo_iid_selecionado)
             self._modal_tv_elenco.focus(novo_iid_selecionado)
@@ -3941,6 +3992,8 @@ class App:
     def _atualizar_combo_tecnicos(self):
         if hasattr(self, "tecnico_entry"):
             self.tecnico_entry['values'] = self.listas.get("tecnicos", [])
+        if hasattr(self, "elenco_tecnico_entry"):
+            self.elenco_tecnico_entry['values'] = self.listas.get("tecnicos", [])
 
     def _competicao_usa_posicao(self, nome):
         if not nome:
