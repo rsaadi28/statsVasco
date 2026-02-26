@@ -1739,6 +1739,8 @@ class App:
         self.elenco_botao_var = tk.StringVar(value="Adicionar")
         self.elenco_resumo_var = tk.StringVar(value="")
         self._elenco_edit_nome_cf = None
+        self._elenco_sort_col = None
+        self._elenco_sort_reverse = False
 
         ttk.Label(entrada_wrap, text="Posição:").grid(row=0, column=0, sticky="w")
         self.elenco_posicao_entry = ttk.Combobox(
@@ -1799,9 +1801,9 @@ class App:
 
         cols = ("posicao", "jogador", "condicao")
         self.tv_elenco_atual = ttk.Treeview(list_wrap, columns=cols, show="headings", height=14)
-        self.tv_elenco_atual.heading("posicao", text="Posição")
-        self.tv_elenco_atual.heading("jogador", text="Jogador")
-        self.tv_elenco_atual.heading("condicao", text="Condição")
+        self.tv_elenco_atual.heading("posicao", text="Posição", command=lambda: self._toggle_ordenacao_elenco_atual("posicao"))
+        self.tv_elenco_atual.heading("jogador", text="Jogador", command=lambda: self._toggle_ordenacao_elenco_atual("jogador"))
+        self.tv_elenco_atual.heading("condicao", text="Condição", command=self._reset_ordenacao_elenco_atual)
         self.tv_elenco_atual.column("posicao", width=180, anchor="w")
         self.tv_elenco_atual.column("jogador", width=340, anchor="w")
         self.tv_elenco_atual.column("condicao", width=150, anchor="center")
@@ -1860,6 +1862,7 @@ class App:
         for iid in self.tv_elenco_atual.get_children():
             self.tv_elenco_atual.delete(iid)
         jogadores = list(self.elenco_atual.get("jogadores", []))
+        jogadores = self._ordenar_jogadores_elenco_para_exibicao(jogadores)
         cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0}
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
@@ -1886,6 +1889,42 @@ class App:
                 f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']}"
             )
         self._render_campinho_elenco()
+
+    def _ordenar_jogadores_elenco_para_exibicao(self, jogadores):
+        itens = list(jogadores or [])
+        col = getattr(self, "_elenco_sort_col", None)
+        if col not in {"posicao", "jogador"}:
+            return itens
+
+        pos_ordem = {pos: i for i, pos in enumerate(POSICOES_ELENCO)}
+
+        def key_pos(item):
+            pos = _normalizar_posicao_elenco(item.get("posicao"))
+            nome = str(item.get("nome", "")).strip()
+            return (pos_ordem.get(pos, 999), _chave_nome_jogador(nome))
+
+        def key_jog(item):
+            nome = str(item.get("nome", "")).strip()
+            pos = _normalizar_posicao_elenco(item.get("posicao"))
+            return (_chave_nome_jogador(nome), pos_ordem.get(pos, 999))
+
+        key_fn = key_pos if col == "posicao" else key_jog
+        return sorted(itens, key=key_fn, reverse=bool(getattr(self, "_elenco_sort_reverse", False)))
+
+    def _toggle_ordenacao_elenco_atual(self, coluna):
+        if coluna not in {"posicao", "jogador"}:
+            return
+        if getattr(self, "_elenco_sort_col", None) == coluna:
+            self._elenco_sort_reverse = not bool(getattr(self, "_elenco_sort_reverse", False))
+        else:
+            self._elenco_sort_col = coluna
+            self._elenco_sort_reverse = False
+        self._render_elenco_atual()
+
+    def _reset_ordenacao_elenco_atual(self):
+        self._elenco_sort_col = None
+        self._elenco_sort_reverse = False
+        self._render_elenco_atual()
 
     def _titulares_elenco_por_posicao(self):
         tit = {pos: [] for pos in POSICOES_ELENCO}
