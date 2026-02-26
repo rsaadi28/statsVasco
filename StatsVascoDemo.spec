@@ -1,5 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+
+TARGET_ARCH = os.environ.get('PYI_TARGET_ARCH') or None
+CODESIGN_IDENTITY = os.environ.get('PYI_CODESIGN_IDENTITY') or None
+ENTITLEMENTS_FILE = os.environ.get('PYI_ENTITLEMENTS_FILE') or None
+
 
 a = Analysis(
     ['main_demo.py'],
@@ -35,9 +42,9 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    target_arch=TARGET_ARCH,
+    codesign_identity=CODESIGN_IDENTITY,
+    entitlements_file=ENTITLEMENTS_FILE,
     icon=['app.icns'],
 )
 coll = COLLECT(

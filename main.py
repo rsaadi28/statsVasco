@@ -666,6 +666,7 @@ class App:
         self.notebook.pack(fill="both", expand=True)
 
         self.frame_futuros = ttk.Frame(self.notebook, padding=10)
+        self.frame_retro = ttk.Frame(self.notebook, padding=10)
         self.frame_elenco_atual = ttk.Frame(self.notebook, padding=10)
         self.frame_registro = ttk.Frame(self.notebook, padding=10)
         self.frame_temporadas = ttk.Frame(self.notebook, padding=10)
@@ -677,6 +678,7 @@ class App:
 
         self.notebook.add(self.frame_futuros, text="Jogos Futuros")
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
+        self.notebook.add(self.frame_retro, text="Retrospecto")
         self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
         self.notebook.add(self.frame_comparativo, text="Comparativo")
@@ -695,6 +697,7 @@ class App:
         self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
+        self._criar_aba_retro(self.frame_retro)
         self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
         self.notebook.select(self.frame_registro)
 
@@ -931,6 +934,396 @@ class App:
             message += f" | Inválidos: {invalidos}"
         message += f" | Total cadastrado: {len(base)}"
         messagebox.showinfo("Importação concluída", message)
+
+    def _criar_aba_retro(self, frame):
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+
+        topo = ttk.Frame(frame)
+        topo.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        topo.columnconfigure(1, weight=1)
+
+        ttk.Label(topo, text="Adversário:").grid(row=0, column=0, sticky="w")
+        self.retro_adversario_var = tk.StringVar()
+        self.retro_adversario_combo = ttk.Combobox(
+            topo,
+            textvariable=self.retro_adversario_var,
+            state="readonly",
+            values=[],
+        )
+        self.retro_adversario_combo.grid(row=0, column=1, sticky="ew", padx=(8, 8))
+        self.retro_adversario_combo.bind("<<ComboboxSelected>>", self._atualizar_retro_aba_adversario)
+
+        ttk.Button(topo, text="Atualizar", command=self._atualizar_retro_aba_adversario).grid(row=0, column=2, sticky="e")
+
+        content = ttk.Frame(frame)
+        content.grid(row=1, column=0, sticky="nsew")
+        content.columnconfigure(0, weight=3)
+        content.columnconfigure(1, weight=2)
+        content.rowconfigure(0, weight=1)
+
+        table_wrap = ttk.Frame(content)
+        table_wrap.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        table_wrap.columnconfigure(0, weight=1)
+        table_wrap.rowconfigure(0, weight=1)
+
+        retro_cols = ("data", "competicao", "local", "placar", "resultado", "gols_vasco", "gols_adversario")
+        self.tv_retro_aba = ttk.Treeview(table_wrap, columns=retro_cols, show="headings", height=16)
+        self.tv_retro_aba.heading("data", text="Data", command=lambda c="data": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("competicao", text="Competição", command=lambda c="competicao": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("local", text="Local", command=lambda c="local": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("placar", text="Placar", command=lambda c="placar": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("resultado", text="Resultado", command=lambda c="resultado": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("gols_vasco", text="Gols do Vasco", command=lambda c="gols_vasco": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.heading("gols_adversario", text="Gols do Adversário", command=lambda c="gols_adversario": self._ordenar_coluna_retro_aba(c))
+        self.tv_retro_aba.column("data", width=90, anchor="center")
+        self.tv_retro_aba.column("competicao", width=170, anchor="w")
+        self.tv_retro_aba.column("local", width=70, anchor="center")
+        self.tv_retro_aba.column("placar", width=90, anchor="center")
+        self.tv_retro_aba.column("resultado", width=90, anchor="center")
+        self.tv_retro_aba.column("gols_vasco", width=280, anchor="w")
+        self.tv_retro_aba.column("gols_adversario", width=280, anchor="w")
+        self.tv_retro_aba.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_retro_aba.grid(row=0, column=0, sticky="nsew")
+
+        sy = ttk.Scrollbar(table_wrap, orient="vertical", command=self.tv_retro_aba.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        self.tv_retro_aba.configure(yscrollcommand=sy.set)
+
+        info_wrap = ttk.Labelframe(content, text="Informações do retrospecto", padding=10)
+        info_wrap.grid(row=0, column=1, sticky="nsew")
+        info_wrap.columnconfigure(0, weight=1)
+        info_wrap.rowconfigure(13, weight=1)
+
+        self.retro_aba_art_vasco_var = tk.StringVar(value="—")
+        self.retro_aba_art_adv_var = tk.StringVar(value="—")
+        self.retro_aba_total_var = tk.StringVar(value="0")
+        self.retro_aba_aproveitamento_var = tk.StringVar(value="0%")
+        self.retro_aba_vitorias_var = tk.StringVar(value="0")
+        self.retro_aba_empates_var = tk.StringVar(value="0")
+        self.retro_aba_derrotas_var = tk.StringVar(value="0")
+        self.retro_aba_saldo_var = tk.StringVar(value="0")
+        self.retro_aba_gols_somados_var = tk.StringVar(value="Vasco 0 x 0 Adversário")
+        self.retro_aba_elastico_vasco_var = tk.StringVar(value="—")
+        self.retro_aba_elastico_adv_var = tk.StringVar(value="—")
+        self.retro_aba_jejum_adv_var = tk.StringVar(value="—")
+        self.retro_aba_jejum_vasco_var = tk.StringVar(value="—")
+        self.retro_aba_art_adv_titulo_var = tk.StringVar(value="Artilheiros do adversário")
+        self.retro_aba_elastico_adv_titulo_var = tk.StringVar(value="Para o adversário")
+        self.retro_aba_jejum_adv_titulo_var = tk.StringVar(value="Adversário sem vencer")
+        self.retro_aba_jejum_vasco_titulo_var = tk.StringVar(value="Vasco sem vencer")
+
+        cards_wrap = tk.Frame(info_wrap, bg=self.colors["bg"], highlightthickness=0)
+        cards_wrap.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        for col in range(3):
+            cards_wrap.grid_columnconfigure(col, weight=1, uniform="retrocards")
+
+        def _card(parent, row, col, titulo, var, bg, fg="#111111"):
+            card = tk.Frame(
+                parent,
+                bg=bg,
+                bd=1,
+                relief="solid",
+                padx=8,
+                pady=6,
+                highlightthickness=0,
+            )
+            card.grid(row=row, column=col, sticky="nsew", padx=4, pady=4)
+            tk.Label(card, text=titulo, bg=bg, fg=fg, font=("Segoe UI", 9, "bold")).pack(anchor="w")
+            tk.Label(card, textvariable=var, bg=bg, fg=fg, font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(2, 0))
+            return card
+
+        def _card_texto(parent, row, col, titulo=None, var=None, bg="#ffffff", fg="#111111", titulo_var=None, valor_font=None, valor_wraplength=180):
+            card = tk.Frame(parent, bg=bg, bd=1, relief="solid", padx=8, pady=6, highlightthickness=0)
+            card.grid(row=row, column=col, sticky="nsew", padx=4, pady=4)
+            titulo_kwargs = dict(bg=bg, fg=fg, font=("Segoe UI", 9, "bold"), wraplength=180, justify="center")
+            if titulo_var is not None:
+                tk.Label(card, textvariable=titulo_var, **titulo_kwargs).pack(fill="x")
+            else:
+                tk.Label(card, text=titulo or "", **titulo_kwargs).pack(fill="x")
+            tk.Label(
+                card,
+                textvariable=var,
+                bg=bg,
+                fg=fg,
+                font=valor_font or ("Segoe UI", 10),
+                wraplength=valor_wraplength,
+                justify="center"
+            ).pack(fill="x", pady=(4, 0))
+            return card
+
+        _card(cards_wrap, 0, 0, "Jogos", self.retro_aba_total_var, "#eef2f7").grid_configure(columnspan=2, sticky="ew")
+        _card(cards_wrap, 0, 2, "Aproveitamento", self.retro_aba_aproveitamento_var, "#eef7ff", "#0f4d73")
+        _card(cards_wrap, 1, 0, "Vitórias", self.retro_aba_vitorias_var, "#d9f4dd", "#14532d")
+        _card(cards_wrap, 1, 1, "Empates", self.retro_aba_empates_var, "#fff3bf", "#7a5a00")
+        _card(cards_wrap, 1, 2, "Derrotas", self.retro_aba_derrotas_var, "#ffd9d6", "#8a1c16")
+
+        ttk.Label(info_wrap, text="Gols somados:", font=("TkDefaultFont", 10, "bold")).grid(row=1, column=0, sticky="w")
+        gols_card_wrap = tk.Frame(info_wrap, bg=self.colors["bg"], highlightthickness=0)
+        gols_card_wrap.grid(row=2, column=0, sticky="ew", pady=(2, 10))
+        gols_card_wrap.grid_columnconfigure(0, weight=1)
+        gols_card = _card_texto(
+            gols_card_wrap,
+            0,
+            0,
+            titulo="Gols somados",
+            var=self.retro_aba_gols_somados_var,
+            bg="#eef7ff",
+            fg="#0f4d73",
+            valor_font=("Segoe UI", 14, "bold"),
+            valor_wraplength=420,
+        )
+        gols_card.grid_configure(padx=0, pady=0)
+        for child in gols_card.winfo_children():
+            try:
+                child.pack_configure(anchor="center")
+            except Exception:
+                pass
+
+        ttk.Label(info_wrap, text="Placares mais elásticos:", font=("TkDefaultFont", 10, "bold")).grid(row=4, column=0, sticky="w")
+        placares_wrap = tk.Frame(info_wrap, bg=self.colors["bg"], highlightthickness=0)
+        placares_wrap.grid(row=5, column=0, sticky="ew", pady=(2, 10))
+        placares_wrap.grid_columnconfigure(0, weight=1, uniform="retroelastic")
+        placares_wrap.grid_columnconfigure(1, weight=1, uniform="retroelastic")
+        _card_texto(placares_wrap, 0, 0, titulo="Para o Vasco", var=self.retro_aba_elastico_vasco_var, bg="#e8f0ff", fg="#163c7a")
+        _card_texto(placares_wrap, 0, 1, var=self.retro_aba_elastico_adv_var, bg="#fbe9e7", fg="#8a1c16", titulo_var=self.retro_aba_elastico_adv_titulo_var)
+
+        ttk.Label(info_wrap, text="Maiores Jejuns:", font=("TkDefaultFont", 10, "bold")).grid(row=6, column=0, sticky="w")
+        jejuns_wrap = tk.Frame(info_wrap, bg=self.colors["bg"], highlightthickness=0)
+        jejuns_wrap.grid(row=7, column=0, sticky="ew", pady=(2, 10))
+        jejuns_wrap.grid_columnconfigure(0, weight=1, uniform="retrojejuns")
+        jejuns_wrap.grid_columnconfigure(1, weight=1, uniform="retrojejuns")
+        _card_texto(jejuns_wrap, 0, 0, var=self.retro_aba_jejum_adv_var, bg="#eef7ff", fg="#0f4d73", titulo_var=self.retro_aba_jejum_adv_titulo_var)
+        _card_texto(jejuns_wrap, 0, 1, var=self.retro_aba_jejum_vasco_var, bg="#f2efff", fg="#4a2f8a", titulo_var=self.retro_aba_jejum_vasco_titulo_var)
+
+        ttk.Label(info_wrap, text="Artilheiros do Vasco", font=("TkDefaultFont", 10, "bold")).grid(row=8, column=0, sticky="w")
+        ttk.Label(
+            info_wrap,
+            textvariable=self.retro_aba_art_vasco_var,
+            justify="left",
+            wraplength=420,
+        ).grid(row=9, column=0, sticky="nw", pady=(2, 10))
+
+        ttk.Label(
+            info_wrap,
+            textvariable=self.retro_aba_art_adv_titulo_var,
+            font=("TkDefaultFont", 10, "bold")
+        ).grid(row=10, column=0, sticky="w")
+        ttk.Label(
+            info_wrap,
+            textvariable=self.retro_aba_art_adv_var,
+            justify="left",
+            wraplength=420,
+        ).grid(row=11, column=0, sticky="nw")
+
+        self._retro_aba_partidas_atual = []
+        self._retro_aba_sort_col = "data"
+        self._retro_aba_sort_reverse = True
+        self._atualizar_opcoes_aba_retro()
+
+    def _listar_adversarios_com_historico(self):
+        return sorted(
+            {
+                str(j.get("adversario", "")).strip()
+                for j in carregar_dados_jogos()
+                if str(j.get("adversario", "")).strip()
+            },
+            key=lambda s: s.casefold()
+        )
+
+    def _atualizar_opcoes_aba_retro(self):
+        if not hasattr(self, "retro_adversario_combo"):
+            return
+        atual = self.retro_adversario_var.get().strip() if hasattr(self, "retro_adversario_var") else ""
+        opcoes = self._listar_adversarios_com_historico()
+        self.retro_adversario_combo["values"] = opcoes
+        if atual and atual in opcoes:
+            self.retro_adversario_var.set(atual)
+        elif atual and opcoes:
+            self.retro_adversario_var.set("")
+            self._limpar_retro_aba("Selecione um adversário para ver o retrospecto.")
+        elif not opcoes:
+            self.retro_adversario_var.set("")
+            self._limpar_retro_aba("Nenhum jogo registrado para montar retrospecto.")
+
+    def _limpar_retro_aba(self, mensagem):
+        self._retro_aba_partidas_atual = []
+        if hasattr(self, "retro_aba_total_var"):
+            self.retro_aba_total_var.set("0")
+        if hasattr(self, "retro_aba_aproveitamento_var"):
+            self.retro_aba_aproveitamento_var.set("0%")
+        if hasattr(self, "retro_aba_vitorias_var"):
+            self.retro_aba_vitorias_var.set("0")
+        if hasattr(self, "retro_aba_empates_var"):
+            self.retro_aba_empates_var.set("0")
+        if hasattr(self, "retro_aba_derrotas_var"):
+            self.retro_aba_derrotas_var.set("0")
+        if hasattr(self, "retro_aba_saldo_var"):
+            self.retro_aba_saldo_var.set("0")
+        if hasattr(self, "retro_aba_gols_somados_var"):
+            self.retro_aba_gols_somados_var.set(mensagem if mensagem else "Vasco 0 x 0 Adversário")
+        if hasattr(self, "retro_aba_elastico_vasco_var"):
+            self.retro_aba_elastico_vasco_var.set("—")
+        if hasattr(self, "retro_aba_elastico_adv_var"):
+            self.retro_aba_elastico_adv_var.set("—")
+        if hasattr(self, "retro_aba_jejum_adv_var"):
+            self.retro_aba_jejum_adv_var.set("—")
+        if hasattr(self, "retro_aba_jejum_vasco_var"):
+            self.retro_aba_jejum_vasco_var.set("—")
+        if hasattr(self, "retro_aba_elastico_adv_titulo_var"):
+            self.retro_aba_elastico_adv_titulo_var.set("Para o adversário")
+        if hasattr(self, "retro_aba_jejum_adv_titulo_var"):
+            self.retro_aba_jejum_adv_titulo_var.set("Adversário sem vencer")
+        if hasattr(self, "retro_aba_jejum_vasco_titulo_var"):
+            self.retro_aba_jejum_vasco_titulo_var.set("Vasco sem vencer")
+        if hasattr(self, "retro_aba_art_vasco_var"):
+            self.retro_aba_art_vasco_var.set("—")
+        if hasattr(self, "retro_aba_art_adv_var"):
+            self.retro_aba_art_adv_var.set("—")
+        if hasattr(self, "retro_aba_art_adv_titulo_var"):
+            self.retro_aba_art_adv_titulo_var.set("Artilheiros do adversário")
+        if hasattr(self, "tv_retro_aba"):
+            for iid in self.tv_retro_aba.get_children():
+                self.tv_retro_aba.delete(iid)
+
+    def _atualizar_retro_aba_adversario(self, _event=None):
+        if not hasattr(self, "tv_retro_aba"):
+            return
+        adversario = self.retro_adversario_var.get().strip() if hasattr(self, "retro_adversario_var") else ""
+        if not adversario:
+            self._limpar_retro_aba("Selecione um adversário para ver o retrospecto.")
+            return
+
+        retro = self._coletar_retro_por_adversario(adversario)
+        total = len(retro["partidas"])
+        if total == 0:
+            self._limpar_retro_aba(f"{adversario}: sem partidas registradas contra o Vasco.")
+            return
+
+        artilheiros_vasco = self._formatar_goleadores(retro["artilheiros_vasco"])
+        artilheiros_adv = self._formatar_goleadores(retro["artilheiros_adversario"])
+
+        def _parse_placar_nums(placar_txt):
+            m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", str(placar_txt or "").strip())
+            if not m:
+                return 0, 0
+            return int(m.group(1)), int(m.group(2))
+
+        def _fmt_partida_card(partida):
+            data = str(partida.get("data", "—")).strip() or "—"
+            placar = str(partida.get("placar", "—")).strip() or "—"
+            return f"{placar}\nData: {data}"
+
+        def _maior_elastico(partidas, lado="vasco"):
+            melhor = None
+            melhor_diff = -1
+            for p in partidas:
+                gv, ga = _parse_placar_nums(p.get("placar"))
+                diff = (gv - ga) if lado == "vasco" else (ga - gv)
+                if diff <= 0:
+                    continue
+                if diff > melhor_diff:
+                    melhor_diff = diff
+                    melhor = p
+            return "—" if melhor is None else _fmt_partida_card(melhor)
+
+        def _maior_jejum(partidas, sem_vencer_resultados):
+            max_len = 0
+            cur_len = 0
+            inicio = fim = None
+            cur_inicio = None
+            streak_atual = False
+            for p in partidas:  # cronológico (mais antigo -> mais novo)
+                res = str(p.get("resultado", "")).strip()
+                if res in sem_vencer_resultados:
+                    cur_len += 1
+                    if cur_inicio is None:
+                        cur_inicio = p
+                    cur_fim = p
+                    if cur_len > max_len:
+                        max_len = cur_len
+                        inicio, fim = cur_inicio, cur_fim
+                        streak_atual = False
+                else:
+                    cur_len = 0
+                    cur_inicio = None
+            if partidas:
+                ultimo = partidas[-1]
+                if str(ultimo.get("resultado", "")).strip() in sem_vencer_resultados and inicio is not None and fim is not None:
+                    # Se o maior jejum termina no último jogo, considera em andamento.
+                    streak_atual = str(fim.get("data", "")) == str(ultimo.get("data", ""))
+            return {"qtd": max_len, "inicio": inicio, "fim": fim, "em_andamento": streak_atual}
+
+        def _fmt_jejum_card(info):
+            qtd = int(info.get("qtd", 0) or 0)
+            if qtd <= 0:
+                return "0 jogo(s)\nPeríodo: —"
+            inicio = info.get("inicio") or {}
+            fim = info.get("fim") or {}
+            data_ini = str(inicio.get("data", "—")).strip() or "—"
+            data_fim = "hoje" if info.get("em_andamento") else (str(fim.get("data", "—")).strip() or "—")
+            return f"{qtd} jogo(s)\n{data_ini} até {data_fim}"
+
+        aproveitamento = ((retro["vitorias"] * 3 + retro["empates"]) / (total * 3)) * 100 if total else 0.0
+        self.retro_aba_total_var.set(str(total))
+        self.retro_aba_aproveitamento_var.set(f"{aproveitamento:.0f}%")
+        self.retro_aba_vitorias_var.set(str(retro["vitorias"]))
+        self.retro_aba_empates_var.set(str(retro["empates"]))
+        self.retro_aba_derrotas_var.set(str(retro["derrotas"]))
+        self.retro_aba_saldo_var.set(str(retro["gols_vasco"] - retro["gols_adversario"]))
+        self.retro_aba_gols_somados_var.set(
+            f"Vasco {retro['gols_vasco']} x {retro['gols_adversario']} {adversario}"
+        )
+        self.retro_aba_elastico_vasco_var.set(_maior_elastico(retro["partidas"], "vasco"))
+        self.retro_aba_elastico_adv_var.set(_maior_elastico(retro["partidas"], "adversario"))
+        self.retro_aba_elastico_adv_titulo_var.set(f"Para o {adversario}")
+        self.retro_aba_jejum_adv_titulo_var.set(f"{adversario} sem vencer")
+        self.retro_aba_jejum_vasco_titulo_var.set("Vasco sem vencer")
+        self.retro_aba_jejum_adv_var.set(_fmt_jejum_card(_maior_jejum(retro["partidas"], {"Vitória", "Empate"})))
+        self.retro_aba_jejum_vasco_var.set(_fmt_jejum_card(_maior_jejum(retro["partidas"], {"Derrota", "Empate"})))
+        self.retro_aba_art_vasco_var.set(artilheiros_vasco)
+        self.retro_aba_art_adv_titulo_var.set(f"Artilheiros do {adversario}")
+        self.retro_aba_art_adv_var.set(artilheiros_adv)
+        self._retro_aba_partidas_atual = list(retro["partidas"])
+        self._retro_aba_sort_col = "data"
+        self._retro_aba_sort_reverse = True
+        self._render_retro_partidas_aba_ordenado()
+
+    def _render_retro_partidas_aba_ordenado(self):
+        if not hasattr(self, "tv_retro_aba"):
+            return
+        for iid in self.tv_retro_aba.get_children():
+            self.tv_retro_aba.delete(iid)
+        partidas = sorted(
+            self._retro_aba_partidas_atual,
+            key=lambda p: self._chave_ordenacao_retro(p, self._retro_aba_sort_col),
+            reverse=self._retro_aba_sort_reverse
+        )
+        for i, partida in enumerate(partidas, start=1):
+            self.tv_retro_aba.insert(
+                "",
+                "end",
+                values=(
+                    partida["data"],
+                    partida["competicao"],
+                    partida["local"],
+                    partida["placar"],
+                    partida["resultado"],
+                    partida["gols_vasco"],
+                    partida["gols_adversario"],
+                ),
+                tags=("odd",) if i % 2 else ()
+            )
+
+    def _ordenar_coluna_retro_aba(self, coluna):
+        if not getattr(self, "_retro_aba_partidas_atual", None):
+            return
+        if self._retro_aba_sort_col == coluna:
+            self._retro_aba_sort_reverse = not self._retro_aba_sort_reverse
+        else:
+            self._retro_aba_sort_col = coluna
+            self._retro_aba_sort_reverse = False
+        self._render_retro_partidas_aba_ordenado()
 
     def _copiar_exemplo_json_futuros(self):
         exemplo = [
@@ -1825,6 +2218,10 @@ class App:
         if event.widget is not self.notebook:
             return
         atual = self.notebook.select()
+        if hasattr(self, "frame_retro") and str(atual) == str(self.frame_retro):
+            self._atualizar_opcoes_aba_retro()
+            if getattr(self, "retro_adversario_var", None) and self.retro_adversario_var.get().strip():
+                self._atualizar_retro_aba_adversario()
         if str(atual) != str(self.frame_registro):
             return
         # Sempre espelha o que estiver salvo no Elenco Atual ao entrar na aba de registro.
@@ -3892,6 +4289,10 @@ class App:
         self._carregar_tecnicos()
         self._carregar_graficos()
         self._render_aba_jogadores_historico()
+        if hasattr(self, "retro_adversario_combo"):
+            self._atualizar_opcoes_aba_retro()
+            if self.retro_adversario_var.get().strip():
+                self._atualizar_retro_aba_adversario()
 
     # --------------------- Menu de contexto ---------------------
     def mostrar_menu_contexto(self, event, tipo):
@@ -4014,6 +4415,7 @@ class App:
     def _carregar_temporadas(self):
         for widget in self.frame_temporadas.winfo_children():
             widget.destroy()
+        self._temporadas_filtros_vars = []
 
         jogos = carregar_dados_jogos()
         if not jogos:
@@ -4140,6 +4542,16 @@ class App:
             make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Maior sequência derrotas", derrota_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
 
+            # ----- Filtro da lista de partidas da temporada
+            filtros_temporada = ttk.Frame(frame_ano)
+            filtros_temporada.pack(fill="x", pady=(0, 6))
+            ttk.Label(filtros_temporada, text="Filtrar adversário:").pack(side="left")
+            filtro_adversario_var = tk.StringVar(value="")
+            self._temporadas_filtros_vars.append(filtro_adversario_var)
+            entry_filtro_adversario = ttk.Entry(filtros_temporada, textvariable=filtro_adversario_var, width=28)
+            entry_filtro_adversario.pack(side="left", padx=(6, 6))
+            self._forcar_cursor_visivel(entry_filtro_adversario)
+
             # ----- Tabela de partidas da temporada
             table_wrap = ttk.Frame(frame_ano)
             table_wrap.pack(fill="both", expand=True)
@@ -4162,29 +4574,7 @@ class App:
             tooltip_map = {}
             obs_map = {}
             item_to_idx = {}
-
-            for i, r in enumerate(rows, start=1):
-                jogo_raw = r["raw"]
-                placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
-                vasco_g = placar.get("vasco", 0)
-                adv_g = placar.get("adversario", 0)
-                adversario = jogo_raw.get("adversario", "Adversário")
-                local_raw = jogo_raw.get("local", "casa")
-                local_disp = local_raw.capitalize()
-
-                if local_raw == "casa":
-                    placar_fmt = f"Vasco {vasco_g} x {adv_g} {adversario}"
-                else:
-                    placar_fmt = f"{adversario} {adv_g} x {vasco_g} Vasco"
-
-                iid = tv.insert(
-                    "", "end",
-                    values=(r["data"], local_disp, r["competicao"], adversario, placar_fmt),
-                    tags=("odd" if i % 2 else "",),
-                )
-                tooltip_map[iid] = self._tooltip_gols_text(jogo_raw)
-                obs_map[iid] = jogo_raw.get("observacao", "").strip()
-                item_to_idx[iid] = r["idx"]
+            sort_state = {"col": "data", "reverse": False}
 
             # Tooltip nos gols (mouse hover)
             self._bind_treeview_tooltips(tv, tooltip_map)
@@ -4242,6 +4632,125 @@ class App:
             # bind usando factory para não “colar” no último tv do loop
             tv.bind("<<TreeviewSelect>>",
                     on_select_factory(tv, obs_frame, obs_header, obs_label, obs_map))
+
+            def _render_rows_temporada(
+                rows_base,
+                termo_busca="",
+                tv_ref=tv,
+                tooltip_map_ref=tooltip_map,
+                obs_map_ref=obs_map,
+                item_to_idx_ref=item_to_idx,
+                obs_frame_ref=obs_frame,
+                sort_state_ref=sort_state,
+            ):
+                termo_txt = str(termo_busca or "").strip()
+                termo_cf = termo_txt.casefold()
+                termo_norm = _chave_nome_jogador(termo_txt)
+                score_match = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", termo_txt, flags=re.IGNORECASE)
+                tv_ref.delete(*tv_ref.get_children())
+                tooltip_map_ref.clear()
+                obs_map_ref.clear()
+                item_to_idx_ref.clear()
+                obs_frame_ref.pack_forget()
+
+                linhas = rows_base
+                if termo_cf:
+                    if score_match:
+                        vasco_q = int(score_match.group(1))
+                        adv_q = int(score_match.group(2))
+                        linhas = []
+                        for r in rows_base:
+                            placar = (r.get("raw") or {}).get("placar", {})
+                            try:
+                                v = int(placar.get("vasco", -999))
+                                a = int(placar.get("adversario", -999))
+                            except Exception:
+                                continue
+                            if v == vasco_q and a == adv_q:
+                                linhas.append(r)
+                    else:
+                        linhas = [
+                            r for r in rows_base
+                            if (
+                                termo_cf in str(r.get("adversario", "")).casefold()
+                                or termo_norm in _chave_nome_jogador(r.get("adversario", ""))
+                            )
+                        ]
+
+                def _sort_key(r):
+                    col = sort_state_ref["col"]
+                    jogo_raw = r.get("raw", {})
+                    if col == "data":
+                        return _parse_data_ptbr_safe(str(r.get("data", ""))) or datetime.min
+                    if col == "local":
+                        return str(r.get("local", "")).casefold()
+                    if col == "competicao":
+                        return str(r.get("competicao", "")).casefold()
+                    if col == "adversario":
+                        return _chave_nome_jogador(r.get("adversario", ""))
+                    if col == "placar":
+                        placar = jogo_raw.get("placar", {})
+                        try:
+                            v = int(placar.get("vasco", -1))
+                            a = int(placar.get("adversario", -1))
+                        except Exception:
+                            v, a = -1, -1
+                        # ordena por gols do Vasco, depois do adversário
+                        return (v, a)
+                    return str(r.get(col, "")).casefold()
+
+                linhas = sorted(linhas, key=_sort_key, reverse=sort_state_ref["reverse"])
+
+                for i, r in enumerate(linhas, start=1):
+                    jogo_raw = r["raw"]
+                    placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
+                    vasco_g = placar.get("vasco", 0)
+                    adv_g = placar.get("adversario", 0)
+                    adversario = jogo_raw.get("adversario", "Adversário")
+                    local_raw = jogo_raw.get("local", "casa")
+                    local_disp = local_raw.capitalize()
+
+                    if local_raw == "casa":
+                        placar_fmt = f"Vasco {vasco_g} x {adv_g} {adversario}"
+                    else:
+                        placar_fmt = f"{adversario} {adv_g} x {vasco_g} Vasco"
+
+                    iid = tv_ref.insert(
+                        "", "end",
+                        values=(r["data"], local_disp, r["competicao"], adversario, placar_fmt),
+                        tags=("odd" if i % 2 else "",),
+                    )
+                    tooltip_map_ref[iid] = self._tooltip_gols_text(jogo_raw)
+                    obs_map_ref[iid] = jogo_raw.get("observacao", "").strip()
+                    item_to_idx_ref[iid] = r["idx"]
+
+            def _limpar_filtro_temporada():
+                for filtro_var in getattr(self, "_temporadas_filtros_vars", []):
+                    filtro_var.set("")
+
+            def _toggle_sort_temporada(
+                coluna,
+                sort_state_ref=sort_state,
+                rows_ref=rows,
+                filtro_var=filtro_adversario_var,
+                render_fn=_render_rows_temporada,
+            ):
+                if sort_state_ref["col"] == coluna:
+                    sort_state_ref["reverse"] = not sort_state_ref["reverse"]
+                else:
+                    sort_state_ref["col"] = coluna
+                    sort_state_ref["reverse"] = False
+                render_fn(rows_ref, filtro_var.get())
+
+            ttk.Button(filtros_temporada, text="Limpar", command=_limpar_filtro_temporada).pack(side="left")
+            filtro_adversario_var.trace_add(
+                "write",
+                lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get())
+            )
+            for c in cols:
+                titulo = c.capitalize() if c != "placar" else "Placar"
+                tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
+            _render_rows_temporada(rows, "")
 
 
 
