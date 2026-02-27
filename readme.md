@@ -1,5 +1,11 @@
 # StatsVasco
 
+## Persistencia de dados
+
+- O app agora usa SQLite (`stats_vasco.sqlite3`) em vez de JSON como base principal.
+- Na primeira execucao, os JSONs legados sao migrados automaticamente para o banco.
+- Diagrama de relacionamentos: [docs/DIAGRAMA_RELACIONAMENTOS.md](docs/DIAGRAMA_RELACIONAMENTOS.md)
+
 ## Rodar em desenvolvimento
 
 ### macOS / Linux

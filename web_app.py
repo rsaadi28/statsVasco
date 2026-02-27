@@ -13,12 +13,33 @@ from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
+from storage_sqlite import (
+    bootstrap_database,
+    db_path_for,
+    load_current_squad as db_load_current_squad,
+    load_future_matches as db_load_future_matches,
+    load_listas as db_load_listas,
+    load_matches as db_load_matches,
+    save_listas as db_save_listas,
+    save_matches as db_save_matches,
+)
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 ARQUIVO_JOGOS = os.path.join(PROJECT_ROOT, "jogos_vasco.json")
 ARQUIVO_FUTUROS = os.path.join(PROJECT_ROOT, "jogos_futuros.json")
 ARQUIVO_LISTAS = os.path.join(PROJECT_ROOT, "listas_auxiliares.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(PROJECT_ROOT, "elenco_atual.json")
+DB_PATH = db_path_for(PROJECT_ROOT)
+bootstrap_database(
+    DB_PATH,
+    json_paths={
+        "jogos": ARQUIVO_JOGOS,
+        "listas": ARQUIVO_LISTAS,
+        "futuros": ARQUIVO_FUTUROS,
+        "elenco": ARQUIVO_ELENCO_ATUAL,
+        "historico": os.path.join(PROJECT_ROOT, "jogadores_historico.json"),
+    },
+)
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 POSICOES_ELENCO = [
     "Goleiro",
@@ -37,47 +58,24 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
 )
 
 
-def _load_json_safe(path: str, default):
-    if not os.path.exists(path):
-        return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-        return json.loads(content) if content else default
-    except Exception:
-        return default
-
-
 def carregar_jogos():
-    return _load_json_safe(ARQUIVO_JOGOS, [])
+    return db_load_matches(DB_PATH)
 
 
 def carregar_futuros():
-    return _load_json_safe(ARQUIVO_FUTUROS, [])
+    return db_load_future_matches(DB_PATH)
 
 
 def carregar_listas():
-    return _load_json_safe(
-        ARQUIVO_LISTAS,
-        {
-            "clubes_adversarios": [],
-            "jogadores_vasco": [],
-            "jogadores_contra": [],
-            "competicoes": [],
-            "tecnicos": [],
-            "tecnico_atual": "",
-        },
-    )
+    return db_load_listas(DB_PATH)
 
 
 def salvar_listas(dados: dict):
-    with open(ARQUIVO_LISTAS, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+    db_save_listas(DB_PATH, dados)
 
 
 def salvar_lista_jogos(dados: list):
-    with open(ARQUIVO_JOGOS, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+    db_save_matches(DB_PATH, dados)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -106,7 +104,7 @@ def _normalizar_jogador_elenco(item):
 
 
 def carregar_elenco_atual():
-    dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": [], "tecnico": ""})
+    dados = db_load_current_squad(DB_PATH)
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):

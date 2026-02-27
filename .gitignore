@@ -37,6 +37,8 @@ dist/
 
 # App runtime backups
 *.backup_*.json
+*.backup_*.sqlite3
+stats_vasco.sqlite3
 
 # Logs
 *.log

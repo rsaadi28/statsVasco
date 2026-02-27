@@ -3,10 +3,8 @@ from tkinter import ttk, messagebox
 from collections import defaultdict, Counter
 import json
 import os
-import shutil
 import sys
 import ast
-import glob
 try:
     from tkcalendar import Calendar
     TKCALENDAR_OK = True
@@ -17,6 +15,21 @@ import tkinter.font as tkFont
 import re
 import unicodedata
 from datetime import datetime
+from storage_sqlite import (
+    backup_database_snapshot,
+    bootstrap_database,
+    db_path_for,
+    load_current_squad as db_load_current_squad,
+    load_future_matches as db_load_future_matches,
+    load_historic_players as db_load_historic_players,
+    load_listas as db_load_listas,
+    load_matches as db_load_matches,
+    save_current_squad as db_save_current_squad,
+    save_future_matches as db_save_future_matches,
+    save_historic_players as db_save_historic_players,
+    save_listas as db_save_listas,
+    save_matches as db_save_matches,
+)
 
 # --- Matplotlib (gráficos) ---
 try:
@@ -57,6 +70,26 @@ ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
 ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
 ARQUIVO_JOGADORES_HISTORICO = os.path.join(DATA_DIR, "jogadores_historico.json")
+DB_PATH = db_path_for(DATA_DIR)
+
+
+def _json_origem_inicial(nome_arquivo: str) -> str:
+    preferido = os.path.join(DATA_DIR, nome_arquivo)
+    if os.path.exists(preferido):
+        return preferido
+    return os.path.join(PROJECT_ROOT, nome_arquivo)
+
+
+bootstrap_database(
+    DB_PATH,
+    json_paths={
+        "jogos": _json_origem_inicial("jogos_vasco.json"),
+        "listas": _json_origem_inicial("listas_auxiliares.json"),
+        "futuros": _json_origem_inicial("jogos_futuros.json"),
+        "elenco": _json_origem_inicial("elenco_atual.json"),
+        "historico": _json_origem_inicial("jogadores_historico.json"),
+    },
+)
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
 POSICOES_ELENCO = [
     "Goleiro",
@@ -84,89 +117,9 @@ ICONE_STATUS_ESCALACAO = {
 }
 
 
-def _json_tem_dados(path):
-    """Retorna True se o JSON existir e contiver dados úteis."""
-    if not os.path.exists(path):
-        return False
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-        if not content:
-            return False
-        data = json.loads(content)
-        if data in (None, "", [], {}):
-            return False
-        return True
-    except Exception:
-        return False
-
-
-def _bootstrap_jsons():
-    """Garante JSONs na pasta de produção com fallback nos JSONs do app."""
-    if DATA_DIR == PROJECT_ROOT:
-        return
-    os.makedirs(DATA_DIR, exist_ok=True)
-
-    defaults = {
-        "jogos_vasco.json": [],
-        "jogos_futuros.json": [],
-        "elenco_atual.json": {"jogadores": [], "tecnico": ""},
-        "jogadores_historico.json": {"jogadores": []},
-        "listas_auxiliares.json": {
-            "clubes_adversarios": [],
-            "jogadores_vasco": [],
-            "jogadores_contra": [],
-            "competicoes": [],
-            "tecnicos": ["Fernando Diniz"],
-            "tecnico_atual": "Fernando Diniz",
-        },
-    }
-
-    for nome in ("jogos_vasco.json", "listas_auxiliares.json", "jogos_futuros.json", "elenco_atual.json", "jogadores_historico.json"):
-        destino = os.path.join(DATA_DIR, nome)
-        if _json_tem_dados(destino):
-            continue
-
-        origem = os.path.join(PROJECT_ROOT, nome)
-        if _json_tem_dados(origem):
-            shutil.copy2(origem, destino)
-            continue
-
-        if os.path.exists(origem):
-            shutil.copy2(origem, destino)
-            continue
-
-        with open(destino, "w", encoding="utf-8") as f:
-            json.dump(defaults[nome], f, ensure_ascii=False, indent=2)
-
-
-_bootstrap_jsons()
-
-
 def _gerar_backup_jsons_inicio():
-    """Gera backup snapshot dos JSONs ao abrir o app (mantém somente o mais recente de cada arquivo)."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    arquivos = (
-        ("jogos_vasco", ARQUIVO_JOGOS),
-        ("jogos_futuros", ARQUIVO_FUTUROS),
-        ("listas_auxiliares", ARQUIVO_LISTAS),
-        ("elenco_atual", ARQUIVO_ELENCO_ATUAL),
-        ("jogadores_historico", ARQUIVO_JOGADORES_HISTORICO),
-    )
-    for prefixo, origem in arquivos:
-        if not os.path.exists(origem):
-            continue
-        padrao_antigos = os.path.join(DATA_DIR, f"{prefixo}.backup_*.json")
-        for antigo in glob.glob(padrao_antigos):
-            try:
-                os.remove(antigo)
-            except Exception:
-                pass
-        destino = os.path.join(DATA_DIR, f"{prefixo}.backup_{timestamp}.json")
-        try:
-            shutil.copy2(origem, destino)
-        except Exception:
-            pass
+    """Gera backup snapshot do banco SQLite ao abrir o app."""
+    backup_database_snapshot(DATA_DIR, DB_PATH)
 
 
 def _ordenar_listas(dados: dict) -> dict:
@@ -181,37 +134,16 @@ def _ordenar_listas(dados: dict) -> dict:
     return dados
 
 
-def _load_json_safe(path, default):
-    """Carrega JSON com segurança, retornando default se ausente/corrompido."""
-    if not os.path.exists(path):
-        return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content:
-                return default
-            return json.loads(content)
-    except Exception:
-        return default
-
-
 def carregar_dados_jogos():
-    return _load_json_safe(ARQUIVO_JOGOS, [])
+    return db_load_matches(DB_PATH)
 
 
 def carregar_jogos_futuros():
-    return _load_json_safe(ARQUIVO_FUTUROS, [])
+    return db_load_future_matches(DB_PATH)
 
 
 def carregar_listas():
-    dados = _load_json_safe(ARQUIVO_LISTAS, {
-        "clubes_adversarios": [],
-        "jogadores_vasco": [],
-        "jogadores_contra": [],
-        "competicoes": [],
-        "tecnicos": ["Fernando Diniz"],
-        "tecnico_atual": "Fernando Diniz",
-    })
+    dados = db_load_listas(DB_PATH)
     dados = _ordenar_listas(dados)
     if not dados.get("tecnicos"):
         dados["tecnicos"] = ["Fernando Diniz"]
@@ -225,8 +157,7 @@ def carregar_listas():
 
 def salvar_listas(data):
     data = _ordenar_listas(data)
-    with open(ARQUIVO_LISTAS, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    db_save_listas(DB_PATH, data)
 
 
 def salvar_jogo(jogo):
@@ -236,13 +167,11 @@ def salvar_jogo(jogo):
 
 
 def salvar_lista_jogos(dados):
-    with open(ARQUIVO_JOGOS, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+    db_save_matches(DB_PATH, dados)
 
 
 def salvar_lista_futuros(dados):
-    with open(ARQUIVO_FUTUROS, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+    db_save_future_matches(DB_PATH, dados)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -304,7 +233,7 @@ def _ordenar_jogadores_por_posicao(jogadores):
 
 
 def carregar_elenco_atual():
-    dados = _load_json_safe(ARQUIVO_ELENCO_ATUAL, {"jogadores": [], "tecnico": ""})
+    dados = db_load_current_squad(DB_PATH)
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
@@ -353,8 +282,7 @@ def salvar_elenco_atual(dados):
         normalizados.append(jogador)
 
     jogadores_limpos = _ordenar_jogadores_elenco(normalizados)
-    with open(ARQUIVO_ELENCO_ATUAL, "w", encoding="utf-8") as f:
-        json.dump({"jogadores": jogadores_limpos, "tecnico": tecnico}, f, ensure_ascii=False, indent=2)
+    db_save_current_squad(DB_PATH, {"jogadores": jogadores_limpos, "tecnico": tecnico})
 
 
 def _normalizar_jogador_historico(item):
@@ -389,7 +317,7 @@ def _ordenar_jogadores_historico(jogadores):
 
 
 def carregar_jogadores_historico():
-    dados = _load_json_safe(ARQUIVO_JOGADORES_HISTORICO, {"jogadores": []})
+    dados = db_load_historic_players(DB_PATH)
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
@@ -434,8 +362,7 @@ def salvar_jogadores_historico(dados):
         vistos.add(chave)
         normalizados.append(jogador)
 
-    with open(ARQUIVO_JOGADORES_HISTORICO, "w", encoding="utf-8") as f:
-        json.dump({"jogadores": _ordenar_jogadores_historico(normalizados)}, f, ensure_ascii=False, indent=2)
+    db_save_historic_players(DB_PATH, {"jogadores": _ordenar_jogadores_historico(normalizados)})
 
 
 def _chave_nome_jogador(nome):
