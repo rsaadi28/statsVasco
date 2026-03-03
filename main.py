@@ -172,14 +172,36 @@ def carregar_jogos_futuros():
 
 def carregar_listas():
     dados = db_load_listas(DB_PATH)
+    alterou = False
     dados = _ordenar_listas(dados)
     if not dados.get("tecnicos"):
         dados["tecnicos"] = ["Fernando Diniz"]
+        alterou = True
     if not dados.get("tecnico_atual"):
         dados["tecnico_atual"] = dados["tecnicos"][0]
+        alterou = True
     elif dados["tecnico_atual"] not in dados["tecnicos"]:
         dados["tecnicos"].append(dados["tecnico_atual"])
         dados = _ordenar_listas(dados)
+        alterou = True
+
+    tecnicos_jogos = {
+        str(j.get("tecnico", "") or "").strip()
+        for j in carregar_dados_jogos()
+        if str(j.get("tecnico", "") or "").strip()
+    }
+    if tecnicos_jogos:
+        base = list(dados.get("tecnicos", []))
+        base_cf = {str(nome).casefold() for nome in base}
+        for nome in sorted(tecnicos_jogos, key=str.casefold):
+            if nome.casefold() not in base_cf:
+                base.append(nome)
+                base_cf.add(nome.casefold())
+                alterou = True
+        dados["tecnicos"] = sorted(base, key=lambda s: s.casefold())
+
+    if alterou:
+        db_save_listas(DB_PATH, dados)
     return dados
 
 
@@ -2286,6 +2308,10 @@ class App:
                 self._atualizar_retro_aba_adversario()
         if str(atual) != str(self.frame_registro):
             return
+        if getattr(self, "editing_index", None) is not None:
+            # Em modo edição, preserva os dados do jogo carregado (inclui técnico específico da partida).
+            self._sincronizar_jogadores_vasco_com_elenco()
+            return
         # Sempre espelha o que estiver salvo no Elenco Atual ao entrar na aba de registro.
         self.elenco_atual = carregar_elenco_atual()
         tecnico_elenco = str(self.elenco_atual.get("tecnico", "") or "").strip()
@@ -4238,12 +4264,15 @@ class App:
             return
 
         jogo = jogos[jogo_idx]
-        self.notebook.select(self.frame_registro)
         self.editing_index = jogo_idx
+        self.notebook.select(self.frame_registro)
         adversario = jogo.get("adversario", "")
         data = jogo.get("data", "")
+        tecnico_jogo = str(jogo.get("tecnico", "") or "").strip()
+        if not tecnico_jogo:
+            tecnico_jogo = str(self.listas.get("tecnico_atual", "") or "Fernando Diniz").strip()
         self.salvar_btn_label.set("Salvar Alterações")
-        self.modo_edicao_var.set(f"Editando: {adversario} ({data})")
+        self.modo_edicao_var.set(f"Editando: {adversario} ({data}) | Técnico: {tecnico_jogo}")
         self.btn_cancelar_edicao.state(["!disabled"])
 
         self.data_var.set(data)
@@ -4258,7 +4287,7 @@ class App:
                 self.posicao_var.set("")
         self.local_var.set(jogo.get("local", "casa"))
         if hasattr(self, "tecnico_var"):
-            self.tecnico_var.set(jogo.get("tecnico", self.listas.get("tecnico_atual", "Fernando Diniz")))
+            self.tecnico_var.set(tecnico_jogo)
 
         placar = jogo.get("placar", {})
         self.placar_vasco.delete(0, tk.END)
@@ -4312,6 +4341,8 @@ class App:
             return
 
         menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Editar jogo", command=lambda idx=jogo_idx: self._carregar_jogo_para_edicao(idx))
+        menu.add_separator()
         menu.add_command(label="Excluir jogo", command=lambda idx=jogo_idx: self._excluir_jogo_por_indice(idx))
         try:
             menu.tk_popup(event.x_root, event.y_root)
@@ -4547,12 +4578,15 @@ class App:
                 data = jogo["data"]
                 adversario = jogo["adversario"]
 
+                resultado = "Empate"
                 if placar["vasco"] > placar["adversario"]:
+                    resultado = "Vitória"
                     vitorias += 1
                     streak_inv += 1
                     invicto_max = max(invicto_max, streak_inv)
                     streak_der = 0
                 elif placar["vasco"] < placar["adversario"]:
+                    resultado = "Derrota"
                     derrotas += 1
                     streak_der += 1
                     derrota_max = max(derrota_max, streak_der)
@@ -4574,8 +4608,14 @@ class App:
                         carrascos[g["nome"]] += g["gols"]
 
                 rows.append({
-                    "data": data, "local": local, "competicao": competicao,
-                    "adversario": adversario, "raw": jogo, "idx": idx_global
+                    "data": data,
+                    "local": local,
+                    "competicao": competicao,
+                    "adversario": adversario,
+                    "resultado": resultado,
+                    "tecnico": str(jogo.get("tecnico", "") or "").strip(),
+                    "raw": jogo,
+                    "idx": idx_global,
                 })
 
             # Cards
@@ -4609,7 +4649,7 @@ class App:
             # ----- Filtro da lista de partidas da temporada
             filtros_temporada = ttk.Frame(frame_ano)
             filtros_temporada.pack(fill="x", pady=(0, 6))
-            ttk.Label(filtros_temporada, text="Filtrar adversário:").pack(side="left")
+            ttk.Label(filtros_temporada, text="Filtrar (adversário, placar, resultado: vv/ee/dd):").pack(side="left")
             filtro_adversario_var = tk.StringVar(value="")
             self._temporadas_filtros_vars.append(filtro_adversario_var)
             entry_filtro_adversario = ttk.Entry(filtros_temporada, textvariable=filtro_adversario_var, width=28)
@@ -4620,11 +4660,11 @@ class App:
             table_wrap = ttk.Frame(frame_ano)
             table_wrap.pack(fill="both", expand=True)
 
-            cols = ("data", "local", "competicao", "adversario", "placar")
+            cols = ("data", "local", "competicao", "adversario", "resultado", "tecnico", "placar")
             tv = ttk.Treeview(table_wrap, columns=cols, show="headings",
                               height=min(16, max(8, len(rows))))
             # larguras para caber placar estendido
-            for c, w in zip(cols, (90, 80, 240, 220, 320)):
+            for c, w in zip(cols, (90, 80, 190, 170, 110, 160, 250)):
                 tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
                 tv.column(c, anchor="w", width=w, stretch=True)
 
@@ -4710,6 +4750,13 @@ class App:
                 termo_txt = str(termo_busca or "").strip()
                 termo_cf = termo_txt.casefold()
                 termo_norm = _chave_nome_jogador(termo_txt)
+                resultado_por_termo = None
+                if termo_cf == "vv":
+                    resultado_por_termo = "vitoria"
+                elif termo_cf == "ee":
+                    resultado_por_termo = "empate"
+                elif termo_cf == "dd":
+                    resultado_por_termo = "derrota"
                 score_match = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", termo_txt, flags=re.IGNORECASE)
                 tv_ref.delete(*tv_ref.get_children())
                 tooltip_map_ref.clear()
@@ -4738,6 +4785,14 @@ class App:
                             if (
                                 termo_cf in str(r.get("adversario", "")).casefold()
                                 or termo_norm in _chave_nome_jogador(r.get("adversario", ""))
+                                or termo_cf in str(r.get("competicao", "")).casefold()
+                                or termo_norm in _chave_nome_jogador(r.get("competicao", ""))
+                                or termo_cf in str(r.get("tecnico", "")).casefold()
+                                or termo_norm in _chave_nome_jogador(r.get("tecnico", ""))
+                                or (
+                                    resultado_por_termo is not None
+                                    and resultado_por_termo == _chave_nome_jogador(r.get("resultado", ""))
+                                )
                             )
                         ]
 
@@ -4752,6 +4807,11 @@ class App:
                         return str(r.get("competicao", "")).casefold()
                     if col == "adversario":
                         return _chave_nome_jogador(r.get("adversario", ""))
+                    if col == "resultado":
+                        ordem_resultado = {"vitoria": 0, "empate": 1, "derrota": 2}
+                        return ordem_resultado.get(_chave_nome_jogador(r.get("resultado", "")), 99)
+                    if col == "tecnico":
+                        return _chave_nome_jogador(r.get("tecnico", ""))
                     if col == "placar":
                         placar = jogo_raw.get("placar", {})
                         try:
@@ -4779,9 +4839,28 @@ class App:
                     else:
                         placar_fmt = f"{adversario} {adv_g} x {vasco_g} Vasco"
 
+                    resultado_txt = str(r.get("resultado", "") or "")
+                    resultado_norm = _chave_nome_jogador(resultado_txt)
+                    bolinha = ""
+                    if resultado_norm == "vitoria":
+                        bolinha = "🟢"
+                    elif resultado_norm == "empate":
+                        bolinha = "🟡"
+                    elif resultado_norm == "derrota":
+                        bolinha = "🔴"
+                    resultado_disp = f"{bolinha} {resultado_txt}".strip()
+
                     iid = tv_ref.insert(
                         "", "end",
-                        values=(r["data"], local_disp, r["competicao"], adversario, placar_fmt),
+                        values=(
+                            r["data"],
+                            local_disp,
+                            r["competicao"],
+                            adversario,
+                            resultado_disp,
+                            r.get("tecnico", ""),
+                            placar_fmt,
+                        ),
                         tags=("odd" if i % 2 else "",),
                     )
                     tooltip_map_ref[iid] = self._tooltip_gols_text(jogo_raw)
@@ -4812,7 +4891,12 @@ class App:
                 lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get())
             )
             for c in cols:
-                titulo = c.capitalize() if c != "placar" else "Placar"
+                if c == "tecnico":
+                    titulo = "Técnico"
+                elif c == "resultado":
+                    titulo = "Resultado"
+                else:
+                    titulo = c.capitalize() if c != "placar" else "Placar"
                 tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
             _render_rows_temporada(rows, "")
 
@@ -5424,9 +5508,6 @@ class App:
         self._limpar_tecnicos_cell_overlays()
 
         jogos = carregar_dados_jogos()
-        if not jogos:
-            ttk.Label(self.frame_tecnicos, text="Ainda não há jogos registrados.").pack(anchor="w")
-            return
 
         stats = defaultdict(lambda: {
             "jogos": 0,
@@ -5439,6 +5520,11 @@ class App:
             "gols_contra": 0,
             "artilheiros": Counter(),
         })
+
+        for tecnico in self.listas.get("tecnicos", []):
+            nome = str(tecnico or "").strip()
+            if nome:
+                _ = stats[nome]
 
         for jogo in jogos:
             tecnico = jogo.get("tecnico") or "(Sem Técnico)"
@@ -5469,6 +5555,10 @@ class App:
                 info["derrotas"] += 1
             else:
                 info["empates"] += 1
+
+        if not stats:
+            ttk.Label(self.frame_tecnicos, text="Nenhum técnico cadastrado.").pack(anchor="w")
+            return
 
         container = ttk.Frame(self.frame_tecnicos)
         container.pack(fill="both", expand=True)
