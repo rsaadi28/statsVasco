@@ -11929,209 +11929,23 @@
     "posicao_tabela": null
   },
   {
-    "data": "24/02/2026",
-    "adversario": "CSA",
-    "competicao": "Brasileirão Série A",
+    "data": "22/02/2026",
+    "adversario": "Fluminense",
+    "competicao": "Campeonato Carioca",
     "local": "casa",
     "placar": {
-      "vasco": 2,
+      "vasco": 0,
       "adversario": 1
     },
-    "gols_vasco": [
-      {
-        "nome": "David",
-        "gols": 1,
-        "saiu_do_banco": true
-      }
-    ],
-    "gols_adversario": [],
-    "observacao": "teste",
-    "tecnico": "Fernando Diniz",
-    "posicao_tabela": 1,
-    "escalacao_partida": {
-      "titulares_por_posicao": {
-        "Goleiro": [
-          "Léo Jardim"
-        ],
-        "Lateral-Direito": [
-          "Paulo Henrique"
-        ],
-        "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
-        ],
-        "Lateral-Esquerdo": [
-          "Lucas Piton"
-        ],
-        "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
-        ],
-        "Meio-Campista": [
-          "Johan Rojas"
-        ],
-        "Atacante": [
-          "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
-        ]
-      },
-      "reservas": [
-        "Daniel Fuzato",
-        "Puma Rodríguez",
-        "Lucas Freitas",
-        "Saldivia",
-        "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
-        "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
-        "Marino",
-        "Matheus França"
-      ],
-      "nao_relacionados": [
-        "Allan Vitor",
-        "Pablo",
-        "Philippe Coutinho"
-      ],
-      "lesionados": [
-        "Jair",
-        "Mateus Carvalho"
-      ]
-    }
-  },
-  {
-    "data": "25/02/2026",
-    "adversario": "Cruzeiro",
-    "competicao": "Brasileirão Série A",
-    "local": "fora",
-    "placar": {
-      "vasco": 3,
-      "adversario": 1
-    },
-    "gols_vasco": [
-      {
-        "nome": "Andres Gomez",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Brenner",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Spinelli",
-        "gols": 1,
-        "saiu_do_banco": false
-      }
-    ],
+    "gols_vasco": [],
     "gols_adversario": [
       {
-        "nome": "Filha da",
-        "clube": "Cruzeiro",
+        "nome": "Kevin Serna",
+        "clube": "Fluminense",
         "gols": 1
       }
     ],
-    "observacao": "teste",
-    "tecnico": "Fernando Diniz",
-    "posicao_tabela": 10,
-    "escalacao_partida": {
-      "titulares_por_posicao": {
-        "Goleiro": [
-          "Léo Jardim"
-        ],
-        "Lateral-Direito": [
-          "Paulo Henrique"
-        ],
-        "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
-        ],
-        "Lateral-Esquerdo": [
-          "Lucas Piton"
-        ],
-        "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
-        ],
-        "Meio-Campista": [
-          "Johan Rojas"
-        ],
-        "Atacante": [
-          "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
-        ]
-      },
-      "reservas": [
-        "Daniel Fuzato",
-        "Puma Rodríguez",
-        "Lucas Freitas",
-        "Saldivia",
-        "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
-        "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
-        "Marino",
-        "Matheus França"
-      ],
-      "nao_relacionados": [
-        "Allan Vitor",
-        "Pablo",
-        "Philippe Coutinho"
-      ],
-      "lesionados": [
-        "Jair",
-        "Mateus Carvalho"
-      ]
-    }
-  },
-  {
-    "data": "28/02/2026",
-    "adversario": "Criciúma",
-    "competicao": "Campeonato Brasileiro Série A",
-    "local": "fora",
-    "placar": {
-      "vasco": 4,
-      "adversario": 1
-    },
-    "gols_vasco": [
-      {
-        "nome": "Adson",
-        "gols": 2,
-        "saiu_do_banco": true
-      },
-      {
-        "nome": "Brenner",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Johan Rojas",
-        "gols": 1,
-        "saiu_do_banco": false
-      }
-    ],
-    "gols_adversario": [
-      {
-        "nome": "Alesson",
-        "clube": "Criciúma",
-        "gols": 1
-      }
-    ],
-    "observacao": "teste",
+    "observacao": "Jogo horrivel do Vasco, sem criatividade, sem chutes para o gol, somente passes para tras, time com medo de jogar. Jogo que cuminou na demissão do tecnico Fernando Diniz.",
     "tecnico": "Fernando Diniz",
     "posicao_tabela": null,
     "escalacao_partida": {
@@ -12143,178 +11957,79 @@
           "Paulo Henrique"
         ],
         "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
+          "Robert Renan",
+          "Saldivia"
         ],
         "Lateral-Esquerdo": [
-          "Lucas Piton"
+          "Puma Rodríguez"
         ],
         "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
+          "Cauan Barros"
         ],
         "Meio-Campista": [
+          "Tche Tche",
+          "Nuno Moreira",
           "Johan Rojas"
         ],
         "Atacante": [
           "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
+          "Claudio Spinelli"
         ]
       },
       "reservas": [
         "Daniel Fuzato",
-        "Puma Rodríguez",
         "Lucas Freitas",
-        "Saldivia",
-        "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
-        "Tche Tche",
-        "Guilherme Estrella",
+        "João Vitor",
+        "Walace Falcão",
+        "Lucas Piton",
         "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
+        "Hugo Moura",
         "Marino",
+        "Brenner",
+        "Adson",
+        "David",
         "Matheus França"
       ],
       "nao_relacionados": [
         "Allan Vitor",
         "Pablo",
-        "Philippe Coutinho"
+        "Cuiabano",
+        "Guilherme Estrella"
       ],
       "lesionados": [
+        "Carlos Cuesta",
+        "Thiago Mendes",
         "Jair",
         "Mateus Carvalho"
       ]
     }
   },
   {
-    "data": "24/02/2026",
-    "adversario": "Criciúma",
-    "competicao": "Campeonato Brasileiro Série A",
-    "local": "casa",
-    "placar": {
-      "vasco": 4,
-      "adversario": 1
-    },
-    "gols_vasco": [
-      {
-        "nome": "Adson",
-        "gols": 2,
-        "saiu_do_banco": true
-      },
-      {
-        "nome": "Brenner",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Claudio Spinelli",
-        "gols": 1,
-        "saiu_do_banco": true
-      }
-    ],
-    "gols_adversario": [
-      {
-        "nome": "Ademilson",
-        "clube": "Criciúma",
-        "gols": 1
-      }
-    ],
-    "observacao": "teste",
-    "tecnico": "Fernando Diniz",
-    "posicao_tabela": null,
-    "escalacao_partida": {
-      "titulares_por_posicao": {
-        "Goleiro": [
-          "Léo Jardim"
-        ],
-        "Lateral-Direito": [
-          "Paulo Henrique"
-        ],
-        "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
-        ],
-        "Lateral-Esquerdo": [
-          "Lucas Piton"
-        ],
-        "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
-        ],
-        "Meio-Campista": [
-          "Johan Rojas"
-        ],
-        "Atacante": [
-          "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
-        ]
-      },
-      "reservas": [
-        "Daniel Fuzato",
-        "Puma Rodríguez",
-        "Lucas Freitas",
-        "Saldivia",
-        "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
-        "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
-        "Marino",
-        "Matheus França"
-      ],
-      "nao_relacionados": [
-        "Allan Vitor",
-        "Pablo",
-        "Philippe Coutinho"
-      ],
-      "lesionados": [
-        "Jair",
-        "Mateus Carvalho"
-      ]
-    }
-  },
-  {
-    "data": "24/02/2026",
-    "adversario": "Grêmio",
+    "data": "26/02/2026",
+    "adversario": "Santos",
     "competicao": "Brasileirão Série A",
-    "local": "casa",
+    "local": "fora",
     "placar": {
-      "vasco": 2,
-      "adversario": 1
+      "vasco": 1,
+      "adversario": 2
     },
     "gols_vasco": [
       {
         "nome": "Cauan Barros",
         "gols": 1,
         "saiu_do_banco": false
-      },
-      {
-        "nome": "Thiago Mendes",
-        "gols": 1,
-        "saiu_do_banco": false
       }
     ],
     "gols_adversario": [
       {
-        "nome": "Barros (Contra)",
-        "clube": "Grêmio",
-        "gols": 1
+        "nome": "Neymar",
+        "clube": "Santos",
+        "gols": 2
       }
     ],
-    "observacao": "",
-    "tecnico": "Fernando Diniz",
-    "posicao_tabela": 5,
+    "observacao": "O Vasco é um clube a deriva, sem tecnico, jogadores perdidos... o time do Santos é horrivel e o Vasco conseguiu perder para eles... vergonha... o Vasco está na lanterna do campeonato.",
+    "tecnico": "Bruno Lazaroni (interino)",
+    "posicao_tabela": 20,
     "escalacao_partida": {
       "titulares_por_posicao": {
         "Goleiro": [
@@ -12324,7 +12039,7 @@
           "Paulo Henrique"
         ],
         "Zagueiro": [
-          "Carlos Cuesta",
+          "Saldivia",
           "Robert Renan"
         ],
         "Lateral-Esquerdo": [
@@ -12338,95 +12053,63 @@
           "Johan Rojas"
         ],
         "Atacante": [
-          "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
+          "Nuno Moreira",
+          "Claudio Spinelli",
+          "Andrés Gómez"
         ]
       },
       "reservas": [
         "Daniel Fuzato",
-        "Puma Rodríguez",
         "Lucas Freitas",
-        "Saldivia",
+        "João Vitor",
+        "Puma Rodríguez",
         "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
         "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
+        "Hugo Moura",
         "Marino",
+        "Brenner",
+        "Adson",
+        "David",
         "Matheus França"
       ],
       "nao_relacionados": [
         "Allan Vitor",
         "Pablo",
-        "Philippe Coutinho"
+        "Walace Falcão",
+        "JP"
       ],
       "lesionados": [
+        "Carlos Cuesta",
         "Jair",
         "Mateus Carvalho"
       ]
     }
   },
   {
-    "data": "24/02/2026",
-    "adversario": "Madureira",
+    "data": "01/03/2026",
+    "adversario": "Fluminense",
     "competicao": "Campeonato Carioca",
     "local": "fora",
     "placar": {
-      "vasco": 5,
-      "adversario": 4
+      "vasco": 1,
+      "adversario": 1
     },
     "gols_vasco": [
       {
-        "nome": "Andrés Gómez",
-        "gols": 2,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Carlos Cuesta",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Johan Rojas",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Paulo (Contra)",
+        "nome": "Robert Renan",
         "gols": 1,
         "saiu_do_banco": false
       }
     ],
     "gols_adversario": [
       {
-        "nome": "Aitor Cantalapiedra",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Brayann",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Alex Telles",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Barros (Contra)",
-        "clube": "Madureira",
+        "nome": "Ganso",
+        "clube": "Fluminense",
         "gols": 1
       }
     ],
-    "observacao": "teste",
-    "tecnico": "Fernando Diniz",
+    "observacao": "Jogo em que muitos falam que o Vasco estava com mais raça nesse jogo... mas eu não achei grandes coisas não... o time continua cistando e ciscando mas não faz nada, não chuta a gol, time apatico demais... com esse empate fomos eliminados por um time que sempre foi nosso fregues... O FluC teve um penalti que perdeu, o Vasco fez o gol e teve um penalti a favor e perdu, logo depois o Fluc teve outro penalti que converteu, empandando o jogo e eliminando o Vasco pois o primeiro jogo foi 1 x 1.",
+    "tecnico": "Bruno Lazaroni (interino)",
     "posicao_tabela": null,
     "escalacao_partida": {
       "titulares_por_posicao": {
@@ -12434,18 +12117,18 @@
           "Léo Jardim"
         ],
         "Lateral-Direito": [
-          "Paulo Henrique"
+          "Puma Rodríguez"
         ],
         "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
+          "Robert Renan",
+          "Saldivia"
         ],
         "Lateral-Esquerdo": [
           "Lucas Piton"
         ],
         "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
+          "Thiago Mendes",
+          "Cauan Barros"
         ],
         "Meio-Campista": [
           "Johan Rojas"
@@ -12453,148 +12136,33 @@
         "Atacante": [
           "Andrés Gómez",
           "Brenner",
-          "Nuno Moreira"
+          "David"
         ]
       },
       "reservas": [
         "Daniel Fuzato",
-        "Puma Rodríguez",
         "Lucas Freitas",
-        "Saldivia",
         "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
         "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
+        "Hugo Moura",
         "Marino",
-        "Matheus França"
+        "Adson",
+        "Matheus França",
+        "Paulo Henrique",
+        "Nuno Moreira",
+        "Claudio Spinelli",
+        "Carlos Cuesta"
       ],
       "nao_relacionados": [
         "Allan Vitor",
         "Pablo",
-        "Philippe Coutinho"
+        "Walace Falcão",
+        "JP"
       ],
       "lesionados": [
         "Jair",
-        "Mateus Carvalho"
-      ]
-    }
-  },
-  {
-    "data": "24/02/2026",
-    "adversario": "Madureira",
-    "competicao": "Campeonato Carioca",
-    "local": "casa",
-    "placar": {
-      "vasco": 5,
-      "adversario": 4
-    },
-    "gols_vasco": [
-      {
-        "nome": "Andres Gomez",
-        "gols": 1,
-        "saiu_do_banco": false
-      },
-      {
-        "nome": "Claudio Spinelli",
-        "gols": 1,
-        "saiu_do_banco": true
-      },
-      {
-        "nome": "Daniel Fuzato",
-        "gols": 2,
-        "saiu_do_banco": true
-      },
-      {
-        "nome": "Guilherme Estrella",
-        "gols": 1,
-        "saiu_do_banco": true
-      }
-    ],
-    "gols_adversario": [
-      {
-        "nome": "Barros (Contra)",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Carlos Vinicius",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Bruno Henrique",
-        "clube": "Madureira",
-        "gols": 1
-      },
-      {
-        "nome": "Brayann",
-        "clube": "Madureira",
-        "gols": 1
-      }
-    ],
-    "observacao": "teste",
-    "tecnico": "Fernando Diniz",
-    "posicao_tabela": null,
-    "escalacao_partida": {
-      "titulares_por_posicao": {
-        "Goleiro": [
-          "Léo Jardim"
-        ],
-        "Lateral-Direito": [
-          "Paulo Henrique"
-        ],
-        "Zagueiro": [
-          "Carlos Cuesta",
-          "Robert Renan"
-        ],
-        "Lateral-Esquerdo": [
-          "Lucas Piton"
-        ],
-        "Volante": [
-          "Cauan Barros",
-          "Thiago Mendes"
-        ],
-        "Meio-Campista": [
-          "Johan Rojas"
-        ],
-        "Atacante": [
-          "Andrés Gómez",
-          "Brenner",
-          "Nuno Moreira"
-        ]
-      },
-      "reservas": [
-        "Daniel Fuzato",
-        "Puma Rodríguez",
-        "Lucas Freitas",
-        "Saldivia",
-        "Cuiabano",
-        "Victor Luís",
-        "Hugo Moura",
-        "Tche Tche",
-        "Guilherme Estrella",
-        "JP",
-        "Adson",
-        "Claudio Spinelli",
-        "David",
-        "Gabriel Silva (GB)",
-        "Marino",
-        "Matheus França"
-      ],
-      "nao_relacionados": [
-        "Allan Vitor",
-        "Pablo",
-        "Philippe Coutinho"
-      ],
-      "lesionados": [
-        "Jair",
-        "Mateus Carvalho"
+        "Mateus Carvalho",
+        "João Vitor"
       ]
     }
   }

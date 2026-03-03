@@ -70,6 +70,7 @@ ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
 ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
 ARQUIVO_JOGADORES_HISTORICO = os.path.join(DATA_DIR, "jogadores_historico.json")
+ARQUIVO_TITULOS = os.path.join(DATA_DIR, "titulos_vasco.json")
 DB_PATH = db_path_for(DATA_DIR)
 
 
@@ -91,6 +92,16 @@ bootstrap_database(
     },
 )
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
+TITULOS_VASCO_PADRAO = [
+    {"campeonato": "Campeonato Brasileiro Serie A", "ano": 2000},
+    {"campeonato": "Copa Mercosul", "ano": 2000},
+    {"campeonato": "Campeonato Carioca", "ano": 2003},
+    {"campeonato": "Campeonato Brasileiro Serie B", "ano": 2009},
+    {"campeonato": "Copa do Brasil", "ano": 2011},
+    {"campeonato": "Campeonato Carioca", "ano": 2015},
+    {"campeonato": "Campeonato Carioca", "ano": 2016},
+    {"campeonato": "Campeonato Brasileiro Serie B", "ano": 2016},
+]
 POSICOES_ELENCO = [
     "Goleiro",
     "Lateral-Direito",
@@ -172,6 +183,74 @@ def salvar_lista_jogos(dados):
 
 def salvar_lista_futuros(dados):
     db_save_future_matches(DB_PATH, dados)
+
+
+def _ordenar_titulos_vasco(titulos):
+    return sorted(
+        titulos,
+        key=lambda t: (
+            int(t.get("ano", 0)),
+            str(t.get("campeonato", "")).casefold(),
+        ),
+    )
+
+
+def _normalizar_titulo_vasco_item(item):
+    if not isinstance(item, dict):
+        return None
+    campeonato = str(item.get("campeonato", "")).strip()
+    if not campeonato:
+        return None
+    try:
+        ano = int(item.get("ano", 0))
+    except Exception:
+        return None
+    if ano < 1900 or ano > 2100:
+        return None
+    return {"campeonato": campeonato, "ano": ano}
+
+
+def carregar_titulos_vasco():
+    origem = ARQUIVO_TITULOS if os.path.exists(ARQUIVO_TITULOS) else None
+    dados = None
+    if origem:
+        try:
+            with open(origem, "r", encoding="utf-8") as f:
+                dados = json.load(f)
+        except Exception:
+            dados = None
+    if not isinstance(dados, list):
+        dados = list(TITULOS_VASCO_PADRAO)
+
+    normalizados = []
+    vistos = set()
+    for item in dados:
+        titulo = _normalizar_titulo_vasco_item(item)
+        if not titulo:
+            continue
+        chave = (titulo["campeonato"].casefold(), titulo["ano"])
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(titulo)
+    return _ordenar_titulos_vasco(normalizados)
+
+
+def salvar_titulos_vasco(titulos):
+    normalizados = []
+    vistos = set()
+    for item in titulos if isinstance(titulos, list) else []:
+        titulo = _normalizar_titulo_vasco_item(item)
+        if not titulo:
+            continue
+        chave = (titulo["campeonato"].casefold(), titulo["ano"])
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(titulo)
+    normalizados = _ordenar_titulos_vasco(normalizados)
+    with open(ARQUIVO_TITULOS, "w", encoding="utf-8") as f:
+        json.dump(normalizados, f, ensure_ascii=False, indent=2)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -566,6 +645,7 @@ class App:
             pass
 
         self.listas = carregar_listas()
+        self.titulos_vasco = carregar_titulos_vasco()
         self.elenco_atual = carregar_elenco_atual()
         self.jogadores_historico = carregar_jogadores_historico()
         jogadores_elenco = [j.get("nome", "") for j in self.elenco_atual.get("jogadores", []) if j.get("nome")]
@@ -600,6 +680,7 @@ class App:
         self.frame_geral = ttk.Frame(self.notebook, padding=10)
         self.frame_comparativo = ttk.Frame(self.notebook, padding=10)
         self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
+        self.frame_titulos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
         self.frame_jogadores_historico = ttk.Frame(self.notebook, padding=10)
 
@@ -610,6 +691,7 @@ class App:
         self.notebook.add(self.frame_geral, text="Geral")
         self.notebook.add(self.frame_comparativo, text="Comparativo")
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
+        self.notebook.add(self.frame_titulos, text="Títulos")
         self.notebook.add(self.frame_graficos, text="Evolução")
         self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
         self.notebook.add(self.frame_jogadores_historico, text="Jogadores")
@@ -624,6 +706,7 @@ class App:
         self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
+        self._carregar_titulos()
         self._criar_aba_retro(self.frame_retro)
         self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
         self.notebook.select(self.frame_registro)
@@ -4246,6 +4329,7 @@ class App:
 
     def _atualizar_abas(self):
         self.elenco_atual = carregar_elenco_atual()
+        self.titulos_vasco = carregar_titulos_vasco()
         self.jogadores_historico = carregar_jogadores_historico()
         self._sincronizar_jogadores_historico()
         self._atualizar_elenco_disponivel_partida()
@@ -4253,6 +4337,7 @@ class App:
         self._carregar_geral()
         self._carregar_comparativo()
         self._carregar_tecnicos()
+        self._carregar_titulos()
         self._carregar_graficos()
         self._render_aba_jogadores_historico()
         if hasattr(self, "retro_adversario_combo"):
@@ -5323,6 +5408,7 @@ class App:
     def _carregar_tecnicos(self):
         for widget in self.frame_tecnicos.winfo_children():
             widget.destroy()
+        self._limpar_tecnicos_cell_overlays()
 
         jogos = carregar_dados_jogos()
         if not jogos:
@@ -5405,13 +5491,28 @@ class App:
             tv.heading(col, text=headings[col], command=lambda c=col: self._ordenar_coluna_tecnicos(c))
             tv.column(col, width=widths[col], anchor="center" if col != "tecnico" else "w")
 
-        sy = ttk.Scrollbar(container, orient="vertical", command=tv.yview)
-        tv.configure(yscrollcommand=sy.set)
+        def _on_tecnicos_scroll(*args):
+            tv.yview(*args)
+            self._agendar_repintura_tecnicos()
+
+        sy = ttk.Scrollbar(container, orient="vertical", command=_on_tecnicos_scroll)
+        tv.configure(yscrollcommand=lambda first, last: (sy.set(first, last), self._agendar_repintura_tecnicos()))
         tv.pack(side="left", fill="both", expand=True)
         sy.pack(side="right", fill="y")
 
         tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.tag_configure("tecnico_atual", background="#cfe8ff", foreground="#0b3d91")
+        self._tecnicos_colunas_coloridas = {
+            "vitorias": {"bg": "#d9f4dd", "fg": "#14532d"},
+            "empates": {"bg": "#fff3bf", "fg": "#7a5a00"},
+            "derrotas": {"bg": "#ffd9d6", "fg": "#8a1c16"},
+            "gols_pro": {"bg": "#c9f7d2", "fg": "#0f5132"},
+            "gols_contra": {"bg": "#ffcfcf", "fg": "#7f1d1d"},
+        }
         self._tv_tecnicos = tv
+        self._tecnicos_cell_overlays = []
+        self._tecnicos_overlay_after = None
+        tv.bind("<Configure>", lambda _e: self._agendar_repintura_tecnicos())
         self._tecnicos_rows = []
         for tecnico, info in stats.items():
             saldo = info["gols_pro"] - info["gols_contra"]
@@ -5438,6 +5539,66 @@ class App:
         self._tecnicos_sort_reverse = True
         self._render_tecnicos_ordenado()
 
+    def _limpar_tecnicos_cell_overlays(self):
+        if getattr(self, "_tecnicos_overlay_after", None):
+            try:
+                self.root.after_cancel(self._tecnicos_overlay_after)
+            except Exception:
+                pass
+            self._tecnicos_overlay_after = None
+        for lbl in getattr(self, "_tecnicos_cell_overlays", []):
+            try:
+                lbl.destroy()
+            except Exception:
+                pass
+        self._tecnicos_cell_overlays = []
+
+    def _agendar_repintura_tecnicos(self):
+        if not getattr(self, "_tv_tecnicos", None):
+            return
+        if getattr(self, "_tecnicos_overlay_after", None):
+            try:
+                self.root.after_cancel(self._tecnicos_overlay_after)
+            except Exception:
+                pass
+        self._tecnicos_overlay_after = self.root.after(15, self._repintar_colunas_tecnicos)
+
+    def _repintar_colunas_tecnicos(self):
+        self._tecnicos_overlay_after = None
+        tv = getattr(self, "_tv_tecnicos", None)
+        if not tv or not tv.winfo_exists():
+            return
+        self._limpar_tecnicos_cell_overlays()
+
+        palette = getattr(self, "_tecnicos_colunas_coloridas", {})
+        if not palette:
+            return
+
+        for iid in tv.get_children():
+            tags = tv.item(iid, "tags") or ()
+            if "tecnico_atual" in tags:
+                continue
+            for coluna, colors in palette.items():
+                bbox = tv.bbox(iid, coluna)
+                if not bbox:
+                    continue
+                x, y, w, h = bbox
+                if w <= 2 or h <= 2:
+                    continue
+                txt = tv.set(iid, coluna)
+                lbl = tk.Label(
+                    tv,
+                    text=txt,
+                    bg=colors["bg"],
+                    fg=colors["fg"],
+                    bd=0,
+                    padx=0,
+                    pady=0,
+                    font=("Segoe UI", 9),
+                )
+                lbl.place(x=x + 1, y=y + 1, width=w - 2, height=h - 2)
+                self._tecnicos_cell_overlays.append(lbl)
+
     def _chave_ordenacao_tecnicos(self, row, coluna):
         if coluna in {"jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo"}:
             return int(row.get(coluna, 0))
@@ -5447,6 +5608,7 @@ class App:
         if not getattr(self, "_tv_tecnicos", None):
             return
         tv = self._tv_tecnicos
+        self._limpar_tecnicos_cell_overlays()
         for iid in tv.get_children():
             tv.delete(iid)
         rows = sorted(
@@ -5455,6 +5617,10 @@ class App:
             reverse=self._tecnicos_sort_reverse
         )
         for i, row in enumerate(rows, start=1):
+            tags = ["odd"] if i % 2 else []
+            tecnico_atual = str(self.listas.get("tecnico_atual", "") or "").strip()
+            if str(row.get("tecnico", "")).strip().casefold() == tecnico_atual.casefold():
+                tags.append("tecnico_atual")
             tv.insert(
                 "",
                 "end",
@@ -5471,8 +5637,9 @@ class App:
                     row["saldo"],
                     row["artilheiro"],
                 ),
-                tags=("odd",) if i % 2 else ()
+                tags=tuple(tags)
             )
+        self._agendar_repintura_tecnicos()
 
     def _ordenar_coluna_tecnicos(self, coluna):
         if not getattr(self, "_tecnicos_rows", None):
@@ -5483,6 +5650,342 @@ class App:
             self._tecnicos_sort_col = coluna
             self._tecnicos_sort_reverse = False
         self._render_tecnicos_ordenado()
+
+    # --------------------- Títulos ---------------------
+    def _carregar_titulos(self):
+        for widget in self.frame_titulos.winfo_children():
+            widget.destroy()
+
+        jogos = carregar_dados_jogos()
+        if not jogos:
+            ttk.Label(self.frame_titulos, text="Ainda não há jogos registrados.").pack(anchor="w")
+            return
+
+        nb = ttk.Notebook(self.frame_titulos)
+        nb.pack(fill="both", expand=True)
+
+        tab_campanhas = ttk.Frame(nb, padding=8)
+        tab_gerenciar = ttk.Frame(nb, padding=8)
+        nb.add(tab_campanhas, text="Campanhas Campeãs")
+        nb.add(tab_gerenciar, text="Gerenciar Títulos")
+
+        self._render_tab_campanhas_titulos(tab_campanhas, jogos)
+        self._render_tab_gerenciar_titulos(tab_gerenciar)
+
+    def _render_tab_campanhas_titulos(self, parent, jogos):
+        ttk.Label(
+            parent,
+            text="Números das campanhas campeãs: vitórias, empates, derrotas e artilheiro do Vasco.",
+            font=("Segoe UI", 10, "bold"),
+        ).pack(anchor="w", pady=(0, 6))
+
+        wrap = ttk.Frame(parent)
+        wrap.pack(fill="both", expand=True)
+
+        cols = ("campeonato", "ano", "vitorias", "empates", "derrotas", "artilheiro")
+        tv = ttk.Treeview(wrap, columns=cols, show="headings", height=min(16, max(8, len(self.titulos_vasco))))
+        tv.heading("campeonato", text="Campeonato")
+        tv.heading("ano", text="Ano")
+        tv.heading("vitorias", text="Vitórias")
+        tv.heading("empates", text="Empates")
+        tv.heading("derrotas", text="Derrotas")
+        tv.heading("artilheiro", text="Artilheiro do Vasco")
+        tv.column("campeonato", width=320, anchor="w")
+        tv.column("ano", width=90, anchor="center")
+        tv.column("vitorias", width=90, anchor="center")
+        tv.column("empates", width=90, anchor="center")
+        tv.column("derrotas", width=90, anchor="center")
+        tv.column("artilheiro", width=280, anchor="w")
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+
+        campanhas = []
+        for item in self.titulos_vasco:
+            campanhas.append(self._resumir_campanha_titulo(jogos, item["campeonato"], item["ano"]))
+        campanhas.sort(key=lambda x: (x["ano"], x["campeonato"].casefold()))
+
+        for i, info in enumerate(campanhas, start=1):
+            tv.insert(
+                "",
+                "end",
+                values=(
+                    info["campeonato"],
+                    info["ano"],
+                    info["vitorias"],
+                    info["empates"],
+                    info["derrotas"],
+                    info["artilheiro"],
+                ),
+                tags=("odd",) if i % 2 else ()
+            )
+
+        sy = ttk.Scrollbar(wrap, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sy.set)
+        tv.pack(side="left", fill="both", expand=True)
+        sy.pack(side="right", fill="y")
+
+    def _render_tab_gerenciar_titulos(self, parent):
+        parent.columnconfigure(0, weight=1)
+        parent.rowconfigure(1, weight=1)
+
+        form = ttk.Labelframe(parent, text="Cadastrar / Editar título", padding=10)
+        form.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        form.columnconfigure(1, weight=1)
+
+        self.titulo_campeonato_var = tk.StringVar()
+        self.titulo_ano_var = tk.StringVar()
+        competicoes_historicas = self._listar_competicoes_historicas()
+
+        ttk.Label(form, text="Campeonato:").grid(row=0, column=0, sticky="w")
+        self.entry_titulo_campeonato = ttk.Combobox(
+            form,
+            textvariable=self.titulo_campeonato_var,
+            values=competicoes_historicas,
+        )
+        self.entry_titulo_campeonato.grid(row=0, column=1, sticky="ew", padx=(6, 10))
+        self._forcar_cursor_visivel(self.entry_titulo_campeonato)
+
+        ttk.Label(form, text="Ano:").grid(row=0, column=2, sticky="w")
+        ttk.Entry(form, textvariable=self.titulo_ano_var, width=10).grid(row=0, column=3, sticky="w", padx=(6, 0))
+
+        botoes = ttk.Frame(form)
+        botoes.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(10, 0))
+        ttk.Button(botoes, text="Cadastrar", command=self._cadastrar_titulo_vasco).pack(side="left")
+        ttk.Button(botoes, text="Salvar Edição", command=self._editar_titulo_vasco).pack(side="left", padx=(8, 0))
+        ttk.Button(botoes, text="Excluir Selecionado", command=self._excluir_titulo_vasco).pack(side="left", padx=(8, 0))
+        ttk.Button(botoes, text="Limpar", command=self._limpar_form_titulo_vasco).pack(side="left", padx=(8, 0))
+
+        table_wrap = ttk.Frame(parent)
+        table_wrap.grid(row=1, column=0, sticky="nsew")
+        table_wrap.columnconfigure(0, weight=1)
+        table_wrap.rowconfigure(0, weight=1)
+
+        cols = ("campeonato", "ano")
+        self.tv_titulos_gerenciar = ttk.Treeview(
+            table_wrap,
+            columns=cols,
+            show="headings",
+            height=min(16, max(8, len(self.titulos_vasco))),
+        )
+        self.tv_titulos_gerenciar.heading("campeonato", text="Campeonato")
+        self.tv_titulos_gerenciar.heading("ano", text="Ano")
+        self.tv_titulos_gerenciar.column("campeonato", width=420, anchor="w")
+        self.tv_titulos_gerenciar.column("ano", width=110, anchor="center")
+        self.tv_titulos_gerenciar.tag_configure("odd", background=self.colors["row_alt_bg"])
+        self.tv_titulos_gerenciar.grid(row=0, column=0, sticky="nsew")
+        self.tv_titulos_gerenciar.bind("<<TreeviewSelect>>", self._on_select_titulo_vasco)
+
+        sy = ttk.Scrollbar(table_wrap, orient="vertical", command=self.tv_titulos_gerenciar.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        self.tv_titulos_gerenciar.configure(yscrollcommand=sy.set)
+        self._render_tabela_titulos_gerenciar()
+
+    def _listar_competicoes_historicas(self):
+        competicoes = set()
+        for jogo in carregar_dados_jogos():
+            nome = str(jogo.get("competicao", "")).strip()
+            if nome:
+                competicoes.add(nome)
+        for nome in self.listas.get("competicoes", []) if isinstance(self.listas, dict) else []:
+            nome_txt = str(nome).strip()
+            if nome_txt:
+                competicoes.add(nome_txt)
+        return sorted(competicoes, key=str.casefold)
+
+    def _render_tabela_titulos_gerenciar(self):
+        if not getattr(self, "tv_titulos_gerenciar", None):
+            return
+        tv = self.tv_titulos_gerenciar
+        tv.delete(*tv.get_children())
+        for i, item in enumerate(self.titulos_vasco, start=1):
+            tv.insert("", "end", values=(item["campeonato"], item["ano"]), tags=("odd",) if i % 2 else ())
+
+    def _on_select_titulo_vasco(self, _event=None):
+        if not getattr(self, "tv_titulos_gerenciar", None):
+            return
+        sel = self.tv_titulos_gerenciar.selection()
+        if not sel:
+            return
+        vals = self.tv_titulos_gerenciar.item(sel[0], "values")
+        if len(vals) < 2:
+            return
+        self.titulo_campeonato_var.set(str(vals[0]))
+        self.titulo_ano_var.set(str(vals[1]))
+
+    def _limpar_form_titulo_vasco(self):
+        if hasattr(self, "titulo_campeonato_var"):
+            self.titulo_campeonato_var.set("")
+        if hasattr(self, "titulo_ano_var"):
+            self.titulo_ano_var.set("")
+        if getattr(self, "tv_titulos_gerenciar", None):
+            self.tv_titulos_gerenciar.selection_remove(self.tv_titulos_gerenciar.selection())
+
+    def _ler_form_titulo_vasco(self):
+        campeonato = str(self.titulo_campeonato_var.get()).strip() if hasattr(self, "titulo_campeonato_var") else ""
+        ano_txt = str(self.titulo_ano_var.get()).strip() if hasattr(self, "titulo_ano_var") else ""
+        if not campeonato:
+            messagebox.showwarning("Campo obrigatório", "Informe o campeonato.")
+            return None
+        try:
+            ano = int(ano_txt)
+        except Exception:
+            messagebox.showwarning("Campo inválido", "Ano inválido.")
+            return None
+        if ano < 1900 or ano > 2100:
+            messagebox.showwarning("Campo inválido", "Ano fora do intervalo válido.")
+            return None
+        return {"campeonato": campeonato, "ano": ano}
+
+    def _cadastrar_titulo_vasco(self):
+        novo = self._ler_form_titulo_vasco()
+        if not novo:
+            return
+        chave = (novo["campeonato"].casefold(), novo["ano"])
+        existentes = {(t["campeonato"].casefold(), int(t["ano"])) for t in self.titulos_vasco}
+        if chave in existentes:
+            messagebox.showwarning("Título já existe", "Esse título já está cadastrado.")
+            return
+        self.titulos_vasco.append(novo)
+        salvar_titulos_vasco(self.titulos_vasco)
+        self.titulos_vasco = carregar_titulos_vasco()
+        self._carregar_titulos()
+        messagebox.showinfo("Sucesso", "Título cadastrado com sucesso.")
+
+    def _editar_titulo_vasco(self):
+        if not getattr(self, "tv_titulos_gerenciar", None):
+            return
+        sel = self.tv_titulos_gerenciar.selection()
+        if not sel:
+            messagebox.showwarning("Seleção obrigatória", "Selecione um título para editar.")
+            return
+        atual_vals = self.tv_titulos_gerenciar.item(sel[0], "values")
+        if len(atual_vals) < 2:
+            messagebox.showerror("Erro", "Não foi possível ler o título selecionado.")
+            return
+        try:
+            ano_atual = int(str(atual_vals[1]).strip())
+        except Exception:
+            messagebox.showerror("Erro", "Ano atual inválido na seleção.")
+            return
+        campeonato_atual = str(atual_vals[0]).strip()
+        novo = self._ler_form_titulo_vasco()
+        if not novo:
+            return
+
+        chave_antiga = (campeonato_atual.casefold(), ano_atual)
+        chave_nova = (novo["campeonato"].casefold(), novo["ano"])
+
+        for item in self.titulos_vasco:
+            chave_item = (item["campeonato"].casefold(), int(item["ano"]))
+            if chave_item == chave_nova and chave_nova != chave_antiga:
+                messagebox.showwarning("Título já existe", "Já existe um título com esse campeonato e ano.")
+                return
+
+        alterou = False
+        for item in self.titulos_vasco:
+            chave_item = (item["campeonato"].casefold(), int(item["ano"]))
+            if chave_item == chave_antiga:
+                item["campeonato"] = novo["campeonato"]
+                item["ano"] = novo["ano"]
+                alterou = True
+                break
+        if not alterou:
+            messagebox.showerror("Erro", "Título selecionado não foi encontrado.")
+            return
+
+        salvar_titulos_vasco(self.titulos_vasco)
+        self.titulos_vasco = carregar_titulos_vasco()
+        self._carregar_titulos()
+        messagebox.showinfo("Sucesso", "Título atualizado com sucesso.")
+
+    def _excluir_titulo_vasco(self):
+        if not getattr(self, "tv_titulos_gerenciar", None):
+            return
+        sel = self.tv_titulos_gerenciar.selection()
+        if not sel:
+            messagebox.showwarning("Seleção obrigatória", "Selecione um título para excluir.")
+            return
+        vals = self.tv_titulos_gerenciar.item(sel[0], "values")
+        if len(vals) < 2:
+            messagebox.showerror("Erro", "Não foi possível ler o título selecionado.")
+            return
+        campeonato = str(vals[0]).strip()
+        try:
+            ano = int(str(vals[1]).strip())
+        except Exception:
+            messagebox.showerror("Erro", "Ano inválido na seleção.")
+            return
+
+        if not messagebox.askyesno("Excluir título", f"Deseja excluir o título?\n\n{campeonato} ({ano})"):
+            return
+
+        chave = (campeonato.casefold(), ano)
+        antes = len(self.titulos_vasco)
+        self.titulos_vasco = [
+            t for t in self.titulos_vasco
+            if (t["campeonato"].casefold(), int(t["ano"])) != chave
+        ]
+        if len(self.titulos_vasco) == antes:
+            messagebox.showerror("Erro", "Título não encontrado para exclusão.")
+            return
+
+        salvar_titulos_vasco(self.titulos_vasco)
+        self.titulos_vasco = carregar_titulos_vasco()
+        self._carregar_titulos()
+        messagebox.showinfo("Sucesso", "Título excluído com sucesso.")
+
+    def _resumir_campanha_titulo(self, jogos, campeonato, ano):
+        jogos_titulo = []
+        camp_cf = str(campeonato).strip().casefold()
+        for jogo in jogos:
+            data_txt = str(jogo.get("data", "")).strip()
+            dt = _parse_data_ptbr_safe(data_txt)
+            if not dt or dt.year != int(ano):
+                continue
+            comp = str(jogo.get("competicao", "")).strip().casefold()
+            if comp != camp_cf:
+                continue
+            jogos_titulo.append(jogo)
+
+        vitorias = empates = derrotas = 0
+        artilheiros = Counter()
+
+        for jogo in jogos_titulo:
+            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+            gols_vasco = int(placar.get("vasco", 0))
+            gols_adv = int(placar.get("adversario", 0))
+            if gols_vasco > gols_adv:
+                vitorias += 1
+            elif gols_vasco == gols_adv:
+                empates += 1
+            else:
+                derrotas += 1
+
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    nome = str(g.get("nome", "")).strip()
+                    if not nome:
+                        continue
+                    artilheiros[nome] += int(g.get("gols", 0))
+                elif isinstance(g, str):
+                    nome = g.strip()
+                    if nome:
+                        artilheiros[nome] += 1
+
+        if not artilheiros:
+            artilheiro_txt = "—"
+        else:
+            max_gols = max(artilheiros.values())
+            nomes = sorted([nome for nome, gols in artilheiros.items() if gols == max_gols], key=str.casefold)
+            artilheiro_txt = " / ".join(nomes) + f" ({max_gols})"
+
+        return {
+            "campeonato": campeonato,
+            "ano": int(ano),
+            "vitorias": vitorias,
+            "empates": empates,
+            "derrotas": derrotas,
+            "artilheiro": artilheiro_txt,
+        }
 
     # --------------------- Gráficos ---------------------
     def _carregar_graficos(self):

@@ -1,0 +1,88 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+4602,03/01/2000,2000-01-03,Amistoso,Sel. Argélia,casa,7,0,,Antônio Lopes
+4575,06/01/2000,2000-01-06,Mundial de Clubes,South Melbourne,casa,2,0,,Antônio Lopes
+4576,08/01/2000,2000-01-08,Mundial de Clubes,Manchester United,fora,3,1,,Antônio Lopes
+4577,11/01/2000,2000-01-11,Mundial de Clubes,Necaxa,casa,2,1,,Antônio Lopes
+4578,14/01/2000,2000-01-14,Mundial de Clubes,Corinthians,fora,0,0,,Antônio Lopes
+4592,23/01/2000,2000-01-23,Torneio Rio-São Paulo,Palmeiras,casa,3,3,,Antônio Lopes
+4593,27/01/2000,2000-01-27,Torneio Rio-São Paulo,Fluminense,fora,2,1,,Antônio Lopes
+4594,30/01/2000,2000-01-30,Torneio Rio-São Paulo,Corinthians,casa,1,0,,Antônio Lopes
+4595,05/02/2000,2000-02-05,Torneio Rio-São Paulo,Palmeiras,fora,1,2,,Antônio Lopes
+4596,09/02/2000,2000-02-09,Torneio Rio-São Paulo,Fluminense,casa,1,0,,Antônio Lopes
+4597,13/02/2000,2000-02-13,Torneio Rio-São Paulo,Corinthians,fora,1,1,,Antônio Lopes
+4598,19/02/2000,2000-02-19,Torneio Rio-São Paulo,São Paulo,fora,3,0,,Antônio Lopes
+4599,23/02/2000,2000-02-23,Torneio Rio-São Paulo,São Paulo,casa,2,1,,Antônio Lopes
+4600,26/02/2000,2000-02-26,Torneio Rio-São Paulo,Palmeiras,casa,1,2,,Antônio Lopes
+4601,01/03/2000,2000-03-01,Torneio Rio-São Paulo,Palmeiras,fora,4,0,,Antônio Lopes
+4553,12/03/2000,2000-03-12,Campeonato Carioca,Madureira,casa,2,0,,Antônio Lopes
+4548,15/03/2000,2000-03-15,Copa do Brasil,Botafogo-PB,fora,3,1,,Antônio Lopes
+4554,18/03/2000,2000-03-18,Campeonato Carioca,Bangu,casa,3,0,,Antônio Lopes
+4555,22/03/2000,2000-03-22,Campeonato Carioca,Friburguense,fora,1,0,,Antônio Lopes
+4556,25/03/2000,2000-03-25,Campeonato Carioca,Americano,casa,6,0,,Antônio Lopes
+4557,29/03/2000,2000-03-29,Campeonato Carioca,Olaria,fora,4,1,,Antônio Lopes
+4558,02/04/2000,2000-04-02,Campeonato Carioca,Fluminense,fora,3,2,,Antônio Lopes
+4559,09/04/2000,2000-04-09,Campeonato Carioca,Botafogo,casa,0,0,,Antônio Lopes
+4560,12/04/2000,2000-04-12,Campeonato Carioca,V. Redonda,fora,3,0,,Antônio Lopes
+4561,15/04/2000,2000-04-15,Campeonato Carioca,América,fora,3,1,,Antônio Lopes
+4562,19/04/2000,2000-04-19,Campeonato Carioca,Cabo Frio,casa,5,0,,Antônio Lopes
+4563,23/04/2000,2000-04-23,Campeonato Carioca,Flamengo,fora,5,1,,Antônio Lopes
+4549,27/04/2000,2000-04-27,Copa do Brasil,Ponte Preta,casa,1,1,,Antônio Lopes
+4564,30/04/2000,2000-04-30,Campeonato Carioca,Madureira,fora,3,1,,Antônio Lopes
+4550,03/05/2000,2000-05-03,Copa do Brasil,Ponte Preta,fora,1,0,,Antônio Lopes
+4565,06/05/2000,2000-05-06,Campeonato Carioca,América,casa,1,2,,Antônio Lopes
+4566,10/05/2000,2000-05-10,Campeonato Carioca,Americano,fora,2,0,,Antônio Lopes
+4567,13/05/2000,2000-05-13,Campeonato Carioca,Olaria,casa,6,1,,Antônio Lopes
+4568,17/05/2000,2000-05-17,Campeonato Carioca,Bangu,fora,4,1,,Antônio Lopes
+4569,21/05/2000,2000-05-21,Campeonato Carioca,Fluminense,casa,0,1,,Antônio Lopes
+4551,24/05/2000,2000-05-24,Copa do Brasil,Fluminense,fora,1,1,,Antônio Lopes
+4570,28/05/2000,2000-05-28,Campeonato Carioca,Flamengo,casa,3,3,,Antônio Lopes
+4552,31/05/2000,2000-05-31,Copa do Brasil,Fluminense,casa,2,2,,Antônio Lopes
+4571,04/06/2000,2000-06-04,Campeonato Carioca,Friburguense,casa,1,0,,Antônio Lopes
+4572,07/06/2000,2000-06-07,Campeonato Carioca,Botafogo,fora,1,1,,Antônio Lopes
+4573,11/06/2000,2000-06-11,Campeonato Carioca,Flamengo,fora,0,3,,Antônio Lopes
+4574,17/06/2000,2000-06-17,Campeonato Carioca,Flamengo,casa,1,2,,Antônio Lopes
+4603,30/06/2000,2000-06-30,Amistoso,Rio Branco,fora,2,0,,Antônio Lopes
+4604,22/07/2000,2000-07-22,Amistoso,São Cristóvão,fora,3,0,,Antônio Lopes
+4516,29/07/2000,2000-07-29,Campeonato Brasileiro Serie A,Sport,casa,0,2,,Antônio Lopes
+4579,01/08/2000,2000-08-01,Copa Mercosul,Peñarol,fora,3,4,,Antônio Lopes
+4517,06/08/2000,2000-08-06,Campeonato Brasileiro Serie A,Cruzeiro,casa,3,3,,Antônio Lopes
+4518,11/08/2000,2000-08-11,Campeonato Brasileiro Serie A,Corinthians,casa,1,0,,Antônio Lopes
+4519,13/08/2000,2000-08-13,Campeonato Brasileiro Serie A,Guarani,fora,1,0,,Antônio Lopes
+4520,16/08/2000,2000-08-16,Campeonato Brasileiro Serie A,Santa Cruz,fora,1,1,,Antônio Lopes
+4521,20/08/2000,2000-08-20,Campeonato Brasileiro Serie A,Ponte Preta,casa,2,1,,Antônio Lopes
+4580,24/08/2000,2000-08-24,Copa Mercosul,San Lorenzo,casa,3,0,,Antônio Lopes
+4522,27/08/2000,2000-08-27,Campeonato Brasileiro Serie A,Portuguesa,fora,2,2,,Antônio Lopes
+4581,31/08/2000,2000-08-31,Copa Mercosul,Atlético-MG,fora,0,2,,Antônio Lopes
+4523,05/09/2000,2000-09-05,Campeonato Brasileiro Serie A,Atlético-PR,casa,2,2,,Antônio Lopes
+4582,07/09/2000,2000-09-07,Copa Mercosul,Peñarol,casa,1,1,,Antônio Lopes
+4524,10/09/2000,2000-09-10,Campeonato Brasileiro Serie A,Bahia,fora,1,3,,Antônio Lopes
+4525,13/09/2000,2000-09-13,Campeonato Brasileiro Serie A,Fluminense,casa,4,3,,Antônio Lopes
+4526,20/09/2000,2000-09-20,Campeonato Brasileiro Serie A,América-MG,casa,4,0,,Antônio Lopes
+4527,24/09/2000,2000-09-24,Campeonato Brasileiro Serie A,Juventude,fora,2,1,,Antônio Lopes
+4583,28/09/2000,2000-09-28,Copa Mercosul,San Lorenzo,fora,2,0,,Antônio Lopes
+4528,04/10/2000,2000-10-04,Campeonato Brasileiro Serie A,Atlético-MG,casa,4,0,,Antônio Lopes
+4529,11/10/2000,2000-10-11,Campeonato Brasileiro Serie A,Vitória,casa,2,2,,Antônio Lopes
+4530,14/10/2000,2000-10-14,Campeonato Brasileiro Serie A,Santos,fora,1,1,,Antônio Lopes
+4584,17/10/2000,2000-10-17,Copa Mercosul,Atlético-MG,casa,2,0,,Antônio Lopes
+4531,21/10/2000,2000-10-21,Campeonato Brasileiro Serie A,Gama,casa,1,0,,Antônio Lopes
+4532,24/10/2000,2000-10-24,Campeonato Brasileiro Serie A,Goiás,casa,2,1,,Antônio Lopes
+4533,27/10/2000,2000-10-27,Campeonato Brasileiro Serie A,Flamengo,fora,0,4,,Antônio Lopes
+4585,31/10/2000,2000-10-31,Copa Mercosul,R. Central,casa,1,0,,Antônio Lopes
+4534,03/11/2000,2000-11-03,Campeonato Brasileiro Serie A,Coritiba,fora,1,0,,Antônio Lopes
+4535,05/11/2000,2000-11-05,Campeonato Brasileiro Serie A,Internacional,fora,0,2,,Antônio Lopes
+4586,08/11/2000,2000-11-08,Copa Mercosul,R. Central,fora,0,1,,Antônio Lopes
+4536,10/11/2000,2000-11-10,Campeonato Brasileiro Serie A,Palmeiras,fora,0,3,,Antônio Lopes
+4537,12/11/2000,2000-11-12,Campeonato Brasileiro Serie A,Botafogo,casa,1,2,,Antônio Lopes
+4538,16/11/2000,2000-11-16,Campeonato Brasileiro Serie A,Grêmio,fora,1,0,,Antônio Lopes
+4539,19/11/2000,2000-11-19,Campeonato Brasileiro Serie A,São Paulo,casa,0,4,,Antônio Lopes
+4587,22/11/2000,2000-11-22,Copa Mercosul,River Plate,fora,4,1,,Antônio Lopes
+4540,25/11/2000,2000-11-25,Campeonato Brasileiro Serie A,Bahia,fora,3,3,,Antônio Lopes
+4541,28/11/2000,2000-11-28,Campeonato Brasileiro Serie A,Bahia,casa,3,2,,Antônio Lopes
+4588,30/11/2000,2000-11-30,Copa Mercosul,River Plate,casa,1,0,,Antônio Lopes
+4542,03/12/2000,2000-12-03,Campeonato Brasileiro Serie A,Paraná,casa,3,1,,Antônio Lopes
+4589,06/12/2000,2000-12-06,Copa Mercosul,Palmeiras,casa,2,0,,Antônio Lopes
+4543,09/12/2000,2000-12-09,Campeonato Brasileiro Serie A,Paraná,fora,0,1,,Antônio Lopes
+4590,12/12/2000,2000-12-12,Copa Mercosul,Palmeiras,fora,0,1,,Antônio Lopes
+4544,16/12/2000,2000-12-16,Campeonato Brasileiro Serie A,Cruzeiro,casa,2,2,,Antônio Lopes
+4545,23/12/2000,2000-12-23,Campeonato Brasileiro Serie A,Cruzeiro,fora,3,1,,Antônio Lopes
+4546,27/12/2000,2000-12-27,Campeonato Brasileiro Serie A,São Caetano,fora,1,1,,Antônio Lopes

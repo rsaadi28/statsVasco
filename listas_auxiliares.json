@@ -38,6 +38,7 @@
     "Volta Redonda"
   ],
   "jogadores_vasco": [
+    "Adson",
     "Andrés Gómez",
     "Brenner",
     "Carlos Cuesta",
@@ -46,11 +47,8 @@
     "Cuiabano",
     "Daniel Fuzato",
     "David",
-    "Gabriel Silva (GB)",
-    "Guilherme Estrella",
     "Hugo Moura",
     "Johan Rojas",
-    "JP",
     "Lucas Freitas",
     "Lucas Piton",
     "Léo Jardim",
@@ -62,8 +60,7 @@
     "Robert Renan",
     "Saldivia",
     "Tche Tche",
-    "Thiago Mendes",
-    "Victor Luís"
+    "Thiago Mendes"
   ],
   "jogadores_contra": [
     "Ademilson",
@@ -73,7 +70,6 @@
     "Amuzu",
     "Arthur Cabral",
     "Barreal",
-    "Barros (Contra)",
     "Brayann",
     "Bruno Henrique",
     "Bruno Santos",
@@ -88,12 +84,12 @@
     "Erick Pulga",
     "Everton Cebolinha",
     "Ewerthon",
-    "Filha da",
     "Flaco López",
     "Gabriel Boschilia",
     "Gabriel Menino",
     "Gabriel Pereira Taliari",
     "Galeano",
+    "Ganso",
     "Gerardo Padrón",
     "Guga",
     "Guilherme",
@@ -123,6 +119,7 @@
     "Nathan Fernandes",
     "Negueba",
     "Nenê",
+    "Neymar",
     "Pablo Vegetti (contra)",
     "Patrick Mercado",
     "Paulo Henrique (contra)",
@@ -136,6 +133,7 @@
     "Ricardo Mathias",
     "Rodriguez",
     "Ryan Francisco",
+    "Serna",
     "Sidney",
     "Thiago Silva",
     "Victor Luis (contra)",
@@ -145,6 +143,7 @@
     "Zé Vitor"
   ],
   "competicoes": [
+    "5",
     "Brasileirão Série A",
     "Campeonato Brasileiro Série A",
     "Campeonato Carioca",
@@ -152,11 +151,12 @@
     "Copa Sul-Americana"
   ],
   "tecnicos": [
+    "Bruno Lazaroni (interino)",
     "Felipe (interino)",
     "Fernando Diniz",
     "Fábio Carille",
     "Rafael Paiva",
     "Ramon Lima"
   ],
-  "tecnico_atual": "Fernando Diniz"
+  "tecnico_atual": "Bruno Lazaroni (interino)"
 }

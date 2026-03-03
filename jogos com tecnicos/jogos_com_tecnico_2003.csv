@@ -1,0 +1,71 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+4357,18/01/2003,2003-01-18,Campeonato Carioca,América,casa,1,0,,Antônio Lopes
+4358,26/01/2003,2003-01-26,Campeonato Carioca,Botafogo,casa,1,1,,Antônio Lopes
+4359,29/01/2003,2003-01-29,Campeonato Carioca,Friburguense,casa,4,1,,Antônio Lopes
+4360,02/02/2003,2003-02-02,Campeonato Carioca,Fluminense,fora,2,2,,Antônio Lopes
+4350,05/02/2003,2003-02-05,Copa do Brasil,Itabaiana-SE,fora,1,0,,Antônio Lopes
+4361,09/02/2003,2003-02-09,Campeonato Carioca,V. Redonda,fora,2,0,,Antônio Lopes
+4362,12/02/2003,2003-02-12,Campeonato Carioca,Americano,fora,1,2,,Antônio Lopes
+4363,15/02/2003,2003-02-15,Campeonato Carioca,Cabofriense,casa,3,0,,Antônio Lopes
+4364,19/02/2003,2003-02-19,Campeonato Carioca,Olaria,fora,3,1,,Antônio Lopes
+4365,23/02/2003,2003-02-23,Campeonato Carioca,Bangu,casa,2,2,,Antônio Lopes
+4366,26/02/2003,2003-02-26,Campeonato Carioca,Madureira,fora,3,1,,Antônio Lopes
+4367,01/03/2003,2003-03-01,Campeonato Carioca,Flamengo,casa,1,1,,Antônio Lopes
+4368,09/03/2003,2003-03-09,Campeonato Carioca,Americano,fora,4,1,,Antônio Lopes
+4351,12/03/2003,2003-03-12,Copa do Brasil,Itabaiana-SE,casa,4,0,,Antônio Lopes
+4369,16/03/2003,2003-03-16,Campeonato Carioca,Americano,casa,2,0,,Antônio Lopes
+4370,19/03/2003,2003-03-19,Campeonato Carioca,Fluminense,fora,2,1,,Antônio Lopes
+4371,23/03/2003,2003-03-23,Campeonato Carioca,Fluminense,casa,2,1,,Antônio Lopes
+4352,26/03/2003,2003-03-26,Copa do Brasil,Moto Clube,fora,2,0,,Antônio Lopes
+4304,29/03/2003,2003-03-29,Campeonato Brasileiro Serie A,Guarani,fora,2,4,,Antônio Lopes
+4305,06/04/2003,2003-04-06,Campeonato Brasileiro Serie A,Goiás,casa,6,4,,Antônio Lopes
+4306,13/04/2003,2003-04-13,Campeonato Brasileiro Serie A,Vitória,fora,1,2,,Antônio Lopes
+4307,16/04/2003,2003-04-16,Campeonato Brasileiro Serie A,Corinthians,casa,2,2,,Antônio Lopes
+4308,20/04/2003,2003-04-20,Campeonato Brasileiro Serie A,São Paulo,fora,1,3,,Antônio Lopes
+4353,23/04/2003,2003-04-23,Copa do Brasil,Bahia,fora,1,2,,Antônio Lopes
+4309,27/04/2003,2003-04-27,Campeonato Brasileiro Serie A,São Caetano,casa,1,0,,Antônio Lopes
+4354,30/04/2003,2003-04-30,Copa do Brasil,Bahia,casa,1,0,,Antônio Lopes
+4310,04/05/2003,2003-05-04,Campeonato Brasileiro Serie A,Fluminense,fora,0,0,,Antônio Lopes
+4355,07/05/2003,2003-05-07,Copa do Brasil,Cruzeiro,fora,1,2,,Antônio Lopes
+4311,11/05/2003,2003-05-11,Campeonato Brasileiro Serie A,Bahia,casa,1,1,,Antônio Lopes
+4356,14/05/2003,2003-05-14,Copa do Brasil,Cruzeiro,casa,1,1,,Antônio Lopes
+4312,18/05/2003,2003-05-18,Campeonato Brasileiro Serie A,Coritiba,fora,1,1,,Geninho
+4313,24/05/2003,2003-05-24,Campeonato Brasileiro Serie A,Ponte Preta,casa,1,0,,Geninho
+4314,01/06/2003,2003-06-01,Campeonato Brasileiro Serie A,Atlético-MG,casa,2,2,,Geninho
+4315,08/06/2003,2003-06-08,Campeonato Brasileiro Serie A,Juventude,fora,0,0,,Geninho
+4316,15/06/2003,2003-06-15,Campeonato Brasileiro Serie A,Flamengo,casa,1,2,,Geninho
+4317,21/06/2003,2003-06-21,Campeonato Brasileiro Serie A,Criciúma,casa,2,0,,Geninho
+4318,28/06/2003,2003-06-28,Campeonato Brasileiro Serie A,Fortaleza,fora,1,0,,Geninho
+4319,05/07/2003,2003-07-05,Campeonato Brasileiro Serie A,Paraná,casa,1,4,,Geninho
+4320,09/07/2003,2003-07-09,Campeonato Brasileiro Serie A,Internacional,fora,1,2,,Geninho
+4321,12/07/2003,2003-07-12,Campeonato Brasileiro Serie A,Paysandu,casa,0,2,,Geninho
+4322,16/07/2003,2003-07-16,Campeonato Brasileiro Serie A,Cruzeiro,fora,1,4,,Geninho
+4323,20/07/2003,2003-07-20,Campeonato Brasileiro Serie A,Grêmio,casa,2,0,,Geninho
+4324,23/07/2003,2003-07-23,Campeonato Brasileiro Serie A,Figueirense,fora,0,0,,Geninho
+4325,26/07/2003,2003-07-26,Campeonato Brasileiro Serie A,Santos,fora,1,2,,Geninho
+4326,03/08/2003,2003-08-03,Campeonato Brasileiro Serie A,Atlético-PR,casa,2,1,,Geninho
+4327,06/08/2003,2003-08-06,Campeonato Brasileiro Serie A,Goiás,fora,1,3,,Geninho
+4328,10/08/2003,2003-08-10,Campeonato Brasileiro Serie A,Guarani,casa,0,0,,Geninho
+4329,16/08/2003,2003-08-16,Campeonato Brasileiro Serie A,Vitória,casa,1,0,,Geninho
+4330,20/08/2003,2003-08-20,Campeonato Brasileiro Serie A,Corinthians,fora,0,0,,Geninho
+4331,24/08/2003,2003-08-24,Campeonato Brasileiro Serie A,São Paulo,casa,3,2,,Geninho
+4372,27/08/2003,2003-08-27,Copa Sul-Americana,Grêmio,casa,1,1,,Geninho
+4332,31/08/2003,2003-08-31,Campeonato Brasileiro Serie A,São Caetano,fora,0,1,,Geninho
+4373,03/09/2003,2003-09-03,Copa Sul-Americana,São Paulo,fora,1,2,,Geninho
+4333,14/09/2003,2003-09-14,Campeonato Brasileiro Serie A,Fluminense,casa,1,0,,Geninho
+4334,21/09/2003,2003-09-21,Campeonato Brasileiro Serie A,Bahia,fora,0,3,,Geninho
+4335,25/09/2003,2003-09-25,Campeonato Brasileiro Serie A,Coritiba,casa,2,1,,Geninho
+4336,28/09/2003,2003-09-28,Campeonato Brasileiro Serie A,Ponte Preta,fora,2,2,,Geninho
+4337,05/10/2003,2003-10-05,Campeonato Brasileiro Serie A,Atlético-MG,fora,1,2,,Mauro Galvão
+4338,08/10/2003,2003-10-08,Campeonato Brasileiro Serie A,Juventude,casa,1,1,,Mauro Galvão
+4339,12/10/2003,2003-10-12,Campeonato Brasileiro Serie A,Flamengo,fora,1,2,,Mauro Galvão
+4340,19/10/2003,2003-10-19,Campeonato Brasileiro Serie A,Criciúma,fora,1,2,,Mauro Galvão
+4341,23/10/2003,2003-10-23,Campeonato Brasileiro Serie A,Fortaleza,casa,1,1,,Mauro Galvão
+4342,26/10/2003,2003-10-26,Campeonato Brasileiro Serie A,Paraná,fora,3,3,,Mauro Galvão
+4343,02/11/2003,2003-11-02,Campeonato Brasileiro Serie A,Internacional,casa,0,1,,Mauro Galvão
+4344,05/11/2003,2003-11-05,Campeonato Brasileiro Serie A,Paysandu,fora,2,1,,Mauro Galvão
+4345,09/11/2003,2003-11-09,Campeonato Brasileiro Serie A,Cruzeiro,casa,0,1,,Mauro Galvão
+4346,22/11/2003,2003-11-22,Campeonato Brasileiro Serie A,Grêmio,fora,3,4,,Mauro Galvão
+4347,29/11/2003,2003-11-29,Campeonato Brasileiro Serie A,Figueirense,casa,1,0,,Mauro Galvão
+4348,06/12/2003,2003-12-06,Campeonato Brasileiro Serie A,Atlético-PR,fora,2,2,,Mauro Galvão
+4349,14/12/2003,2003-12-14,Campeonato Brasileiro Serie A,Santos,casa,1,1,,Mauro Galvão

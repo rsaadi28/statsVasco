@@ -1,0 +1,63 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+3623,13/01/2013,2013-01-13,Amistoso,Ajax-HOL,casa,1,0,,Gaúcho
+3624,19/01/2013,2013-01-19,Campeonato Carioca,Boavista,fora,3,0,,Gaúcho
+3625,23/01/2013,2013-01-23,Campeonato Carioca,Macaé,casa,4,2,,Gaúcho
+3626,26/01/2013,2013-01-26,Campeonato Carioca,Resende,fora,4,2,,Gaúcho
+3627,31/01/2013,2013-01-31,Campeonato Carioca,Flamengo,casa,2,4,,Gaúcho
+3628,03/02/2013,2013-02-03,Campeonato Carioca,Bangu,casa,0,1,,Gaúcho
+3629,09/02/2013,2013-02-09,Campeonato Carioca,Fluminense,fora,1,1,,Gaúcho
+3630,17/02/2013,2013-02-17,Campeonato Carioca,Audax,casa,2,0,,Gaúcho
+3631,24/02/2013,2013-02-24,Campeonato Carioca,Duque de Caxias,fora,2,1,,Gaúcho
+3632,02/03/2013,2013-03-02,Campeonato Carioca,Fluminense,casa,3,2,,Gaúcho
+3633,10/03/2013,2013-03-10,Campeonato Carioca,Botafogo,casa,0,1,,Gaúcho
+3634,17/03/2013,2013-03-17,Campeonato Carioca,Volta Redonda,casa,0,1,,Gaúcho
+3635,20/03/2013,2013-03-20,Campeonato Carioca,Nova Iguaçu,fora,0,2,,Gaúcho
+3636,27/03/2013,2013-03-27,Campeonato Carioca,Olaria,fora,0,0,,Gaúcho
+3637,03/04/2013,2013-04-03,Campeonato Carioca,Botafogo,casa,0,3,,Gaúcho
+3638,07/04/2013,2013-04-07,Campeonato Carioca,Friburguense,casa,2,1,,Gaúcho
+3639,13/04/2013,2013-04-13,Campeonato Carioca,Quissamã,casa,3,1,,Gaúcho
+3640,20/04/2013,2013-04-20,Campeonato Carioca,Madureira,fora,0,1,,Gaúcho
+3641,11/05/2013,2013-05-11,Amistoso,Tupi-MG,fora,5,1,,Paulo Autuori
+3642,18/05/2013,2013-05-18,Amistoso,Figueirense-SC,fora,2,1,,Paulo Autuori
+3643,25/05/2013,2013-05-25,Campeonato Brasileiro Serie A,Portuguesa,casa,1,0,,Paulo Autuori
+3644,29/05/2013,2013-05-29,Campeonato Brasileiro Serie A,São Paulo,fora,1,5,,Paulo Autuori
+3645,01/06/2013,2013-06-01,Campeonato Brasileiro Serie A,Vitória,fora,0,2,,Paulo Autuori
+3646,05/06/2013,2013-06-05,Campeonato Brasileiro Serie A,Atlético-MG,casa,2,0,,Paulo Autuori
+3647,08/06/2013,2013-06-08,Campeonato Brasileiro Serie A,Bahia,casa,1,1,,Paulo Autuori
+3648,07/07/2013,2013-07-07,Campeonato Brasileiro Serie A,Internacional,fora,3,5,,Paulo Autuori
+3649,14/07/2013,2013-07-14,Campeonato Brasileiro Serie A,Flamengo,casa,0,1,,Paulo Autuori
+3650,21/07/2013,2013-07-21,Campeonato Brasileiro Serie A,Fluminense,fora,3,1,,Paulo Autuori
+3651,27/07/2013,2013-07-27,Campeonato Brasileiro Serie A,Criciúma,casa,3,2,,Paulo Autuori
+3652,01/08/2013,2013-08-01,Campeonato Brasileiro Serie A,Goiás,fora,1,1,,Paulo Autuori
+3653,04/08/2013,2013-08-04,Campeonato Brasileiro Serie A,Botafogo,casa,2,3,,Paulo Autuori
+3654,08/08/2013,2013-08-08,Campeonato Brasileiro Serie A,Ponte Preta,casa,1,1,,Paulo Autuori
+3655,11/08/2013,2013-08-11,Campeonato Brasileiro Serie A,Coritiba,fora,1,0,,Paulo Autuori
+3656,14/08/2013,2013-08-14,Campeonato Brasileiro Serie A,Santos,fora,1,1,,Paulo Autuori
+3657,17/08/2013,2013-08-17,Campeonato Brasileiro Serie A,Grêmio,casa,2,3,,Paulo Autuori
+3658,20/08/2013,2013-08-20,Copa do Brasil,Nacional-AM,fora,2,0,,Paulo Autuori
+3659,25/08/2013,2013-08-25,Campeonato Brasileiro Serie A,Corinthians,casa,1,1,,Paulo Autuori
+3660,29/08/2013,2013-08-29,Copa do Brasil,Nacional-AM,casa,2,1,,Paulo Autuori
+3661,01/09/2013,2013-09-01,Campeonato Brasileiro Serie A,Cruzeiro,fora,3,5,,Dorival Júnior
+3662,05/09/2013,2013-09-05,Campeonato Brasileiro Serie A,Náutico,fora,3,0,,Dorival Júnior
+3663,08/09/2013,2013-09-08,Campeonato Brasileiro Serie A,Atlético-PR,casa,0,0,,Dorival Júnior
+3664,11/09/2013,2013-09-11,Campeonato Brasileiro Serie A,Portuguesa,fora,0,2,,Dorival Júnior
+3665,15/09/2013,2013-09-15,Campeonato Brasileiro Serie A,São Paulo,casa,0,2,,Dorival Júnior
+3666,18/09/2013,2013-09-18,Campeonato Brasileiro Serie A,Vitória,casa,1,2,,Dorival Júnior
+3667,22/09/2013,2013-09-22,Campeonato Brasileiro Serie A,Atlético-MG,fora,1,2,,Dorival Júnior
+3668,25/09/2013,2013-09-25,Copa do Brasil,Goiás,fora,1,2,,Dorival Júnior
+3669,29/09/2013,2013-09-29,Campeonato Brasileiro Serie A,Bahia,fora,0,0,,Dorival Júnior
+3670,03/10/2013,2013-10-03,Campeonato Brasileiro Serie A,Internacional,casa,3,1,,Dorival Júnior
+3671,06/10/2013,2013-10-06,Campeonato Brasileiro Serie A,Flamengo,fora,1,1,,Dorival Júnior
+3672,09/10/2013,2013-10-09,Campeonato Brasileiro Serie A,Fluminense,casa,1,0,,Dorival Júnior
+3673,13/10/2013,2013-10-13,Campeonato Brasileiro Serie A,Criciúma,fora,2,3,,Dorival Júnior
+3674,17/10/2013,2013-10-17,Campeonato Brasileiro Serie A,Goiás,casa,0,2,,Dorival Júnior
+3675,20/10/2013,2013-10-20,Campeonato Brasileiro Serie A,Botafogo,fora,2,2,,Dorival Júnior
+3676,24/10/2013,2013-10-24,Copa do Brasil,Goiás,casa,3,2,,Dorival Júnior
+3677,27/10/2013,2013-10-27,Campeonato Brasileiro Serie A,Ponte Preta,fora,1,2,,Dorival Júnior
+3678,02/11/2013,2013-11-02,Campeonato Brasileiro Serie A,Coritiba,casa,2,1,,Dorival Júnior
+3679,10/11/2013,2013-11-10,Campeonato Brasileiro Serie A,Santos,casa,2,2,,Dorival Júnior
+3680,13/11/2013,2013-11-13,Campeonato Brasileiro Serie A,Grêmio,fora,0,1,,Dorival Júnior
+3681,17/11/2013,2013-11-17,Campeonato Brasileiro Serie A,Corinthians,fora,0,0,,Dorival Júnior
+3682,23/11/2013,2013-11-23,Campeonato Brasileiro Serie A,Cruzeiro,casa,2,1,,Dorival Júnior
+3683,01/12/2013,2013-12-01,Campeonato Brasileiro Serie A,Náutico,casa,2,0,,Dorival Júnior
+3684,08/12/2013,2013-12-08,Campeonato Brasileiro Serie A,Atlético-PR,fora,1,5,,Dorival Júnior

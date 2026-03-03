@@ -649,6 +649,17 @@ def coletar_retro_por_adversario(adversario: str) -> dict:
     }
 
 
+def listar_adversarios_com_historico() -> list[str]:
+    return sorted(
+        {
+            str(jogo.get("adversario", "")).strip()
+            for jogo in carregar_jogos()
+            if str(jogo.get("adversario", "")).strip()
+        },
+        key=lambda s: s.casefold(),
+    )
+
+
 INDEX_HTML = """<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -1069,21 +1080,72 @@ INDEX_HTML = """<!doctype html>
           <select id="retro-adversario-select" style="min-width:320px; flex:1;">
             <option value="">Selecione um adversário...</option>
           </select>
+          <button id="retro-atualizar" class="secondary" type="button">Atualizar</button>
         </div>
         <div id="retro-resumo" class="muted" style="margin-bottom:10px;">
           Selecione um adversário para ver o retrospecto.
         </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="muted">Gols somados</div>
+          <div id="retro-gols-somados" class="value" style="font-size:1.25rem; font-weight:700;">Vasco 0 x 0 Adversário</div>
+        </div>
+        <div class="mini-grid" style="margin-bottom:10px;">
+          <div class="card">
+            <div class="muted">Jogos</div>
+            <div id="retro-total" class="value" style="font-size:1.3rem; font-weight:700;">0</div>
+          </div>
+          <div class="card">
+            <div class="muted">Aproveitamento</div>
+            <div id="retro-aproveitamento" class="value" style="font-size:1.3rem; font-weight:700;">0%</div>
+          </div>
+          <div class="card">
+            <div class="muted">V / E / D</div>
+            <div id="retro-ved" class="value" style="font-size:1.3rem; font-weight:700;">0 / 0 / 0</div>
+          </div>
+          <div class="card">
+            <div class="muted">Saldo</div>
+            <div id="retro-saldo" class="value" style="font-size:1.3rem; font-weight:700;">0</div>
+          </div>
+        </div>
+        <div class="mini-grid" style="margin-bottom:10px;">
+          <div class="card">
+            <div class="muted">Placar mais elástico (Vasco)</div>
+            <div id="retro-elastico-vasco">—</div>
+          </div>
+          <div class="card">
+            <div class="muted" id="retro-elastico-adv-titulo">Placar mais elástico (Adversário)</div>
+            <div id="retro-elastico-adv">—</div>
+          </div>
+          <div class="card">
+            <div class="muted" id="retro-jejum-adv-titulo">Adversário sem vencer</div>
+            <div id="retro-jejum-adv">—</div>
+          </div>
+          <div class="card">
+            <div class="muted">Vasco sem vencer</div>
+            <div id="retro-jejum-vasco">—</div>
+          </div>
+        </div>
+        <div class="mini-grid" style="margin-bottom:10px;">
+          <div class="card">
+            <div class="muted">Artilheiros do Vasco</div>
+            <div id="retro-art-vasco">—</div>
+          </div>
+          <div class="card">
+            <div class="muted" id="retro-art-adv-titulo">Artilheiros do adversário</div>
+            <div id="retro-art-adv">—</div>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead>
+            <thead id="retro-head">
               <tr>
-                <th>Data</th>
-                <th>Competição</th>
-                <th>Local</th>
-                <th>Placar</th>
-                <th>Res.</th>
-                <th>Gols do Vasco</th>
-                <th>Gols do Adversário</th>
+                <th data-col="data" style="cursor:pointer">Data</th>
+                <th data-col="competicao" style="cursor:pointer">Competição</th>
+                <th data-col="local" style="cursor:pointer">Local</th>
+                <th data-col="placar" style="cursor:pointer">Placar</th>
+                <th data-col="resultado" style="cursor:pointer">Res.</th>
+                <th data-col="gols_vasco" style="cursor:pointer">Gols do Vasco</th>
+                <th data-col="gols_adversario" style="cursor:pointer">Gols do Adversário</th>
               </tr>
             </thead>
             <tbody id="tbody-retro"></tbody>
@@ -1463,6 +1525,212 @@ INDEX_HTML = """<!doctype html>
       gols: { vasco: [], contra: [] },
     };
     const editState = { idx: null, escalacaoPadrao: null };
+    const retroState = { adversario: "", partidas: [], sortCol: "data", sortReverse: true };
+
+    function parseDataBR(txt) {
+      const m = String(txt || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!m) return null;
+      const d = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const y = Number(m[3]);
+      const dt = new Date(y, mo, d);
+      return Number.isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function parsePlacar(txt) {
+      const m = String(txt || "").trim().match(/^(\d+)\s*x\s*(\d+)$/i);
+      if (!m) return [0, 0];
+      return [Number(m[1]), Number(m[2])];
+    }
+
+    function chaveOrdenacaoRetro(partida, coluna) {
+      if (coluna === "data") return parseDataBR(partida?.data) || new Date(0);
+      if (coluna === "placar") {
+        const [v, a] = parsePlacar(partida?.placar);
+        return `${String(v).padStart(3, "0")}-${String(a).padStart(3, "0")}`;
+      }
+      return String(partida?.[coluna] || "").toLowerCase();
+    }
+
+    function renderRetroPartidasOrdenado() {
+      const partidas = [...(retroState.partidas || [])].sort((a, b) => {
+        const ka = chaveOrdenacaoRetro(a, retroState.sortCol);
+        const kb = chaveOrdenacaoRetro(b, retroState.sortCol);
+        if (ka < kb) return retroState.sortReverse ? 1 : -1;
+        if (ka > kb) return retroState.sortReverse ? -1 : 1;
+        return 0;
+      });
+      $("#tbody-retro").innerHTML = partidas.map((p) => `
+        <tr>
+          <td>${escapeHtml(p.data || "")}</td>
+          <td>${escapeHtml(p.competicao || "")}</td>
+          <td>${escapeHtml(p.local || "")}</td>
+          <td>${escapeHtml(p.placar || "")}</td>
+          <td><span class="pill ${escapeHtml(p.resultado || "?")}">${escapeHtml(p.resultado || "?")}</span></td>
+          <td>${escapeHtml(p.gols_vasco || "—")}</td>
+          <td>${escapeHtml(p.gols_adversario || "—")}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="7" class="muted">Nenhuma partida encontrada.</td></tr>`;
+    }
+
+    function maiorElastico(partidas, lado = "vasco") {
+      let best = null;
+      let diff = -1;
+      (partidas || []).forEach((p) => {
+        const [v, a] = parsePlacar(p.placar);
+        const d = lado === "vasco" ? (v - a) : (a - v);
+        if (d <= 0) return;
+        if (d > diff) {
+          diff = d;
+          best = p;
+        }
+      });
+      if (!best) return "—";
+      return `${best.placar} | Data: ${best.data}`;
+    }
+
+    function maiorJejum(partidas, semVencer) {
+      let maxLen = 0;
+      let curLen = 0;
+      let ini = null;
+      let fim = null;
+      let curIni = null;
+      let emAndamento = false;
+      const asc = [...(partidas || [])].sort((a, b) => {
+        const da = parseDataBR(a.data) || new Date(0);
+        const db = parseDataBR(b.data) || new Date(0);
+        return da - db;
+      });
+      asc.forEach((p) => {
+        const rt = String(p.resultado_texto || "").trim();
+        if (semVencer.has(rt)) {
+          curLen += 1;
+          if (!curIni) curIni = p;
+          if (curLen > maxLen) {
+            maxLen = curLen;
+            ini = curIni;
+            fim = p;
+            emAndamento = false;
+          }
+        } else {
+          curLen = 0;
+          curIni = null;
+        }
+      });
+      const ultimo = asc.length ? asc[asc.length - 1] : null;
+      if (ultimo && fim && String(ultimo.data || "") === String(fim.data || "") && semVencer.has(String(ultimo.resultado_texto || ""))) {
+        emAndamento = true;
+      }
+      return { qtd: maxLen, inicio: ini, fim, em_andamento: emAndamento };
+    }
+
+    function fmtJejumCard(info) {
+      if (!info || !info.qtd) return "0 jogo(s) | Período: —";
+      const ini = info.inicio?.data || "—";
+      const fim = info.em_andamento ? "hoje" : (info.fim?.data || "—");
+      return `${info.qtd} jogo(s) | ${ini} até ${fim}`;
+    }
+
+    function limparRetro(msg) {
+      retroState.partidas = [];
+      retroState.sortCol = "data";
+      retroState.sortReverse = true;
+      $("#retro-resumo").textContent = msg || "Selecione um adversário para ver o retrospecto.";
+      $("#retro-total").textContent = "0";
+      $("#retro-aproveitamento").textContent = "0%";
+      $("#retro-ved").textContent = "0 / 0 / 0";
+      $("#retro-saldo").textContent = "0";
+      $("#retro-gols-somados").textContent = "Vasco 0 x 0 Adversário";
+      $("#retro-elastico-vasco").textContent = "—";
+      $("#retro-elastico-adv").textContent = "—";
+      $("#retro-jejum-adv").textContent = "—";
+      $("#retro-jejum-vasco").textContent = "—";
+      $("#retro-art-vasco").textContent = "—";
+      $("#retro-art-adv").textContent = "—";
+      $("#retro-elastico-adv-titulo").textContent = "Placar mais elástico (Adversário)";
+      $("#retro-jejum-adv-titulo").textContent = "Adversário sem vencer";
+      $("#retro-art-adv-titulo").textContent = "Artilheiros do adversário";
+      renderRetroPartidasOrdenado();
+    }
+
+    function renderRetroDados(retro) {
+      const total = Number(retro?.total_partidas || 0);
+      const adversario = String(retro?.adversario || "").trim();
+      if (!adversario || total === 0) {
+        limparRetro(adversario ? `${adversario}: sem partidas registradas contra o Vasco.` : "Selecione um adversário para ver o retrospecto.");
+        return;
+      }
+      const v = Number(retro.vitorias || 0);
+      const e = Number(retro.empates || 0);
+      const d = Number(retro.derrotas || 0);
+      const gv = Number(retro.gols_vasco || 0);
+      const ga = Number(retro.gols_adversario || 0);
+      const aproveitamento = total ? (((v * 3 + e) / (total * 3)) * 100) : 0;
+      const resumo = `${adversario} | Jogos: ${total} | V/E/D: ${v}/${e}/${d} | Gols totais: Vasco ${gv} x ${ga} ${adversario}`;
+
+      $("#retro-resumo").textContent = resumo;
+      $("#retro-total").textContent = String(total);
+      $("#retro-aproveitamento").textContent = `${Math.round(aproveitamento)}%`;
+      $("#retro-ved").textContent = `${v} / ${e} / ${d}`;
+      $("#retro-saldo").textContent = String(gv - ga);
+      $("#retro-gols-somados").textContent = `Vasco ${gv} x ${ga} ${adversario}`;
+      $("#retro-art-vasco").textContent = retro.artilheiros_vasco || "—";
+      $("#retro-art-adv").textContent = retro.artilheiros_adversario || "—";
+      $("#retro-elastico-adv-titulo").textContent = `Placar mais elástico (${adversario})`;
+      $("#retro-jejum-adv-titulo").textContent = `${adversario} sem vencer`;
+      $("#retro-art-adv-titulo").textContent = `Artilheiros do ${adversario}`;
+
+      retroState.partidas = Array.isArray(retro.partidas) ? retro.partidas : [];
+      retroState.sortCol = "data";
+      retroState.sortReverse = true;
+      $("#retro-elastico-vasco").textContent = maiorElastico(retroState.partidas, "vasco");
+      $("#retro-elastico-adv").textContent = maiorElastico(retroState.partidas, "adversario");
+      $("#retro-jejum-adv").textContent = fmtJejumCard(maiorJejum(retroState.partidas, new Set(["Vitória", "Empate"])));
+      $("#retro-jejum-vasco").textContent = fmtJejumCard(maiorJejum(retroState.partidas, new Set(["Derrota", "Empate"])));
+      renderRetroPartidasOrdenado();
+    }
+
+    async function carregarRetroAdversario(adversario) {
+      const alvo = String(adversario || "").trim();
+      retroState.adversario = alvo;
+      if (!alvo) {
+        limparRetro("Selecione um adversário para ver o retrospecto.");
+        return;
+      }
+      const retro = await getJSON(`/api/retrospecto?adversario=${encodeURIComponent(alvo)}`);
+      renderRetroDados(retro);
+    }
+
+    async function carregarOpcoesRetro(preferido = "") {
+      const res = await getJSON("/api/retrospecto/opcoes");
+      const items = Array.isArray(res?.items) ? res.items : [];
+      const select = $("#retro-adversario-select");
+      const atual = String(preferido || select.value || "").trim();
+      select.innerHTML = `<option value="">Selecione um adversário...</option>` +
+        items.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+      if (atual && items.includes(atual)) {
+        select.value = atual;
+      } else {
+        select.value = "";
+      }
+    }
+
+    function setupRetrospecto() {
+      $("#retro-adversario-select").addEventListener("change", (e) => carregarRetroAdversario(e.target.value));
+      $("#retro-atualizar").addEventListener("click", () => carregarRetroAdversario($("#retro-adversario-select").value));
+      $("#retro-head").addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-col]");
+        if (!th || !retroState.partidas.length) return;
+        const col = th.dataset.col;
+        if (retroState.sortCol === col) {
+          retroState.sortReverse = !retroState.sortReverse;
+        } else {
+          retroState.sortCol = col;
+          retroState.sortReverse = false;
+        }
+        renderRetroPartidasOrdenado();
+      });
+    }
 
     function fillDataLists(listas) {
       const setOptions = (id, arr) => {
@@ -1807,6 +2075,7 @@ INDEX_HTML = """<!doctype html>
     }
 
     async function carregarTudo(busca = "") {
+      const retroSelecionado = ($("#retro-adversario-select")?.value || "").trim();
       const [resumo, jogos, futuros, listas, prefill] = await Promise.all([
         getJSON("/api/resumo"),
         getJSON(`/api/jogos?limit=300&busca=${encodeURIComponent(busca)}`),
@@ -1819,6 +2088,13 @@ INDEX_HTML = """<!doctype html>
       renderFuturos(futuros.items || []);
       renderListas(listas);
       applyRegistroDefaults(prefill);
+      await carregarOpcoesRetro(retroSelecionado);
+      const alvo = ($("#retro-adversario-select")?.value || "").trim();
+      if (alvo) {
+        await carregarRetroAdversario(alvo);
+      } else {
+        limparRetro("Selecione um adversário para ver o retrospecto.");
+      }
     }
 
     function setupTabs() {
@@ -1831,7 +2107,7 @@ INDEX_HTML = """<!doctype html>
           btn.classList.add("active");
           btn.classList.remove("secondary");
           const tab = btn.dataset.tab;
-          ["jogos","futuros","listas","registro"].forEach(id => {
+          ["jogos","futuros","retrospecto","listas","registro"].forEach(id => {
             document.querySelector(`#tab-${id}`).classList.toggle("hidden", id !== tab);
           });
         });
@@ -2015,6 +2291,7 @@ INDEX_HTML = """<!doctype html>
 
     window.addEventListener("DOMContentLoaded", async () => {
       setupTabs();
+      setupRetrospecto();
       setupJogoModal();
       setupEditJogoModal();
       renderEscalacaoEditor();
@@ -2122,6 +2399,9 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
 
         if path == "/api/futuros":
             return self._json_response({"items": serializar_futuros(carregar_futuros())})
+
+        if path == "/api/retrospecto/opcoes":
+            return self._json_response({"items": listar_adversarios_com_historico()})
 
         if path == "/api/retrospecto":
             adversario = (qs.get("adversario") or [""])[0]

@@ -1,0 +1,65 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+3897,18/01/2009,2009-01-18,Amistoso,Desportiva-ES,fora,1,0,,Dorival Júnior
+3898,24/01/2009,2009-01-24,Campeonato Carioca,Americano-RJ,casa,0,2,,Dorival Júnior
+3899,28/01/2009,2009-01-28,Campeonato Carioca,Tigres-RJ,fora,4,0,,Dorival Júnior
+3900,31/01/2009,2009-01-31,Campeonato Carioca,Duque de Caxias-RJ,casa,3,1,,Dorival Júnior
+3901,04/02/2009,2009-02-04,Campeonato Carioca,Resende-RJ,fora,3,1,,Dorival Júnior
+3902,08/02/2009,2009-02-08,Campeonato Carioca,Fluminense-RJ,fora,0,0,,Dorival Júnior
+3903,11/02/2009,2009-02-11,Campeonato Carioca,Cabofriense-RJ,casa,0,0,,Dorival Júnior
+3904,15/02/2009,2009-02-15,Campeonato Carioca,Madureira-RJ,fora,3,0,,Dorival Júnior
+3905,18/02/2009,2009-02-18,Copa do Brasil,Flamengo-PI,fora,4,1,,Dorival Júnior
+3906,08/03/2009,2009-03-08,Campeonato Carioca,Friburguense-RJ,casa,3,0,,Dorival Júnior
+3907,12/03/2009,2009-03-12,Campeonato Carioca,Botafogo-RJ,fora,4,1,,Dorival Júnior
+3908,15/03/2009,2009-03-15,Campeonato Carioca,Boavista-RJ,fora,1,0,,Dorival Júnior
+3909,22/03/2009,2009-03-22,Campeonato Carioca,Flamengo-RJ,casa,2,0,,Dorival Júnior
+3910,25/03/2009,2009-03-25,Campeonato Carioca,Mesquita-RJ,casa,2,1,,Dorival Júnior
+3911,28/03/2009,2009-03-28,Campeonato Carioca,Volta Redonda-RJ,fora,5,3,,Dorival Júnior
+3912,31/03/2009,2009-03-31,Campeonato Carioca,Macaé-RJ,fora,1,0,,Dorival Júnior
+3913,05/04/2009,2009-04-05,Campeonato Carioca,Bangu-RJ,casa,4,0,,Dorival Júnior
+3914,11/04/2009,2009-04-11,Campeonato Carioca,Botafogo-RJ,casa,0,4,,Dorival Júnior
+3915,15/04/2009,2009-04-15,Copa do Brasil,Central-PE,fora,3,0,,Dorival Júnior
+3916,30/04/2009,2009-04-30,Copa do Brasil,Icasa-CE,casa,1,1,,Dorival Júnior
+3917,02/05/2009,2009-05-02,Amistoso,Santa Cruz-PE,fora,3,2,,Dorival Júnior
+3918,06/05/2009,2009-05-06,Copa do Brasil,Icasa-CE,fora,4,1,,Dorival Júnior
+3919,09/05/2009,2009-05-09,Campeonato Brasileiro Serie B,Brasiliense-DF,casa,1,0,,Dorival Júnior
+3920,13/05/2009,2009-05-13,Copa do Brasil,Vitória-BA,casa,4,0,,Dorival Júnior
+3921,16/05/2009,2009-05-16,Campeonato Brasileiro Serie B,Ceará-CE,fora,2,0,,Dorival Júnior
+3922,20/05/2009,2009-05-20,Copa do Brasil,Vitória-BA,fora,1,1,,Dorival Júnior
+3923,23/05/2009,2009-05-23,Campeonato Brasileiro Serie B,Atlético-GO,casa,3,0,,Dorival Júnior
+3924,27/05/2009,2009-05-27,Copa do Brasil,Corinthians-SP,casa,1,1,,Dorival Júnior
+3925,30/05/2009,2009-05-30,Campeonato Brasileiro Serie B,Paraná-PR,fora,1,3,,Dorival Júnior
+3926,03/06/2009,2009-06-03,Copa do Brasil,Corinthians-SP,fora,0,0,,Dorival Júnior
+3927,06/06/2009,2009-06-06,Campeonato Brasileiro Serie B,São Caetano-SP,casa,0,0,,Dorival Júnior
+3928,13/06/2009,2009-06-13,Campeonato Brasileiro Serie B,Guarani-SP,fora,0,0,,Dorival Júnior
+3929,19/06/2009,2009-06-19,Campeonato Brasileiro Serie B,Duque de Caxias-RJ,casa,0,0,,Celso Roth
+3930,27/06/2009,2009-06-27,Campeonato Brasileiro Serie B,Figueirense-SC,fora,1,1,,Celso Roth
+3931,30/06/2009,2009-06-30,Campeonato Brasileiro Serie B,Bragantino-SP,casa,0,0,,Celso Roth
+3932,11/07/2009,2009-07-11,Campeonato Brasileiro Serie B,Ponte Preta-SP,casa,3,0,,Celso Roth
+3933,14/07/2009,2009-07-14,Campeonato Brasileiro Serie B,Vila Nova-GO,fora,2,0,,Celso Roth
+3934,17/07/2009,2009-07-17,Campeonato Brasileiro Serie B,ABC-RN,casa,3,0,,Celso Roth
+3935,25/07/2009,2009-07-25,Campeonato Brasileiro Serie B,Bahia-BA,fora,1,2,,Celso Roth
+3936,28/07/2009,2009-07-28,Campeonato Brasileiro Serie B,Fortaleza-CE,casa,2,1,,Celso Roth
+3937,01/08/2009,2009-08-01,Campeonato Brasileiro Serie B,Juventude-RS,fora,2,1,,Celso Roth
+3938,08/08/2009,2009-08-08,Campeonato Brasileiro Serie B,Campinense-PB,casa,3,0,,Celso Roth
+3939,11/08/2009,2009-08-11,Campeonato Brasileiro Serie B,América-RN,fora,2,2,,Celso Roth
+3940,15/08/2009,2009-08-15,Campeonato Brasileiro Serie B,Portuguesa-SP,fora,3,1,,Celso Roth
+3941,22/08/2009,2009-08-22,Campeonato Brasileiro Serie B,Ipatinga-MG,casa,4,0,,Celso Roth
+3942,25/08/2009,2009-08-25,Campeonato Brasileiro Serie B,Brasiliense-DF,fora,1,0,,Celso Roth
+3943,28/08/2009,2009-08-28,Campeonato Brasileiro Serie B,Ceará-CE,casa,0,2,,Celso Roth
+3944,05/09/2009,2009-09-05,Campeonato Brasileiro Serie B,Atlético-GO,fora,2,2,,Celso Roth
+3945,11/09/2009,2009-09-11,Campeonato Brasileiro Serie B,Paraná-PR,casa,2,1,,Celso Roth
+3946,15/09/2009,2009-09-15,Campeonato Brasileiro Serie B,São Caetano-SP,fora,1,0,,Celso Roth
+3947,19/09/2009,2009-09-19,Campeonato Brasileiro Serie B,Guarani-SP,casa,1,0,,Celso Roth
+3949,19/09/2009,2009-09-19,Campeonato Brasileiro Serie B,Figueirense-SC,casa,1,2,,Celso Roth
+3948,26/09/2009,2009-09-26,Campeonato Brasileiro Serie B,Duque de Caxias-RJ,fora,1,0,,Celso Roth
+3950,03/10/2009,2009-10-03,Campeonato Brasileiro Serie B,Bragantino-SP,fora,0,0,,Celso Roth
+3951,10/10/2009,2009-10-10,Campeonato Brasileiro Serie B,Ponte Preta-SP,fora,1,1,,Celso Roth
+3952,13/10/2009,2009-10-13,Campeonato Brasileiro Serie B,Vila Nova-GO,casa,4,1,,Celso Roth
+3953,20/10/2009,2009-10-20,Campeonato Brasileiro Serie B,ABC-RN,fora,3,2,,Celso Roth
+3954,24/10/2009,2009-10-24,Campeonato Brasileiro Serie B,Bahia-BA,casa,2,1,,Celso Roth
+3955,31/10/2009,2009-10-31,Campeonato Brasileiro Serie B,Fortaleza-CE,fora,1,1,,Celso Roth
+3956,07/11/2009,2009-11-07,Campeonato Brasileiro Serie B,Juventude-RS,casa,2,1,,Celso Roth
+3957,10/11/2009,2009-11-10,Campeonato Brasileiro Serie B,Campinense-PB,fora,1,0,,Celso Roth
+3958,13/11/2009,2009-11-13,Campeonato Brasileiro Serie B,América-RN,casa,2,1,,Celso Roth
+3959,21/11/2009,2009-11-21,Campeonato Brasileiro Serie B,Portuguesa-SP,casa,0,1,,Celso Roth
+3960,28/11/2009,2009-11-28,Campeonato Brasileiro Serie B,Ipatinga-MG,fora,0,2,,Celso Roth

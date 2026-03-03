@@ -6,12 +6,7 @@
       "condicao": "Titular"
     },
     {
-      "nome": "Paulo Henrique",
-      "posicao": "Lateral-Direito",
-      "condicao": "Titular"
-    },
-    {
-      "nome": "Carlos Cuesta",
+      "nome": "Saldivia",
       "posicao": "Zagueiro",
       "condicao": "Titular"
     },
@@ -22,6 +17,11 @@
     },
     {
       "nome": "Lucas Piton",
+      "posicao": "Lateral-Esquerdo",
+      "condicao": "Titular"
+    },
+    {
+      "nome": "Puma Rodríguez",
       "posicao": "Lateral-Esquerdo",
       "condicao": "Titular"
     },
@@ -51,7 +51,7 @@
       "condicao": "Titular"
     },
     {
-      "nome": "Nuno Moreira",
+      "nome": "David",
       "posicao": "Atacante",
       "condicao": "Titular"
     },
@@ -61,7 +61,7 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Puma Rodríguez",
+      "nome": "Paulo Henrique",
       "posicao": "Lateral-Direito",
       "condicao": "Reserva"
     },
@@ -71,7 +71,7 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Saldivia",
+      "nome": "Carlos Cuesta",
       "posicao": "Zagueiro",
       "condicao": "Reserva"
     },
@@ -81,32 +81,17 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "Victor Luís",
-      "posicao": "Lateral-Esquerdo",
+      "nome": "Tche Tche",
+      "posicao": "Meio-Campista",
       "condicao": "Reserva"
     },
     {
       "nome": "Hugo Moura",
-      "posicao": "Volante",
-      "condicao": "Reserva"
-    },
-    {
-      "nome": "Tche Tche",
-      "posicao": "Volante",
-      "condicao": "Reserva"
-    },
-    {
-      "nome": "Guilherme Estrella",
       "posicao": "Meio-Campista",
       "condicao": "Reserva"
     },
     {
-      "nome": "JP",
-      "posicao": "Meio-Campista",
-      "condicao": "Reserva"
-    },
-    {
-      "nome": "Adson",
+      "nome": "Nuno Moreira",
       "posicao": "Atacante",
       "condicao": "Reserva"
     },
@@ -116,17 +101,12 @@
       "condicao": "Reserva"
     },
     {
-      "nome": "David",
-      "posicao": "Atacante",
-      "condicao": "Reserva"
-    },
-    {
-      "nome": "Gabriel Silva (GB)",
-      "posicao": "Atacante",
-      "condicao": "Reserva"
-    },
-    {
       "nome": "Marino",
+      "posicao": "Atacante",
+      "condicao": "Reserva"
+    },
+    {
+      "nome": "Adson",
       "posicao": "Atacante",
       "condicao": "Reserva"
     },
@@ -146,9 +126,19 @@
       "condicao": "Não Relacionado"
     },
     {
-      "nome": "Philippe Coutinho",
+      "nome": "Walace Falcão",
+      "posicao": "Zagueiro",
+      "condicao": "Não Relacionado"
+    },
+    {
+      "nome": "JP",
       "posicao": "Meio-Campista",
       "condicao": "Não Relacionado"
+    },
+    {
+      "nome": "João Vitor",
+      "posicao": "Zagueiro",
+      "condicao": "Lesionado"
     },
     {
       "nome": "Jair",
@@ -161,5 +151,5 @@
       "condicao": "Lesionado"
     }
   ],
-  "tecnico": ""
+  "tecnico": "Bruno Lazaroni (interino)"
 }

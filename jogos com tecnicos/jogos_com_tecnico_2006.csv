@@ -1,0 +1,77 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+4101,10/01/2006,2006-01-10,Amistoso,Duque de Caxias-RJ,casa,6,0,,Renato Gaúcho
+4102,12/01/2006,2006-01-12,Amistoso,Rio Branco-RJ,casa,7,0,,Renato Gaúcho
+4112,15/01/2006,2006-01-15,Campeonato Carioca,Madureira,casa,3,1,,Renato Gaúcho
+4113,18/01/2006,2006-01-18,Campeonato Carioca,Volta Redonda,casa,2,1,,Renato Gaúcho
+4103,20/01/2006,2006-01-20,Amistoso,Entrerriense-RJ,fora,1,0,,Renato Gaúcho
+4114,22/01/2006,2006-01-22,Campeonato Carioca,Botafogo,fora,3,5,,Renato Gaúcho
+4104,25/01/2006,2006-01-25,Amistoso,Angra dos Reis-RJ,casa,2,2,,Renato Gaúcho
+4115,28/01/2006,2006-01-28,Campeonato Carioca,América,fora,1,2,,Renato Gaúcho
+4105,30/01/2006,2006-01-30,Amistoso,Sagrada Esperança-ANG,casa,4,0,,Renato Gaúcho
+4116,01/02/2006,2006-02-01,Campeonato Carioca,Friburguense,fora,1,1,,Renato Gaúcho
+4106,04/02/2006,2006-02-04,Amistoso,Villa Rio-RJ,casa,4,2,,Renato Gaúcho
+4107,07/02/2006,2006-02-07,Amistoso,Olaria-RJ,casa,6,0,,Renato Gaúcho
+4108,11/02/2006,2006-02-11,Amistoso,Hyunday-COR,casa,2,1,,Renato Gaúcho
+4125,15/02/2006,2006-02-15,Copa do Brasil,Botafogo-PB,fora,1,1,,Renato Gaúcho
+4117,19/02/2006,2006-02-19,Campeonato Carioca,Portuguesa,casa,2,2,,Renato Gaúcho
+4126,22/02/2006,2006-02-22,Copa do Brasil,Botafogo-PB,casa,7,0,,Renato Gaúcho
+4123,25/02/2006,2006-02-25,Campeonato Carioca,Flamengo,casa,1,1,,Renato Gaúcho
+4118,01/03/2006,2006-03-01,Campeonato Carioca,Nova Iguaçu,fora,4,2,,Renato Gaúcho
+4119,05/03/2006,2006-03-05,Campeonato Carioca,Fluminense,fora,2,2,,Renato Gaúcho
+4120,12/03/2006,2006-03-12,Campeonato Carioca,Americano,casa,2,2,,Renato Gaúcho
+4121,15/03/2006,2006-03-15,Campeonato Carioca,Cabofriense,fora,0,2,,Renato Gaúcho
+4122,19/03/2006,2006-03-19,Campeonato Carioca,Flamengo,fora,2,1,,Renato Gaúcho
+4127,22/03/2006,2006-03-22,Copa do Brasil,Iraty-PR,fora,2,2,,Renato Gaúcho
+4128,05/04/2006,2006-04-05,Copa do Brasil,Iraty-PR,casa,5,1,,Renato Gaúcho
+4124,11/04/2006,2006-04-11,Campeonato Carioca,Botafogo,fora,4,4,,Renato Gaúcho
+4129,12/04/2006,2006-04-12,Copa do Brasil,Criciúma-SC,fora,2,1,,Renato Gaúcho
+4139,15/04/2006,2006-04-15,Campeonato Brasileiro Serie A,Internacional,casa,1,1,,Renato Gaúcho
+4130,20/04/2006,2006-04-20,Copa do Brasil,Criciúma-SC,casa,1,0,,Renato Gaúcho
+4140,23/04/2006,2006-04-23,Campeonato Brasileiro Serie A,Ponte Preta,fora,2,1,,Renato Gaúcho
+4131,27/04/2006,2006-04-27,Copa do Brasil,Volta Redonda,fora,0,0,,Renato Gaúcho
+4141,30/04/2006,2006-04-30,Campeonato Brasileiro Serie A,Fluminense,casa,1,1,,Renato Gaúcho
+4132,04/05/2006,2006-05-04,Copa do Brasil,Volta Redonda,casa,2,1,,Renato Gaúcho
+4142,07/05/2006,2006-05-07,Campeonato Brasileiro Serie A,Grêmio,fora,2,1,,Renato Gaúcho
+4133,11/05/2006,2006-05-11,Copa do Brasil,Fluminense,fora,1,0,,Renato Gaúcho
+4143,14/05/2006,2006-05-14,Campeonato Brasileiro Serie A,Goiás,fora,0,2,,Renato Gaúcho
+4134,17/05/2006,2006-05-17,Copa do Brasil,Fluminense,casa,1,1,,Renato Gaúcho
+4144,21/05/2006,2006-05-21,Campeonato Brasileiro Serie A,Corinthians,casa,2,4,,Renato Gaúcho
+4145,25/05/2006,2006-05-25,Campeonato Brasileiro Serie A,Botafogo,fora,1,4,,Renato Gaúcho
+4146,28/05/2006,2006-05-28,Campeonato Brasileiro Serie A,São Paulo,casa,1,1,,Renato Gaúcho
+4147,31/05/2006,2006-05-31,Campeonato Brasileiro Serie A,Fortaleza,fora,1,1,,Renato Gaúcho
+4148,04/06/2006,2006-06-04,Campeonato Brasileiro Serie A,Santa Cruz,casa,2,1,,Renato Gaúcho
+4109,28/06/2006,2006-06-28,Amistoso,São Raimundo-AM,fora,2,1,,Renato Gaúcho
+4110,02/07/2006,2006-07-02,Amistoso,Serrano-BA,fora,2,2,,Renato Gaúcho
+4111,08/07/2006,2006-07-08,Amistoso,Boavista-RJ,fora,2,0,,Renato Gaúcho
+4149,13/07/2006,2006-07-13,Campeonato Brasileiro Serie A,Palmeiras,fora,2,4,,Renato Gaúcho
+4150,16/07/2006,2006-07-16,Campeonato Brasileiro Serie A,Flamengo,fora,1,0,,Valdir Espinosa
+4135,19/07/2006,2006-07-19,Copa do Brasil,Flamengo,fora,0,2,,Valdir Espinosa
+4151,23/07/2006,2006-07-23,Campeonato Brasileiro Serie A,Atlético,casa,2,1,,Valdir Espinosa
+4136,26/07/2006,2006-07-26,Copa do Brasil,Flamengo,casa,0,1,,Valdir Espinosa
+4152,30/07/2006,2006-07-30,Campeonato Brasileiro Serie A,Cruzeiro,casa,1,0,,Valdir Espinosa
+4153,06/08/2006,2006-08-06,Campeonato Brasileiro Serie A,Paraná,fora,1,2,,Valdir Espinosa
+4154,12/08/2006,2006-08-12,Campeonato Brasileiro Serie A,Juventude,fora,0,0,,Valdir Espinosa
+4155,16/08/2006,2006-08-16,Campeonato Brasileiro Serie A,São Caetano,casa,1,2,,Valdir Espinosa
+4156,20/08/2006,2006-08-20,Campeonato Brasileiro Serie A,Santos,fora,2,0,,Valdir Espinosa
+4157,24/08/2006,2006-08-24,Campeonato Brasileiro Serie A,Figueirense,casa,3,1,,Valdir Espinosa
+4158,27/08/2006,2006-08-27,Campeonato Brasileiro Serie A,Internacional,fora,2,1,,Valdir Espinosa
+4159,31/08/2006,2006-08-31,Campeonato Brasileiro Serie A,Ponte Preta,casa,2,2,,Valdir Espinosa
+4160,03/09/2006,2006-09-03,Campeonato Brasileiro Serie A,Fluminense,fora,1,1,,Valdir Espinosa
+4137,06/09/2006,2006-09-06,Copa Sul-Americana,Corinthians-SP,casa,0,1,,Valdir Espinosa
+4161,09/09/2006,2006-09-09,Campeonato Brasileiro Serie A,Grêmio,casa,1,1,,Valdir Espinosa
+4138,13/09/2006,2006-09-13,Copa Sul-Americana,Corinthians-SP,fora,1,3,,Valdir Espinosa
+4162,16/09/2006,2006-09-16,Campeonato Brasileiro Serie A,Goiás,casa,0,0,,Valdir Espinosa
+4163,20/09/2006,2006-09-20,Campeonato Brasileiro Serie A,Corinthians,fora,1,1,,Valdir Espinosa
+4164,24/09/2006,2006-09-24,Campeonato Brasileiro Serie A,Botafogo,casa,0,0,,Valdir Espinosa
+4165,04/10/2006,2006-10-04,Campeonato Brasileiro Serie A,São Paulo,fora,1,5,,Valdir Espinosa
+4166,07/10/2006,2006-10-07,Campeonato Brasileiro Serie A,Fortaleza,casa,2,0,,Valdir Espinosa
+4167,15/10/2006,2006-10-15,Campeonato Brasileiro Serie A,Santa Cruz,fora,4,0,,Valdir Espinosa
+4168,18/10/2006,2006-10-18,Campeonato Brasileiro Serie A,Palmeiras,casa,3,0,,Valdir Espinosa
+4169,26/10/2006,2006-10-26,Campeonato Brasileiro Serie A,Flamengo,casa,3,1,,Valdir Espinosa
+4170,01/11/2006,2006-11-01,Campeonato Brasileiro Serie A,Atlético,fora,4,6,,Valdir Espinosa
+4171,05/11/2006,2006-11-05,Campeonato Brasileiro Serie A,Cruzeiro,fora,1,2,,Valdir Espinosa
+4172,08/11/2006,2006-11-08,Campeonato Brasileiro Serie A,Paraná,casa,3,1,,Valdir Espinosa
+4173,11/11/2006,2006-11-11,Campeonato Brasileiro Serie A,Juventude,casa,1,1,,Valdir Espinosa
+4174,19/11/2006,2006-11-19,Campeonato Brasileiro Serie A,São Caetano,fora,1,0,,Valdir Espinosa
+4175,26/11/2006,2006-11-26,Campeonato Brasileiro Serie A,Santos,casa,1,1,,Valdir Espinosa
+4176,03/12/2006,2006-12-03,Campeonato Brasileiro Serie A,Figueirense,fora,0,0,,Valdir Espinosa

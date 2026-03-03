@@ -1,0 +1,68 @@
+id,data,date_iso,competicao,adversario,local,vasco_goals,opponent_goals,observation,tecnico
+4512,17/01/2001,2001-01-17,Torneio Rio-São Paulo,São Paulo,fora,0,2,,Joel Santana
+4547,18/01/2001,2001-01-18,Campeonato Brasileiro Serie A,São Caetano,casa,3,1,,Joel Santana
+4477,21/01/2001,2001-01-21,Campeonato Carioca,Madureira,casa,1,2,,Joel Santana
+4513,24/01/2001,2001-01-24,Torneio Rio-São Paulo,Palmeiras,casa,0,0,,Joel Santana
+4478,27/01/2001,2001-01-27,Campeonato Carioca,Friburguense,fora,2,1,,Joel Santana
+4514,31/01/2001,2001-01-31,Torneio Rio-São Paulo,Corinthians,casa,1,0,,Joel Santana
+4479,03/02/2001,2001-02-03,Campeonato Carioca,América,fora,1,0,,Joel Santana
+4515,07/02/2001,2001-02-07,Torneio Rio-São Paulo,Santos,fora,0,3,,Joel Santana
+4480,11/02/2001,2001-02-11,Campeonato Carioca,Fluminense,casa,2,0,,Joel Santana
+4481,17/02/2001,2001-02-17,Campeonato Carioca,Cabofriense,casa,3,1,,Joel Santana
+4482,22/02/2001,2001-02-22,Campeonato Carioca,Flamengo,fora,0,1,,Joel Santana
+4483,11/03/2001,2001-03-11,Campeonato Carioca,Cabofriense,casa,3,1,,Joel Santana
+4496,14/03/2001,2001-03-14,Copa Libertadores,América Cáli,fora,3,0,,Joel Santana
+4484,17/03/2001,2001-03-17,Campeonato Carioca,Olaria,fora,1,0,,Joel Santana
+4497,21/03/2001,2001-03-21,Copa Libertadores,Dep. Táchira,fora,1,0,,Joel Santana
+4485,30/03/2001,2001-03-30,Campeonato Carioca,Madureira,casa,3,1,,Joel Santana
+4486,02/04/2001,2001-04-02,Campeonato Carioca,V. Redonda,casa,2,1,,Joel Santana
+4498,05/04/2001,2001-04-05,Copa Libertadores,Peñarol,casa,2,1,,Joel Santana
+4487,08/04/2001,2001-04-08,Campeonato Carioca,Americano,fora,1,1,,Joel Santana
+4499,12/04/2001,2001-04-12,Copa Libertadores,América Cáli,casa,4,1,,Joel Santana
+4488,15/04/2001,2001-04-15,Campeonato Carioca,Fluminense,fora,3,3,,Joel Santana
+4489,18/04/2001,2001-04-18,Campeonato Carioca,Friburguense,fora,2,0,,Joel Santana
+4500,21/04/2001,2001-04-21,Copa Libertadores,Dep. Táchira,casa,3,2,,Joel Santana
+4490,26/04/2001,2001-04-26,Campeonato Carioca,Bangu,casa,3,2,,Joel Santana
+4491,29/04/2001,2001-04-29,Campeonato Carioca,Botafogo,casa,7,0,,Joel Santana
+4501,02/05/2001,2001-05-02,Copa Libertadores,Peñarol,fora,3,1,,Joel Santana
+4492,05/05/2001,2001-05-05,Campeonato Carioca,América,fora,5,0,,Joel Santana
+4502,09/05/2001,2001-05-09,Copa Libertadores,Dep. Concepción,fora,3,1,,Joel Santana
+4493,13/05/2001,2001-05-13,Campeonato Carioca,Flamengo,fora,0,0,,Joel Santana
+4503,16/05/2001,2001-05-16,Copa Libertadores,Dep. Concepción,casa,1,0,,Joel Santana
+4494,20/05/2001,2001-05-20,Campeonato Carioca,Flamengo,fora,2,1,,Joel Santana
+4504,23/05/2001,2001-05-23,Copa Libertadores,Boca Juniors,casa,0,1,,Joel Santana
+4495,27/05/2001,2001-05-27,Campeonato Carioca,Flamengo,casa,1,3,,Joel Santana
+4505,30/05/2001,2001-05-30,Copa Libertadores,Boca Juniors,fora,0,3,,Joel Santana
+4506,24/07/2001,2001-07-24,Copa Mercosul,U. Católica,fora,1,2,,Hélio dos Anjos
+4507,29/07/2001,2001-07-29,Copa Mercosul,Boca Juniors,casa,2,2,,Hélio dos Anjos
+4450,01/08/2001,2001-08-01,Campeonato Brasileiro Serie A,Gama,fora,0,0,,Hélio dos Anjos
+4451,05/08/2001,2001-08-05,Campeonato Brasileiro Serie A,Guarani,casa,7,1,,Hélio dos Anjos
+4452,08/08/2001,2001-08-08,Campeonato Brasileiro Serie A,Coritiba,fora,0,1,,Hélio dos Anjos
+4453,11/08/2001,2001-08-11,Campeonato Brasileiro Serie A,Juventude,casa,1,1,,Hélio dos Anjos
+4454,15/08/2001,2001-08-15,Campeonato Brasileiro Serie A,Vitória,fora,0,1,,Hélio dos Anjos
+4455,18/08/2001,2001-08-18,Campeonato Brasileiro Serie A,Santa Cruz,casa,1,1,,Hélio dos Anjos
+4508,21/08/2001,2001-08-21,Copa Mercosul,C. Porteño,fora,1,2,,Hélio dos Anjos
+4456,26/08/2001,2001-08-26,Campeonato Brasileiro Serie A,Atlético-PR,casa,4,0,,Hélio dos Anjos
+4457,29/08/2001,2001-08-29,Campeonato Brasileiro Serie A,América-MG,fora,1,1,,Hélio dos Anjos
+4458,02/09/2001,2001-09-02,Campeonato Brasileiro Serie A,Botafogo-SP,casa,2,2,,Hélio dos Anjos
+4459,09/09/2001,2001-09-09,Campeonato Brasileiro Serie A,Sport,fora,3,3,,Hélio dos Anjos
+4509,13/09/2001,2001-09-13,Copa Mercosul,U. Católica,casa,2,1,,Hélio dos Anjos
+4460,16/09/2001,2001-09-16,Campeonato Brasileiro Serie A,Bahia,casa,0,1,,Hélio dos Anjos
+4461,19/09/2001,2001-09-19,Campeonato Brasileiro Serie A,Paraná,fora,0,2,,Hélio dos Anjos
+4462,22/09/2001,2001-09-22,Campeonato Brasileiro Serie A,Goiás,casa,2,1,,Hélio dos Anjos
+4510,25/09/2001,2001-09-25,Copa Mercosul,Boca Juniors,fora,2,2,,Hélio dos Anjos
+4463,30/09/2001,2001-09-30,Campeonato Brasileiro Serie A,Ponte Preta,fora,2,2,,Hélio dos Anjos
+4464,03/10/2001,2001-10-03,Campeonato Brasileiro Serie A,Cruzeiro,casa,3,0,,Hélio dos Anjos
+4465,06/10/2001,2001-10-06,Campeonato Brasileiro Serie A,Flamengo,casa,5,1,,Hélio dos Anjos
+4466,10/10/2001,2001-10-10,Campeonato Brasileiro Serie A,Inter-RS,fora,0,2,,Hélio dos Anjos
+4467,13/10/2001,2001-10-13,Campeonato Brasileiro Serie A,Botafogo-RJ,casa,3,1,,Hélio dos Anjos
+4511,17/10/2001,2001-10-17,Copa Mercosul,C. Porteño,casa,3,2,,Hélio dos Anjos
+4468,20/10/2001,2001-10-20,Campeonato Brasileiro Serie A,São Caetano,casa,1,2,,Hélio dos Anjos
+4469,28/10/2001,2001-10-28,Campeonato Brasileiro Serie A,Fluminense,casa,2,2,,Hélio dos Anjos
+4470,04/11/2001,2001-11-04,Campeonato Brasileiro Serie A,Portuguesa,fora,4,5,,Hélio dos Anjos
+4471,08/11/2001,2001-11-08,Campeonato Brasileiro Serie A,Corinthians,casa,1,0,,Hélio dos Anjos
+4472,11/11/2001,2001-11-11,Campeonato Brasileiro Serie A,Atlético-MG,fora,1,2,,Hélio dos Anjos
+4473,15/11/2001,2001-11-15,Campeonato Brasileiro Serie A,Grêmio,casa,2,0,,Hélio dos Anjos
+4474,18/11/2001,2001-11-18,Campeonato Brasileiro Serie A,Palmeiras,fora,3,1,,Hélio dos Anjos
+4475,25/11/2001,2001-11-25,Campeonato Brasileiro Serie A,São Paulo,casa,7,1,,Hélio dos Anjos
+4476,02/12/2001,2001-12-02,Campeonato Brasileiro Serie A,Santos,fora,2,2,,Hélio dos Anjos
