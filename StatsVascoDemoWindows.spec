@@ -11,11 +11,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('jogos_vasco.json', '.'),
-        ('jogos_futuros.json', '.'),
-        ('listas_auxiliares.json', '.'),
-        ('elenco_atual.json', '.'),
-        ('jogadores_historico.json', '.'),
+        ('stats_vasco.sqlite3', '.'),
     ] + matplotlib_datas,
     hiddenimports=[
         'matplotlib',

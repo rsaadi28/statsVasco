@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import ast
+import shutil
 try:
     from tkcalendar import Calendar
     TKCALENDAR_OK = True
@@ -82,6 +83,20 @@ def _json_origem_inicial(nome_arquivo: str) -> str:
     return os.path.join(PROJECT_ROOT, nome_arquivo)
 
 
+def _copiar_db_inicial_se_necessario():
+    if os.path.exists(DB_PATH):
+        return
+    origem = os.path.join(PROJECT_ROOT, "stats_vasco.sqlite3")
+    if not os.path.exists(origem):
+        return
+    try:
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+        shutil.copy2(origem, DB_PATH)
+    except Exception:
+        pass
+
+
+_copiar_db_inicial_se_necessario()
 bootstrap_database(
     DB_PATH,
     json_paths={
