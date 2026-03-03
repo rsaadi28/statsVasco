@@ -24,11 +24,13 @@ from storage_sqlite import (
     load_historic_players as db_load_historic_players,
     load_listas as db_load_listas,
     load_matches as db_load_matches,
+    load_titles as db_load_titles,
     save_current_squad as db_save_current_squad,
     save_future_matches as db_save_future_matches,
     save_historic_players as db_save_historic_players,
     save_listas as db_save_listas,
     save_matches as db_save_matches,
+    save_titles as db_save_titles,
 )
 
 # --- Matplotlib (gráficos) ---
@@ -70,7 +72,6 @@ ARQUIVO_LISTAS = os.path.join(DATA_DIR, "listas_auxiliares.json")
 ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
 ARQUIVO_JOGADORES_HISTORICO = os.path.join(DATA_DIR, "jogadores_historico.json")
-ARQUIVO_TITULOS = os.path.join(DATA_DIR, "titulos_vasco.json")
 DB_PATH = db_path_for(DATA_DIR)
 
 
@@ -89,6 +90,7 @@ bootstrap_database(
         "futuros": _json_origem_inicial("jogos_futuros.json"),
         "elenco": _json_origem_inicial("elenco_atual.json"),
         "historico": _json_origem_inicial("jogadores_historico.json"),
+        "titulos": _json_origem_inicial("titulos_vasco.json"),
     },
 )
 COMPETICAO_BRASILEIRAO = "Brasileirão Série A"
@@ -211,16 +213,13 @@ def _normalizar_titulo_vasco_item(item):
 
 
 def carregar_titulos_vasco():
-    origem = ARQUIVO_TITULOS if os.path.exists(ARQUIVO_TITULOS) else None
-    dados = None
-    if origem:
-        try:
-            with open(origem, "r", encoding="utf-8") as f:
-                dados = json.load(f)
-        except Exception:
-            dados = None
+    dados = db_load_titles(DB_PATH)
     if not isinstance(dados, list):
+        dados = []
+    if not dados:
         dados = list(TITULOS_VASCO_PADRAO)
+        db_save_titles(DB_PATH, dados)
+        dados = db_load_titles(DB_PATH)
 
     normalizados = []
     vistos = set()
@@ -249,8 +248,7 @@ def salvar_titulos_vasco(titulos):
         vistos.add(chave)
         normalizados.append(titulo)
     normalizados = _ordenar_titulos_vasco(normalizados)
-    with open(ARQUIVO_TITULOS, "w", encoding="utf-8") as f:
-        json.dump(normalizados, f, ensure_ascii=False, indent=2)
+    db_save_titles(DB_PATH, normalizados)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -691,10 +689,10 @@ class App:
         self.notebook.add(self.frame_geral, text="Geral")
         self.notebook.add(self.frame_comparativo, text="Comparativo")
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
-        self.notebook.add(self.frame_titulos, text="Títulos")
         self.notebook.add(self.frame_graficos, text="Evolução")
         self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
         self.notebook.add(self.frame_jogadores_historico, text="Jogadores")
+        self.notebook.add(self.frame_titulos, text="Títulos")
 
         self._criar_aba_futuros(self.frame_futuros)
         self._criar_aba_elenco_atual(self.frame_elenco_atual)
@@ -5666,7 +5664,7 @@ class App:
 
         tab_campanhas = ttk.Frame(nb, padding=8)
         tab_gerenciar = ttk.Frame(nb, padding=8)
-        nb.add(tab_campanhas, text="Campanhas Campeãs")
+        nb.add(tab_campanhas, text="Titulos")
         nb.add(tab_gerenciar, text="Gerenciar Títulos")
 
         self._render_tab_campanhas_titulos(tab_campanhas, jogos)
@@ -5945,6 +5943,16 @@ class App:
             if comp != camp_cf:
                 continue
             jogos_titulo.append(jogo)
+
+        if not jogos_titulo:
+            return {
+                "campeonato": campeonato,
+                "ano": int(ano),
+                "vitorias": "Sem registro",
+                "empates": "Sem registro",
+                "derrotas": "Sem registro",
+                "artilheiro": "Sem registro",
+            }
 
         vitorias = empates = derrotas = 0
         artilheiros = Counter()

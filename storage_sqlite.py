@@ -181,9 +181,18 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (opponent_team_id) REFERENCES teams (id)
         );
 
+        CREATE TABLE IF NOT EXISTS vasco_titles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            competition_id INTEGER NOT NULL,
+            year INTEGER NOT NULL,
+            UNIQUE(competition_id, year),
+            FOREIGN KEY (competition_id) REFERENCES competitions (id) ON DELETE CASCADE
+        );
+
         CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(date_iso, id);
         CREATE INDEX IF NOT EXISTS idx_goals_match ON match_goals(match_id);
         CREATE INDEX IF NOT EXISTS idx_future_date ON future_matches(date_iso, id);
+        CREATE INDEX IF NOT EXISTS idx_titles_year ON vasco_titles(year, id);
         """
     )
     conn.execute(
@@ -660,6 +669,63 @@ def load_historic_players(db_path: str) -> dict[str, Any]:
     }
 
 
+def _save_titles_conn(conn: sqlite3.Connection, titulos: list[dict[str, Any]]) -> None:
+    if not isinstance(titulos, list):
+        titulos = []
+    _create_schema(conn)
+    conn.execute("DELETE FROM vasco_titles")
+    seen: set[tuple[int, int]] = set()
+    for item in titulos:
+        if not isinstance(item, dict):
+            continue
+        campeonato = str(item.get("campeonato", "")).strip()
+        if not campeonato:
+            continue
+        try:
+            ano = int(item.get("ano", 0))
+        except Exception:
+            continue
+        if ano < 1900 or ano > 2100:
+            continue
+        comp_id = _ensure_competition(conn, campeonato)
+        if comp_id is None:
+            continue
+        key = (comp_id, ano)
+        if key in seen:
+            continue
+        seen.add(key)
+        conn.execute(
+            "INSERT OR IGNORE INTO vasco_titles(competition_id, year) VALUES (?, ?)",
+            (comp_id, ano),
+        )
+
+
+def save_titles(db_path: str, titulos: list[dict[str, Any]]) -> None:
+    with _open(db_path) as conn:
+        _save_titles_conn(conn, titulos)
+
+
+def load_titles(db_path: str) -> list[dict[str, Any]]:
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        rows = conn.execute(
+            """
+            SELECT c.name AS campeonato, t.year AS ano
+            FROM vasco_titles t
+            JOIN competitions c ON c.id = t.competition_id
+            ORDER BY t.year, lower(c.name), c.name
+            """
+        ).fetchall()
+    return [
+        {
+            "campeonato": row["campeonato"] or "",
+            "ano": int(row["ano"] or 0),
+        }
+        for row in rows
+        if row["campeonato"]
+    ]
+
+
 def backup_database_snapshot(data_dir: str, db_path: str) -> None:
     if not os.path.exists(db_path):
         return
@@ -694,12 +760,14 @@ def _migrate_from_json(db_path: str, json_paths: dict[str, str]) -> None:
     )
     elenco = _json_load_file(json_paths.get("elenco", ""), {"jogadores": [], "tecnico": ""})
     historico = _json_load_file(json_paths.get("historico", ""), {"jogadores": []})
+    titulos = _json_load_file(json_paths.get("titulos", ""), [])
 
     save_listas(db_path, listas)
     save_matches(db_path, jogos)
     save_future_matches(db_path, futuros)
     save_current_squad(db_path, elenco)
     save_historic_players(db_path, historico)
+    save_titles(db_path, titulos)
 
 
 def bootstrap_database(db_path: str, json_paths: dict[str, str] | None = None) -> None:
@@ -720,3 +788,18 @@ def bootstrap_database(db_path: str, json_paths: dict[str, str] | None = None) -
 
     listas = load_listas(db_path)
     save_listas(db_path, listas)
+
+    # Migração pontual de títulos legados sem depender do fluxo principal de migração v1.
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        titulos_row = conn.execute(
+            "SELECT value FROM metadata WHERE key = 'titles_json_migrated_v1'"
+        ).fetchone()
+        if titulos_row is None and json_paths:
+            legacy_titles = _json_load_file(json_paths.get("titulos", ""), [])
+            if isinstance(legacy_titles, list) and legacy_titles:
+                _save_titles_conn(conn, legacy_titles)
+            conn.execute(
+                "INSERT INTO metadata(key, value) VALUES('titles_json_migrated_v1', '1') "
+                "ON CONFLICT(key) DO UPDATE SET value='1'"
+            )
