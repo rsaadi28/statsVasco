@@ -128,7 +128,7 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
@@ -136,14 +136,6 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
 )
 ELENCO_POSICAO_PLACEHOLDER = "Selecione..."
 ELENCO_CONDICAO_PLACEHOLDER = "Selecione..."
-ICONE_STATUS_ESCALACAO = {
-    "titulares": "T",
-    "reservas": "R",
-    "nao_relacionados": "N",
-    "lesionados": "L",
-    "sem_lista": "!",
-}
-
 
 def _gerar_backup_jsons_inicio():
     """Gera backup snapshot do banco SQLite ao abrir o app."""
@@ -1856,6 +1848,7 @@ class App:
         self.tv_elenco_atual.tag_configure("status_reservas", background="#fff4cf", foreground="#4a3a06")
         self.tv_elenco_atual.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
         self.tv_elenco_atual.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
+        self.tv_elenco_atual.tag_configure("status_emprestados", background="#e8ebf4", foreground="#1f2f57")
         self.tv_elenco_atual.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
         self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
         self.tv_elenco_atual.bind("<Delete>", self._remover_jogador_elenco)
@@ -1908,7 +1901,7 @@ class App:
             self.tv_elenco_atual.delete(iid)
         jogadores = list(self.elenco_atual.get("jogadores", []))
         jogadores = self._ordenar_jogadores_elenco_para_exibicao(jogadores)
-        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0}
+        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0, "Emprestado": 0}
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
             cont[condicao] = cont.get(condicao, 0) + 1
@@ -1920,6 +1913,8 @@ class App:
                 tag = "status_nao_relacionados"
             elif condicao == "Lesionado":
                 tag = "status_lesionados"
+            elif condicao == "Emprestado":
+                tag = "status_emprestados"
             else:
                 tag = "status_sem_lista"
             self.tv_elenco_atual.insert(
@@ -1931,7 +1926,8 @@ class App:
         if hasattr(self, "elenco_resumo_var"):
             self.elenco_resumo_var.set(
                 f"Titulares: {cont['Titular']} | Reservas: {cont['Reserva']} | "
-                f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']}"
+                f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']} | "
+                f"Emprestados: {cont['Emprestado']}"
             )
         self._render_campinho_elenco()
 
@@ -2146,6 +2142,7 @@ class App:
         menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
@@ -2364,7 +2361,11 @@ class App:
             nome = str(jogador.get("nome", "")).strip()
             if not nome:
                 continue
-            nova_condicao = nomes_por_condicao.get(nome.casefold(), "Não Relacionado")
+            nome_cf = nome.casefold()
+            condicao_atual = _normalizar_condicao_elenco(jogador.get("condicao"))
+            if condicao_atual == "Emprestado" and nome_cf not in nomes_por_condicao:
+                continue
+            nova_condicao = nomes_por_condicao.get(nome_cf, "Não Relacionado")
             if jogador.get("condicao") != nova_condicao:
                 jogador["condicao"] = nova_condicao
                 alterou = True
@@ -2801,6 +2802,7 @@ class App:
         menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
@@ -2837,6 +2839,8 @@ class App:
                 nova_condicao = "Não Relacionado"
             elif chave == "lesionados":
                 nova_condicao = "Lesionado"
+            elif chave == "emprestados":
+                nova_condicao = "Emprestado"
 
         self.tv_elenco_atual.item(iid, values=(nova_posicao, nome, nova_condicao))
         self._salvar_elenco_da_interface()
@@ -3019,7 +3023,7 @@ class App:
             row=2, column=0, sticky="e", pady=(6, 0)
         )
 
-        # Coluna direita: escalação em modal
+        # Coluna direita: preview de escalação
         escalacao_card = ttk.Labelframe(meio, text="Escalação da Partida", padding=10)
         escalacao_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
         escalacao_card.columnconfigure(0, weight=1)
@@ -3027,18 +3031,13 @@ class App:
 
         ttk.Label(
             escalacao_card,
-            text="Configure titulares por posição e banco em uma tela dedicada."
-        ).grid(row=0, column=0, sticky="w")
-        ttk.Button(
-            escalacao_card,
-            text="Abrir Modal de Escalação",
-            command=self._abrir_modal_escalacao_partida
-        ).grid(row=1, column=0, sticky="w", pady=(8, 10))
+            text="Escalação montada automaticamente com base no Elenco Atual."
+        ).grid(row=0, column=0, sticky="w", pady=(0, 10))
         self.escalacao_resumo_var = tk.StringVar(value="")
-        ttk.Label(escalacao_card, textvariable=self.escalacao_resumo_var).grid(row=2, column=0, sticky="w")
+        ttk.Label(escalacao_card, textvariable=self.escalacao_resumo_var).grid(row=1, column=0, sticky="w")
 
         preview_wrap = ttk.Frame(escalacao_card)
-        preview_wrap.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
+        preview_wrap.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
         preview_wrap.columnconfigure(0, weight=1)
         preview_wrap.columnconfigure(1, weight=0)
         preview_wrap.rowconfigure(0, weight=1)
@@ -3337,8 +3336,9 @@ class App:
                 base["reservas"].append(nome)
             elif condicao == "Não Relacionado":
                 base["nao_relacionados"].append(nome)
-            else:
+            elif condicao == "Lesionado":
                 base["lesionados"].append(nome)
+            # Emprestados ficam fora da escalação da partida.
         self._carregar_escalacao_partida(base)
 
     def _coletar_escalacao_partida(self):
@@ -3358,7 +3358,11 @@ class App:
         nomes_elenco = {
             str(j.get("nome", "")).strip().casefold()
             for j in self.elenco_atual.get("jogadores", [])
-            if isinstance(j, dict) and str(j.get("nome", "")).strip()
+            if (
+                isinstance(j, dict)
+                and str(j.get("nome", "")).strip()
+                and _normalizar_condicao_elenco(j.get("condicao")) != "Emprestado"
+            )
         }
         nomes_escalados = set()
         for pos in POSICOES_ELENCO:
@@ -3374,7 +3378,7 @@ class App:
 
         faltando = sorted(nomes_elenco - nomes_escalados)
         if faltando:
-            return False, "Todos os jogadores do elenco precisam estar em alguma lista da escalação."
+            return False, "Todos os jogadores do elenco (exceto emprestados) precisam estar em alguma lista da escalação."
         return True, ""
 
     def _carregar_escalacao_partida(self, escalacao):
@@ -3382,545 +3386,6 @@ class App:
         self._atualizar_resumo_escalacao()
         self._render_preview_escalacao()
         self._atualizar_opcoes_gol_vasco()
-
-    def _abrir_modal_escalacao_partida(self):
-        existente = getattr(self, "_modal_escalacao_partida", None)
-        if existente and existente.winfo_exists():
-            existente.lift()
-            existente.focus_force()
-            return
-
-        self._atualizar_elenco_disponivel_partida()
-        draft = self._coletar_escalacao_partida()
-
-        top = tk.Toplevel(self.root)
-        top.title("Escalação da Partida")
-        top.transient(self.root)
-        top.grab_set()
-        top.lift()
-        top.focus_force()
-        modal_w = 1200
-        modal_h = 780
-        self.root.update_idletasks()
-        try:
-            root_x = self.root.winfo_rootx()
-            root_y = self.root.winfo_rooty()
-            root_w = self.root.winfo_width()
-            root_h = self.root.winfo_height()
-            modal_w, modal_h = root_w, root_h
-            top.geometry(f"{modal_w}x{modal_h}+{root_x}+{root_y}")
-        except Exception:
-            top.geometry("1200x780")
-        self._modal_escalacao_partida = top
-
-        largura_esquerda = max(360, min(440, int(modal_w * 0.30)))
-        top.columnconfigure(0, weight=0, minsize=largura_esquerda)
-        top.columnconfigure(1, weight=1)
-        top.rowconfigure(0, weight=1)
-
-        esquerda = ttk.Labelframe(top, text="Elenco Atual (lista geral)", padding=8)
-        esquerda.grid(row=0, column=0, sticky="nsew", padx=(10, 6), pady=10)
-        esquerda.grid_propagate(False)
-        esquerda.columnconfigure(0, weight=1)
-        esquerda.rowconfigure(0, weight=1)
-
-        self._modal_tv_elenco = ttk.Treeview(esquerda, columns=("nome", "posicao"), show="headings")
-        self._modal_tv_elenco.heading("nome", text="Jogador")
-        self._modal_tv_elenco.heading("posicao", text="Posição")
-        largura_nome = 220
-        largura_posicao = 150
-        self._modal_tv_elenco.column("nome", width=largura_nome, minwidth=220, anchor="w", stretch=False)
-        self._modal_tv_elenco.column("posicao", width=largura_posicao, minwidth=120, anchor="w", stretch=False)
-        self._modal_tv_elenco.tag_configure("status_titulares", background="#dff5e6", foreground="#173a23")
-        self._modal_tv_elenco.tag_configure("status_reservas", background="#fff4cf", foreground="#4a3a06")
-        self._modal_tv_elenco.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
-        self._modal_tv_elenco.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
-        self._modal_tv_elenco.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
-        self._modal_tv_elenco.tag_configure("sep_posicao", background=self.colors["bg2"], foreground=self.colors["bg2"])
-        self._modal_tv_elenco.grid(row=0, column=0, sticky="nsew")
-        sy = ttk.Scrollbar(esquerda, orient="vertical", command=self._modal_tv_elenco.yview)
-        sy.grid(row=0, column=1, sticky="ns")
-        self._modal_tv_elenco.configure(yscrollcommand=sy.set)
-        self._modal_tv_elenco.bind(
-            "<Button-3>",
-            lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("elenco", None))
-        )
-        self._modal_tv_elenco.bind(
-            "<Control-Button-1>",
-            lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("elenco", None))
-        )
-
-        self._modal_tv_elenco.delete(*self._modal_tv_elenco.get_children())
-
-        direita = ttk.Frame(top)
-        direita.grid(row=0, column=1, sticky="nsew", padx=(6, 10), pady=10)
-        direita.columnconfigure(0, weight=1)
-        direita.rowconfigure(1, weight=1)
-
-        header = ttk.Frame(direita)
-        header.grid(row=0, column=0, sticky="ew")
-        header.columnconfigure(0, weight=1)
-        self._modal_resumo_var = tk.StringVar(value="")
-        ttk.Label(header, textvariable=self._modal_resumo_var).grid(row=0, column=0, sticky="w")
-
-        conteudo = ttk.Frame(direita)
-        conteudo.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
-        conteudo.columnconfigure(0, weight=1)
-        conteudo.columnconfigure(1, weight=1)
-        conteudo.rowconfigure(0, weight=5, minsize=320)
-        conteudo.rowconfigure(1, weight=1, minsize=140)
-        conteudo.rowconfigure(2, weight=1, minsize=140)
-
-        titulares_frame = ttk.Labelframe(conteudo, text="Titulares no Campinho", padding=10)
-        titulares_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=(4, 4), pady=(4, 10))
-        titulares_frame.columnconfigure(0, weight=1)
-        titulares_frame.rowconfigure(0, weight=1)
-
-        self._modal_canvas_campinho = tk.Canvas(
-            titulares_frame,
-            background="#0f6a35",
-            highlightthickness=1,
-            highlightbackground="#1a1a1a",
-            height=340,
-        )
-        self._modal_canvas_campinho.grid(row=0, column=0, sticky="nsew")
-        self._modal_canvas_campinho.bind("<Configure>", lambda _e: self._modal_render_campinho())
-        self._modal_canvas_campinho.bind("<ButtonPress-1>", self._modal_campinho_drag_start)
-        self._modal_canvas_campinho.bind("<ButtonRelease-1>", self._modal_campinho_drag_end)
-        self._modal_canvas_campinho.bind("<Button-3>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
-        self._modal_canvas_campinho.bind("<Control-Button-1>", lambda e: self._abrir_menu_contexto_escalacao_modal(e, ("campinho", None)))
-        self._modal_titulares_por_posicao = {pos: [] for pos in POSICOES_ELENCO}
-
-        self._modal_lb_extras = {}
-        for idx, (chave, titulo) in enumerate(CATEGORIAS_ESCALACAO_EXTRAS):
-            r, c = divmod(idx, 2)
-            bloco = ttk.Labelframe(conteudo, text=titulo, padding=10)
-            bloco.grid(
-                row=1 + r, column=c, sticky="nsew",
-                padx=(4 if c == 0 else 6, 6 if c == 0 else 4),
-                pady=(4, 10 if r == 0 else 4)
-            )
-            bloco.columnconfigure(0, weight=1)
-            bloco.rowconfigure(0, weight=1)
-            if chave == "reservas":
-                lb_bg, lb_fg = "#fff4cf", "#4a3a06"
-            elif chave == "nao_relacionados":
-                lb_bg, lb_fg = "#ffe3c2", "#4f2a09"
-            else:  # lesionados
-                lb_bg, lb_fg = "#ffd6d6", "#5a1414"
-            lb = tk.Listbox(
-                bloco, height=6,
-                bg=lb_bg, fg=lb_fg,
-                selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
-            )
-            lb.grid(row=0, column=0, sticky="nsew")
-            lb.bind("<Delete>", lambda _e, k=chave: self._modal_remover_jogador(("extras", k)))
-            lb.bind("<Button-3>", lambda e, k=chave: self._abrir_menu_contexto_escalacao_modal(e, ("extras", k)))
-            lb.bind("<Control-Button-1>", lambda e, k=chave: self._abrir_menu_contexto_escalacao_modal(e, ("extras", k)))
-            botoes = ttk.Frame(bloco)
-            botoes.grid(row=1, column=0, sticky="ew", pady=(6, 0))
-            ttk.Button(botoes, text="Adicionar", command=lambda k=chave: self._modal_adicionar_jogador(("extras", k))).pack(side="left")
-            ttk.Button(botoes, text="Remover", command=lambda k=chave: self._modal_remover_jogador(("extras", k))).pack(side="right")
-            self._modal_lb_extras[chave] = lb
-
-        rodape = ttk.Frame(direita)
-        rodape.grid(row=2, column=0, sticky="e", pady=(14, 14), padx=(0, 14))
-        ttk.Button(rodape, text="Cancelar", command=self._fechar_modal_escalacao_partida).pack(side="left", padx=(0, 10))
-        ttk.Button(rodape, text="Salvar Escalação", command=self._salvar_modal_escalacao_partida).pack(side="left")
-
-        self._modal_carregar_escalacao(draft)
-        self._modal_atualizar_resumo()
-        self._modal_atualizar_lista_geral_com_status()
-        top.protocol("WM_DELETE_WINDOW", self._fechar_modal_escalacao_partida)
-
-    def _modal_coletar_escalacao(self):
-        base = self._escalacao_partida_base()
-        titulares = getattr(self, "_modal_titulares_por_posicao", {})
-        for pos in POSICOES_ELENCO:
-            nomes = titulares.get(pos, [])
-            base["titulares_por_posicao"][pos] = list(nomes) if isinstance(nomes, list) else []
-        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
-            lb = self._modal_lb_extras.get(chave)
-            base[chave] = list(lb.get(0, tk.END)) if lb else []
-        return self._normalizar_escalacao_partida(base)
-
-    def _modal_carregar_escalacao(self, escalacao):
-        data = self._normalizar_escalacao_partida(escalacao)
-        self._modal_titulares_por_posicao = {
-            pos: list(data["titulares_por_posicao"].get(pos, []))
-            for pos in POSICOES_ELENCO
-        }
-        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
-            lb = self._modal_lb_extras.get(chave)
-            if not lb:
-                continue
-            lb.delete(0, tk.END)
-            for nome in data.get(chave, []):
-                lb.insert(tk.END, nome)
-        self._modal_render_campinho()
-
-    def _modal_render_campinho(self):
-        canvas = getattr(self, "_modal_canvas_campinho", None)
-        if canvas is None:
-            return
-        canvas.delete("all")
-        self._modal_campinho_hits = []
-
-        w = max(360, canvas.winfo_width())
-        h = max(240, canvas.winfo_height())
-        m = 16
-        canvas.create_rectangle(0, 0, w, h, fill="#0f6a35", outline="")
-        canvas.create_rectangle(m, m, w - m, h - m, outline="#e9f7ed", width=2)
-        meio_y = h / 2
-        canvas.create_line(m, meio_y, w - m, meio_y, fill="#e9f7ed", width=2)
-        canvas.create_oval(w / 2 - 36, meio_y - 36, w / 2 + 36, meio_y + 36, outline="#e9f7ed", width=2)
-
-        tit = getattr(self, "_modal_titulares_por_posicao", {})
-        linhas = [
-            ("ATA", "Atacante", 0.16),
-            ("MEI", "Meio-Campista", 0.34),
-            ("VOL", "Volante", 0.50),
-            ("DEF", "Lateral-Esquerdo", 0.68),
-            ("GOL", "Goleiro", 0.84),
-        ]
-
-        for sigla, chave, rel_y in linhas:
-            y = m + (h - 2 * m) * rel_y
-            canvas.create_text(m + 18, y, text=sigla, fill="#d8f0de", font=("Segoe UI", 9, "bold"))
-            if sigla == "DEF":
-                nomes = (
-                    list(tit.get("Lateral-Esquerdo", []))
-                    + list(tit.get("Zagueiro", []))
-                    + list(tit.get("Lateral-Direito", []))
-                )
-            else:
-                nomes = list(tit.get(chave, []))
-            if not nomes:
-                continue
-            n = len(nomes)
-            for i, nome in enumerate(nomes):
-                x = m + (w - 2 * m) * ((i + 1) / (n + 1))
-                r = 14
-                canvas.create_oval(x - r, y - r, x + r, y + r, fill="#f5f8f6", outline="#0b3d24", width=1)
-                canvas.create_text(x, y, text=str(i + 1), fill="#133b23", font=("Segoe UI", 8, "bold"))
-                nome_curto = nome if len(nome) <= 21 else (nome[:20] + "…")
-                canvas.create_text(x, y + 20, text=nome_curto, fill="#eef9f1", font=("Segoe UI", 11, "bold"))
-                self._modal_campinho_hits.append({
-                    "nome": nome,
-                    "linha": sigla,
-                    "idx": i,
-                    "n": n,
-                    "x": x,
-                    "y": y,
-                    "r": r,
-                })
-
-    def _modal_campinho_drag_start(self, event):
-        hit = None
-        for item in getattr(self, "_modal_campinho_hits", []):
-            dx = event.x - item["x"]
-            dy = event.y - item["y"]
-            if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
-                hit = item
-                break
-        self._modal_campinho_drag_state = hit
-        if hit:
-            self._modal_canvas_campinho.configure(cursor="hand2")
-
-    def _modal_campinho_drag_end(self, event):
-        state = getattr(self, "_modal_campinho_drag_state", None)
-        self._modal_campinho_drag_state = None
-        self._modal_canvas_campinho.configure(cursor="")
-        if not state:
-            return
-        if state["n"] < 2:
-            return
-
-        linha = state["linha"]
-        origem = state["idx"]
-        n = state["n"]
-        mesmos = sorted(
-            [p for p in getattr(self, "_modal_campinho_hits", []) if p.get("linha") == linha],
-            key=lambda p: p.get("idx", 0),
-        )
-        if len(mesmos) != n:
-            return
-        alvo = min(range(n), key=lambda i: abs(event.x - mesmos[i]["x"]))
-        if alvo == origem:
-            return
-
-        if linha == "DEF":
-            le = list(self._modal_titulares_por_posicao.get("Lateral-Esquerdo", []))
-            zag = list(self._modal_titulares_por_posicao.get("Zagueiro", []))
-            ld = list(self._modal_titulares_por_posicao.get("Lateral-Direito", []))
-            combinado = le + zag + ld
-            if len(combinado) != n:
-                return
-            jogador = combinado.pop(origem)
-            combinado.insert(alvo, jogador)
-            n_le = len(le)
-            n_zag = len(zag)
-            self._modal_titulares_por_posicao["Lateral-Esquerdo"] = combinado[:n_le]
-            self._modal_titulares_por_posicao["Zagueiro"] = combinado[n_le:n_le + n_zag]
-            self._modal_titulares_por_posicao["Lateral-Direito"] = combinado[n_le + n_zag:]
-        else:
-            mapa = {
-                "ATA": "Atacante",
-                "MEI": "Meio-Campista",
-                "VOL": "Volante",
-                "GOL": "Goleiro",
-            }
-            pos = mapa.get(linha)
-            if not pos:
-                return
-            lista = list(self._modal_titulares_por_posicao.get(pos, []))
-            if len(lista) != n:
-                return
-            jogador = lista.pop(origem)
-            lista.insert(alvo, jogador)
-            self._modal_titulares_por_posicao[pos] = lista
-
-        self._modal_render_campinho()
-        self._modal_atualizar_resumo()
-        self._modal_atualizar_lista_geral_com_status()
-
-    def _modal_status_por_jogador(self):
-        esc = self._modal_coletar_escalacao()
-        status = {}
-        for pos in POSICOES_ELENCO:
-            for nome in esc["titulares_por_posicao"].get(pos, []):
-                status[str(nome).strip().casefold()] = "titulares"
-        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
-            for nome in esc.get(chave, []):
-                status[str(nome).strip().casefold()] = chave
-        return status
-
-    def _modal_formatar_nome_com_status(self, nome, status):
-        icone = ICONE_STATUS_ESCALACAO.get(status or "sem_lista", ICONE_STATUS_ESCALACAO["sem_lista"])
-        return f"{icone} {nome}"
-
-    def _modal_extrair_nome_raw(self, texto):
-        txt = str(texto or "").strip()
-        if len(txt) >= 2 and txt[1] == " " and txt[0] in set(ICONE_STATUS_ESCALACAO.values()):
-            return txt[2:].strip()
-        return txt
-
-    def _modal_atualizar_lista_geral_com_status(self):
-        if not hasattr(self, "_modal_tv_elenco"):
-            return
-        status_por_nome = self._modal_status_por_jogador()
-        selecionado_cf = None
-        self._modal_iids_separador = set()
-        sel = self._modal_tv_elenco.selection()
-        if sel:
-            vals_sel = self._modal_tv_elenco.item(sel[0], "values")
-            if vals_sel:
-                selecionado_cf = self._modal_extrair_nome_raw(vals_sel[0]).casefold()
-
-        self._modal_tv_elenco.delete(*self._modal_tv_elenco.get_children())
-        novo_iid_selecionado = None
-        for jogador in list(self.elenco_atual.get("jogadores", [])):
-            nome = str(jogador.get("nome", "")).strip()
-            if not nome:
-                continue
-            posicao_atual = str(jogador.get("posicao", "")).strip()
-            cf = nome.casefold()
-            status = status_por_nome.get(cf, "sem_lista")
-            tag = f"status_{status}"
-            iid = self._modal_tv_elenco.insert(
-                "",
-                "end",
-                values=(self._modal_formatar_nome_com_status(nome, status), posicao_atual),
-                tags=(tag,),
-            )
-            if selecionado_cf and cf == selecionado_cf:
-                novo_iid_selecionado = iid
-        if novo_iid_selecionado:
-            self._modal_tv_elenco.selection_set(novo_iid_selecionado)
-            self._modal_tv_elenco.focus(novo_iid_selecionado)
-
-    def _modal_remover_nome_de_tudo(self, nome):
-        alvo = nome.casefold()
-        for pos in POSICOES_ELENCO:
-            atuais = list(getattr(self, "_modal_titulares_por_posicao", {}).get(pos, []))
-            self._modal_titulares_por_posicao[pos] = [
-                i for i in atuais if str(i).strip().casefold() != alvo
-            ]
-        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
-            lb = self._modal_lb_extras.get(chave)
-            if not lb:
-                continue
-            itens = [i for i in lb.get(0, tk.END) if str(i).strip().casefold() != alvo]
-            lb.delete(0, tk.END)
-            for item in itens:
-                lb.insert(tk.END, item)
-        self._modal_render_campinho()
-
-    def _modal_adicionar_jogador(self, destino):
-        sel = self._modal_tv_elenco.selection()
-        if not sel:
-            messagebox.showwarning("Escalação", "Selecione um jogador da lista geral do elenco.")
-            return
-        vals = self._modal_tv_elenco.item(sel[0], "values")
-        if len(vals) < 2:
-            return
-        nome = self._modal_extrair_nome_raw(vals[0])
-        if not nome:
-            return
-        self._modal_enviar_jogador_para(nome, destino)
-
-    def _modal_enviar_jogador_para(self, nome, destino):
-        nome = str(nome).strip()
-        if not nome:
-            return
-        tipo, chave = destino
-        if tipo == "titulares":
-            total_titulares = sum(len(self._modal_titulares_por_posicao.get(pos, [])) for pos in POSICOES_ELENCO)
-            ja_era_titular = any(
-                str(n).strip().casefold() == nome.casefold()
-                for pos in POSICOES_ELENCO
-                for n in self._modal_titulares_por_posicao.get(pos, [])
-            )
-            if not ja_era_titular and total_titulares >= 11:
-                messagebox.showerror("Escalação inválida", "Não é possível escalar mais de 11 titulares.")
-                return
-            if chave == "Goleiro":
-                goleiros_titulares = len(self._modal_titulares_por_posicao.get("Goleiro", []))
-                if goleiros_titulares >= 1 and not any(
-                    str(n).strip().casefold() == nome.casefold()
-                    for n in self._modal_titulares_por_posicao.get("Goleiro", [])
-                ):
-                    messagebox.showerror("Escalação inválida", "Só é permitido 1 goleiro titular.")
-                    return
-        self._modal_remover_nome_de_tudo(nome)
-        if tipo == "titulares":
-            lista = self._modal_titulares_por_posicao.setdefault(chave, [])
-            lista.append(nome)
-            self._modal_render_campinho()
-        else:
-            lb = self._modal_lb_extras.get(chave)
-            if not lb:
-                return
-            itens = list(lb.get(0, tk.END))
-            itens.append(nome)
-            lb.delete(0, tk.END)
-            for item in itens:
-                lb.insert(tk.END, item)
-        self._modal_atualizar_resumo()
-        self._modal_atualizar_lista_geral_com_status()
-
-    def _abrir_menu_contexto_escalacao_modal(self, event, origem):
-        nome = ""
-        tipo, chave = origem
-        if tipo == "elenco":
-            iid = self._modal_tv_elenco.identify_row(event.y)
-            if not iid:
-                return
-            if iid in getattr(self, "_modal_iids_separador", set()):
-                return
-            self._modal_tv_elenco.selection_set(iid)
-            self._modal_tv_elenco.focus(iid)
-            values = self._modal_tv_elenco.item(iid, "values")
-            if len(values) >= 1:
-                nome = self._modal_extrair_nome_raw(values[0])
-        elif tipo == "campinho":
-            hits = getattr(self, "_modal_campinho_hits", [])
-            hit = None
-            for item in hits:
-                dx = event.x - item["x"]
-                dy = event.y - item["y"]
-                if (dx * dx + dy * dy) <= (item["r"] + 4) ** 2:
-                    hit = item
-                    break
-            if not hit:
-                return
-            nome = str(hit.get("nome", "")).strip()
-        elif tipo == "extras":
-            lb = self._modal_lb_extras.get(chave)
-            if not lb:
-                return
-            idx = lb.nearest(event.y)
-            if idx < 0 or idx >= lb.size():
-                return
-            lb.selection_clear(0, tk.END)
-            lb.selection_set(idx)
-            nome = str(lb.get(idx)).strip()
-
-        if not nome:
-            return
-
-        menu = tk.Menu(self._modal_escalacao_partida, tearoff=0)
-        submenu_tit = tk.Menu(menu, tearoff=0)
-        for pos in POSICOES_ELENCO:
-            submenu_tit.add_command(
-                label=f"Titular - {pos}",
-                command=lambda n=nome, p=pos: self._modal_enviar_jogador_para(n, ("titulares", p))
-            )
-        menu.add_cascade(label="Enviar para Titulares", menu=submenu_tit)
-        menu.add_separator()
-        menu.add_command(
-            label="Enviar para Reservas",
-            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "reservas"))
-        )
-        menu.add_command(
-            label="Enviar para Não Relacionados",
-            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "nao_relacionados"))
-        )
-        menu.add_command(
-            label="Enviar para Lesionados",
-            command=lambda n=nome: self._modal_enviar_jogador_para(n, ("extras", "lesionados"))
-        )
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
-
-    def _modal_remover_jogador(self, origem):
-        tipo, chave = origem
-        lb = self._modal_lb_extras.get(chave) if tipo == "extras" else None
-        if not lb:
-            return
-        sel = lb.curselection()
-        if not sel:
-            return
-        nome_removido = str(lb.get(sel[0])).strip()
-        lb.delete(sel[0])
-        if tipo == "extras" and chave == "reservas" and nome_removido:
-            lb_nao_rel = self._modal_lb_extras.get("nao_relacionados")
-            if lb_nao_rel:
-                atuais = [str(n).strip() for n in lb_nao_rel.get(0, tk.END) if str(n).strip()]
-                if nome_removido.casefold() not in {n.casefold() for n in atuais}:
-                    atuais.append(nome_removido)
-                    lb_nao_rel.delete(0, tk.END)
-                    for item in atuais:
-                        lb_nao_rel.insert(tk.END, item)
-        self._modal_atualizar_resumo()
-        self._modal_atualizar_lista_geral_com_status()
-
-    def _modal_atualizar_resumo(self):
-        esc = self._modal_coletar_escalacao()
-        titulares = sum(len(esc["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
-        reservas = len(esc.get("reservas", []))
-        self._modal_resumo_var.set(f"Titulares: {titulares}/11 | Reservas: {reservas} (mín. 4)")
-
-    def _salvar_modal_escalacao_partida(self):
-        escalacao = self._modal_coletar_escalacao()
-        ok, msg = self._validar_escalacao_partida(escalacao)
-        if not ok:
-            messagebox.showerror("Escalação inválida", msg)
-            return
-        self._carregar_escalacao_partida(escalacao)
-        self._fechar_modal_escalacao_partida()
-
-    def _fechar_modal_escalacao_partida(self):
-        modal = getattr(self, "_modal_escalacao_partida", None)
-        if modal and modal.winfo_exists():
-            try:
-                modal.grab_release()
-            except Exception:
-                pass
-            modal.destroy()
-        self._modal_escalacao_partida = None
 
     def _centralizar_janela(self):
         try:
@@ -4190,7 +3655,6 @@ class App:
 
     def _limpar_formulario(self):
         self.editing_index = None
-        self._fechar_modal_escalacao_partida()
         if hasattr(self, "salvar_btn_label"):
             self.salvar_btn_label.set("Salvar Partida")
         if hasattr(self, "modo_edicao_var"):

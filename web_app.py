@@ -50,7 +50,7 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
@@ -194,8 +194,9 @@ def escalacao_padrao_do_elenco(elenco: dict) -> dict:
             base["reservas"].append(nome)
         elif cond == "Não Relacionado":
             base["nao_relacionados"].append(nome)
-        else:
+        elif cond == "Lesionado":
             base["lesionados"].append(nome)
+        # Emprestados ficam fora da escalação padrão da partida.
     return _normalizar_escalacao_partida(base)
 
 
@@ -214,7 +215,11 @@ def validar_escalacao_partida(escalacao: dict, elenco: dict):
     nomes_elenco = {
         str(j.get("nome", "")).strip().casefold()
         for j in elenco.get("jogadores", [])
-        if isinstance(j, dict) and str(j.get("nome", "")).strip()
+        if (
+            isinstance(j, dict)
+            and str(j.get("nome", "")).strip()
+            and _normalizar_condicao_elenco(j.get("condicao")) != "Emprestado"
+        )
     }
     nomes_escalados = set()
     for pos in POSICOES_ELENCO:
@@ -229,7 +234,7 @@ def validar_escalacao_partida(escalacao: dict, elenco: dict):
                 nomes_escalados.add(n.casefold())
     faltando = sorted(nomes_elenco - nomes_escalados)
     if faltando:
-        return False, "Todos os jogadores do elenco precisam estar em alguma lista da escalação.", escalacao
+        return False, "Todos os jogadores do elenco (exceto emprestados) precisam estar em alguma lista da escalação.", escalacao
     return True, "", escalacao
 
 
@@ -1235,7 +1240,7 @@ INDEX_HTML = """<!doctype html>
         <div class="card">
           <h3 class="section-title">Escalação da Partida (simplificada)</h3>
           <p class="muted" style="margin-top:0">
-            Mesmas regras do desktop para validação: 11 titulares, 1 goleiro titular, mínimo 4 reservas e todos do elenco em alguma lista.
+            Mesmas regras do desktop para validação: 11 titulares, 1 goleiro titular, mínimo 4 reservas e todos do elenco (exceto emprestados) em alguma lista.
           </p>
           <div id="escalacao-resumo-web" class="muted" style="margin-bottom:10px"></div>
           <div class="table-wrap" style="max-height:620px; overflow:auto;">
