@@ -4569,8 +4569,8 @@ class App:
             carrascos = Counter()
 
             rows = []
-            streak_inv = streak_der = 0
-            invicto_max = derrota_max = 0
+            streak_inv = streak_sem_vitoria = 0
+            invicto_max = sem_vitoria_max = 0
             for idx_global, jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j[1]["data"])):
                 local = jogo.get("local", "desconhecido").capitalize()
                 placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -4584,18 +4584,19 @@ class App:
                     vitorias += 1
                     streak_inv += 1
                     invicto_max = max(invicto_max, streak_inv)
-                    streak_der = 0
+                    streak_sem_vitoria = 0
                 elif placar["vasco"] < placar["adversario"]:
                     resultado = "Derrota"
                     derrotas += 1
-                    streak_der += 1
-                    derrota_max = max(derrota_max, streak_der)
+                    streak_sem_vitoria += 1
+                    sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
                     streak_inv = 0
                 else:
                     empates += 1
                     streak_inv += 1
                     invicto_max = max(invicto_max, streak_inv)
-                    streak_der = 0
+                    streak_sem_vitoria += 1
+                    sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
 
                 gols_pro += placar.get("vasco", 0)
                 gols_contra += placar.get("adversario", 0)
@@ -4644,7 +4645,7 @@ class App:
             make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=4, pady=4)
             make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Maior sequência derrotas", derrota_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
+            make_card(cards, "Maior tempo sem vitórias", sem_vitoria_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
 
             # ----- Filtro da lista de partidas da temporada
             filtros_temporada = ttk.Frame(frame_ano)
