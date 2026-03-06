@@ -3803,15 +3803,82 @@ class App:
         jogo_idx = mapping.get(iid)
         if jogo_idx is None:
             return
+        jogos = carregar_dados_jogos()
+        if not (0 <= jogo_idx < len(jogos)):
+            return
+        jogo = jogos[jogo_idx]
 
         menu = tk.Menu(self.root, tearoff=0)
         menu.add_command(label="Editar jogo", command=lambda idx=jogo_idx: self._carregar_jogo_para_edicao(idx))
+        submenu_copiar = tk.Menu(menu, tearoff=0)
+        submenu_copiar.add_command(
+            label="Confronto com placar",
+            command=lambda item=jogo: self._copiar_texto_temporadas(
+                self._formatar_confronto_temporadas(item, incluir_placar=True)
+            ),
+        )
+        submenu_copiar.add_command(
+            label="Confronto com data",
+            command=lambda item=jogo: self._copiar_texto_temporadas(
+                self._formatar_confronto_temporadas(item, incluir_data=True)
+            ),
+        )
+        submenu_copiar.add_separator()
+        submenu_copiar.add_command(
+            label="ID do confronto no banco",
+            command=lambda item=jogo: self._copiar_campo_banco_temporadas(
+                item.get("db_match_id"),
+                "ID do confronto",
+            ),
+        )
+        submenu_copiar.add_command(
+            label="ID do tecnico da partida",
+            command=lambda item=jogo: self._copiar_campo_banco_temporadas(
+                item.get("db_tecnico_id"),
+                "ID do tecnico",
+            ),
+        )
+        menu.add_cascade(label="Copiar", menu=submenu_copiar)
         menu.add_separator()
         menu.add_command(label="Excluir jogo", command=lambda idx=jogo_idx: self._excluir_jogo_por_indice(idx))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
+
+    def _formatar_confronto_temporadas(self, jogo, incluir_placar=False, incluir_data=False):
+        adversario = str(jogo.get("adversario", "") or "").strip()
+        data = str(jogo.get("data", "") or "").strip()
+        local = str(jogo.get("local", "") or "").strip().casefold()
+        placar = jogo.get("placar") or {}
+        gols_vasco = int(placar.get("vasco", 0) or 0)
+        gols_adversario = int(placar.get("adversario", 0) or 0)
+
+        if local == "fora":
+            confronto = f"{adversario} x Vasco"
+            if incluir_placar:
+                confronto = f"{adversario} {gols_adversario} x {gols_vasco} Vasco"
+        else:
+            confronto = f"Vasco x {adversario}"
+            if incluir_placar:
+                confronto = f"Vasco {gols_vasco} x {gols_adversario} {adversario}"
+
+        if incluir_data and data:
+            return f"{data} - {confronto}"
+        return confronto
+
+    def _copiar_texto_temporadas(self, texto):
+        if not str(texto or "").strip():
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(texto)
+        self.root.update()
+
+    def _copiar_campo_banco_temporadas(self, valor, descricao):
+        if valor in (None, ""):
+            messagebox.showwarning("Copiar", f"{descricao} não disponível para esta partida.")
+            return
+        self._copiar_texto_temporadas(str(valor))
 
     def _excluir_jogo_por_indice(self, jogo_idx):
         jogos = carregar_dados_jogos()

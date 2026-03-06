@@ -416,7 +416,7 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
             """
             SELECT m.id, m.date_text, t.name AS adversario, c.name AS competicao,
                    m.location, m.vasco_goals, m.opponent_goals, m.observation,
-                   ch.name AS tecnico, m.table_position, m.lineup_json
+                   ch.name AS tecnico, m.coach_id, m.table_position, m.lineup_json
             FROM matches m
             LEFT JOIN teams t ON t.id = m.opponent_team_id
             LEFT JOIN competitions c ON c.id = m.competition_id
@@ -484,6 +484,8 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                 },
                 "observacao": row["observation"] or "",
                 "tecnico": row["tecnico"] or "",
+                "db_match_id": mid,
+                "db_tecnico_id": int(row["coach_id"]) if row["coach_id"] is not None else None,
                 "posicao_tabela": row["table_position"],
                 "escalacao_partida": lineup if isinstance(lineup, dict) else {},
             }
