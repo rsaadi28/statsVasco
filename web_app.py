@@ -363,7 +363,6 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
         if nome not in listas.get("jogadores_contra", []):
             listas.setdefault("jogadores_contra", []).append(nome)
     listas["jogadores_contra"] = sorted(listas.get("jogadores_contra", []), key=str.casefold)
-    listas["tecnico_atual"] = tecnico
     salvar_listas(listas)
 
     jogo = {

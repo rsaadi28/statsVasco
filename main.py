@@ -1345,7 +1345,7 @@ class App:
                     partida["competicao"],
                     partida["local"],
                     partida["placar"],
-                    partida["resultado"],
+                    self._formatar_resultado_com_bolinha(partida["resultado"]),
                     partida["gols_vasco"],
                     partida["gols_adversario"],
                 ),
@@ -1502,6 +1502,18 @@ class App:
             partes.append(f"{nome} x{qtd}" if qtd > 1 else nome)
         return ", ".join(partes)
 
+    def _formatar_resultado_com_bolinha(self, resultado):
+        resultado_txt = str(resultado or "").strip()
+        resultado_norm = _chave_nome_jogador(resultado_txt)
+        bolinha = ""
+        if resultado_norm == "vitoria":
+            bolinha = "🟢"
+        elif resultado_norm == "empate":
+            bolinha = "🟡"
+        elif resultado_norm == "derrota":
+            bolinha = "🔴"
+        return f"{bolinha} {resultado_txt}".strip()
+
     def _coletar_retro_por_adversario(self, adversario):
         retrospecto = {
             "partidas": [],
@@ -1645,7 +1657,7 @@ class App:
                     partida["competicao"],
                     partida["local"],
                     partida["placar"],
-                    partida["resultado"],
+                    self._formatar_resultado_com_bolinha(partida["resultado"]),
                     partida["gols_vasco"],
                     partida["gols_adversario"],
                 ),
@@ -2241,6 +2253,12 @@ class App:
         if hasattr(self, "tecnico_var"):
             self.tecnico_var.set(tecnico)
         self._atualizar_combo_tecnicos()
+
+    def _obter_tecnico_destacado(self) -> str:
+        tecnico_elenco = str(self.elenco_atual.get("tecnico", "") or "").strip()
+        if tecnico_elenco:
+            return tecnico_elenco
+        return str(self.listas.get("tecnico_atual", "") or "Fernando Diniz").strip()
 
     def _sincronizar_jogadores_vasco_com_elenco(self):
         self._atualizar_opcoes_gol_vasco(persistir=True)
@@ -3615,7 +3633,6 @@ class App:
         if tecnico not in lista_tecnicos:
             lista_tecnicos.append(tecnico)
             self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
-        self.listas["tecnico_atual"] = tecnico
         self.tecnico_var.set(tecnico)
         self._atualizar_combo_tecnicos()
         salvar_listas(self.listas)
@@ -5251,10 +5268,10 @@ class App:
             key=lambda r: (self._chave_ordenacao_tecnicos(r, self._tecnicos_sort_col), str(r.get("tecnico", "")).casefold()),
             reverse=self._tecnicos_sort_reverse
         )
+        tecnico_destacado = self._obter_tecnico_destacado()
         for i, row in enumerate(rows, start=1):
             tags = ["odd"] if i % 2 else []
-            tecnico_atual = str(self.listas.get("tecnico_atual", "") or "").strip()
-            if str(row.get("tecnico", "")).strip().casefold() == tecnico_atual.casefold():
+            if str(row.get("tecnico", "")).strip().casefold() == tecnico_destacado.casefold():
                 tags.append("tecnico_atual")
             tv.insert(
                 "",
