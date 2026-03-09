@@ -714,12 +714,12 @@ class App:
         self.notebook.add(self.frame_futuros, text="Jogos Futuros")
         self.notebook.add(self.frame_registro, text="Registrar Jogo")
         self.notebook.add(self.frame_retro, text="Retrospecto")
-        self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_geral, text="Geral")
+        self.notebook.add(self.frame_temporadas, text="Temporadas")
         self.notebook.add(self.frame_comparativo, text="Comparativo")
-        self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_graficos, text="Evolução")
         self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
+        self.notebook.add(self.frame_tecnicos, text="Técnicos")
         self.notebook.add(self.frame_jogadores_historico, text="Jogadores")
         self.notebook.add(self.frame_titulos, text="Títulos")
 
@@ -2536,14 +2536,28 @@ class App:
         self.jogadores_hist_busca_var = tk.StringVar(value="")
         self.entry_jogadores_hist_busca = ttk.Entry(filtros, textvariable=self.jogadores_hist_busca_var, width=24)
         self.entry_jogadores_hist_busca.pack(side="left", padx=(6, 6))
+        ttk.Label(filtros, text="Filtro:").pack(side="left", padx=(8, 0))
+        self.jogadores_hist_filtro_var = tk.StringVar(value="Todos")
+        opcoes_filtro = ["Todos"] + POSICOES_ELENCO + CONDICOES_ELENCO + ["Ex-jogador"]
+        self.combo_jogadores_hist_filtro = ttk.Combobox(
+            filtros,
+            textvariable=self.jogadores_hist_filtro_var,
+            values=opcoes_filtro,
+            state="readonly",
+            width=18,
+        )
+        self.combo_jogadores_hist_filtro.pack(side="left", padx=(6, 6))
         ttk.Button(filtros, text="Limpar", command=self._limpar_busca_jogadores_historico).pack(side="left")
         self.jogadores_hist_busca_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
+        self.jogadores_hist_filtro_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
 
         cols = ("posicao", "jogador", "status")
         self.tv_jogadores_historico = ttk.Treeview(esquerda, columns=cols, show="headings", height=16)
-        self.tv_jogadores_historico.heading("posicao", text="Posição")
-        self.tv_jogadores_historico.heading("jogador", text="Jogador")
-        self.tv_jogadores_historico.heading("status", text="Status")
+        self._jogadores_hist_sort_col = "posicao"
+        self._jogadores_hist_sort_reverse = False
+        self.tv_jogadores_historico.heading("posicao", text="Posição", command=lambda: self._toggle_ordenacao_jogadores_historico("posicao"))
+        self.tv_jogadores_historico.heading("jogador", text="Jogador", command=lambda: self._toggle_ordenacao_jogadores_historico("jogador"))
+        self.tv_jogadores_historico.heading("status", text="Status", command=lambda: self._toggle_ordenacao_jogadores_historico("status"))
         self.tv_jogadores_historico.column("posicao", width=150, anchor="w")
         self.tv_jogadores_historico.column("jogador", width=280, anchor="w")
         self.tv_jogadores_historico.column("status", width=130, anchor="center")
@@ -2598,6 +2612,9 @@ class App:
         termo = ""
         if hasattr(self, "jogadores_hist_busca_var"):
             termo = self.jogadores_hist_busca_var.get().strip().casefold()
+        filtro = "Todos"
+        if hasattr(self, "jogadores_hist_filtro_var"):
+            filtro = self.jogadores_hist_filtro_var.get().strip() or "Todos"
 
         atuais = {
             str(j.get("nome", "")).strip().casefold(): _normalizar_condicao_elenco(j.get("condicao"))
@@ -2605,8 +2622,9 @@ class App:
             if isinstance(j, dict) and str(j.get("nome", "")).strip()
         }
         self.tv_jogadores_historico.delete(*self.tv_jogadores_historico.get_children())
+        jogadores_filtrados = []
         novo_sel = None
-        for i, jogador in enumerate(_ordenar_jogadores_historico(list(self.jogadores_historico.get("jogadores", []))), start=1):
+        for jogador in _ordenar_jogadores_historico(list(self.jogadores_historico.get("jogadores", []))):
             nome = str(jogador.get("nome", "")).strip()
             if not nome:
                 continue
@@ -2617,13 +2635,50 @@ class App:
                 haystack = f"{posicao} {nome} {status}".casefold()
                 if termo not in haystack:
                     continue
+            if filtro != "Todos" and filtro not in {posicao, status}:
+                continue
+            jogadores_filtrados.append({
+                "posicao": posicao,
+                "jogador": nome,
+                "status": status,
+            })
+
+        def _sort_key(item):
+            col = getattr(self, "_jogadores_hist_sort_col", "posicao")
+            ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
+            ordem_status = {status_txt: idx for idx, status_txt in enumerate(CONDICOES_ELENCO + ["Ex-jogador"])}
+            if col == "posicao":
+                return (
+                    ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
+                    str(item.get("jogador", "")).casefold(),
+                    ordem_status.get(item.get("status", ""), len(ordem_status)),
+                )
+            if col == "status":
+                return (
+                    ordem_status.get(item.get("status", ""), len(ordem_status)),
+                    ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
+                    str(item.get("jogador", "")).casefold(),
+                )
+            return (
+                str(item.get("jogador", "")).casefold(),
+                ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
+                ordem_status.get(item.get("status", ""), len(ordem_status)),
+            )
+
+        jogadores_filtrados = sorted(
+            jogadores_filtrados,
+            key=_sort_key,
+            reverse=getattr(self, "_jogadores_hist_sort_reverse", False),
+        )
+
+        for i, item in enumerate(jogadores_filtrados, start=1):
             iid = self.tv_jogadores_historico.insert(
                 "",
                 "end",
-                values=(posicao, nome, status),
+                values=(item["posicao"], item["jogador"], item["status"]),
                 tags=("odd",) if i % 2 else (),
             )
-            if selecionado_cf and nome.casefold() == selecionado_cf:
+            if selecionado_cf and item["jogador"].casefold() == selecionado_cf:
                 novo_sel = iid
         if novo_sel:
             self.tv_jogadores_historico.selection_set(novo_sel)
@@ -2633,6 +2688,18 @@ class App:
     def _limpar_busca_jogadores_historico(self):
         if hasattr(self, "jogadores_hist_busca_var"):
             self.jogadores_hist_busca_var.set("")
+        if hasattr(self, "jogadores_hist_filtro_var"):
+            self.jogadores_hist_filtro_var.set("Todos")
+
+    def _toggle_ordenacao_jogadores_historico(self, coluna):
+        if coluna not in {"posicao", "jogador", "status"}:
+            return
+        if getattr(self, "_jogadores_hist_sort_col", None) == coluna:
+            self._jogadores_hist_sort_reverse = not getattr(self, "_jogadores_hist_sort_reverse", False)
+        else:
+            self._jogadores_hist_sort_col = coluna
+            self._jogadores_hist_sort_reverse = False
+        self._render_aba_jogadores_historico()
 
     def _ao_selecionar_jogador_historico(self, _event=None):
         if not hasattr(self, "tv_jogadores_historico") or not hasattr(self, "tv_detalhes_jogador_historico"):
@@ -4104,358 +4171,373 @@ class App:
         nb.pack(fill="both", expand=True)
 
         anos_ordenados = sorted(temporadas.keys())
-        indice_atual = len(anos_ordenados) - 1
+        limite_abas = 10
+        limite_temporadas_visiveis = limite_abas if len(anos_ordenados) <= limite_abas else limite_abas - 1
+        anos_visiveis = anos_ordenados[-limite_temporadas_visiveis:]
+        anos_ocultos = anos_ordenados[:-limite_temporadas_visiveis]
 
-        for ano in anos_ordenados:
+        if anos_ocultos:
+            frame_mais = ttk.Frame(nb, padding=10)
+            nb.add(frame_mais, text="Mais")
+
+            topo = ttk.Frame(frame_mais)
+            topo.pack(fill="x", pady=(0, 8))
+            ttk.Label(
+                topo,
+                text="Temporadas antigas ficam aqui para manter no máximo 10 abas visíveis.",
+            ).pack(side="left")
+
+            seletor_wrap = ttk.Frame(frame_mais)
+            seletor_wrap.pack(fill="x", pady=(0, 8))
+            ttk.Label(seletor_wrap, text="Carregar temporada:").pack(side="left")
+            temporada_antiga_var = tk.StringVar(value=str(anos_ocultos[-1]))
+            combo_temporadas_antigas = ttk.Combobox(
+                seletor_wrap,
+                textvariable=temporada_antiga_var,
+                values=list(reversed(anos_ocultos)),
+                state="readonly",
+                width=10,
+            )
+            combo_temporadas_antigas.pack(side="left", padx=(8, 8))
+
+            container_temporada_antiga = ttk.Frame(frame_mais)
+            container_temporada_antiga.pack(fill="both", expand=True)
+
+            def _render_temporada_antiga(_event=None):
+                ano_sel = temporada_antiga_var.get().strip()
+                if not ano_sel or ano_sel not in temporadas:
+                    return
+                for child in container_temporada_antiga.winfo_children():
+                    child.destroy()
+                self._montar_conteudo_temporada(container_temporada_antiga, ano_sel, temporadas[ano_sel])
+
+            combo_temporadas_antigas.bind("<<ComboboxSelected>>", _render_temporada_antiga)
+            ttk.Button(seletor_wrap, text="Carregar", command=_render_temporada_antiga).pack(side="left")
+            _render_temporada_antiga()
+
+        for idx, ano in enumerate(anos_visiveis):
             frame_ano = ttk.Frame(nb, padding=10)
             nb.add(frame_ano, text=str(ano))
-
-            jogos_ano = temporadas[ano]
-            vitorias = empates = derrotas = 0
-            gols_pro = gols_contra = 0
-            artilheiros = Counter()
-            carrascos = Counter()
-
-            rows = []
-            streak_inv = streak_sem_vitoria = 0
-            invicto_max = sem_vitoria_max = 0
-            for idx_global, jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j[1]["data"])):
-                local = jogo.get("local", "desconhecido").capitalize()
-                placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
-                competicao = jogo.get("competicao", "Competição Desconhecida")
-                data = jogo["data"]
-                adversario = jogo["adversario"]
-
-                resultado = "Empate"
-                if placar["vasco"] > placar["adversario"]:
-                    resultado = "Vitória"
-                    vitorias += 1
-                    streak_inv += 1
-                    invicto_max = max(invicto_max, streak_inv)
-                    streak_sem_vitoria = 0
-                elif placar["vasco"] < placar["adversario"]:
-                    resultado = "Derrota"
-                    derrotas += 1
-                    streak_sem_vitoria += 1
-                    sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
-                    streak_inv = 0
-                else:
-                    empates += 1
-                    streak_inv += 1
-                    invicto_max = max(invicto_max, streak_inv)
-                    streak_sem_vitoria += 1
-                    sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
-
-                gols_pro += placar.get("vasco", 0)
-                gols_contra += placar.get("adversario", 0)
-
-                for g in jogo.get("gols_vasco", []):
-                    if isinstance(g, dict):
-                        artilheiros[g["nome"]] += g["gols"]
-                for g in jogo.get("gols_adversario", []):
-                    if isinstance(g, dict):
-                        carrascos[g["nome"]] += g["gols"]
-
-                rows.append({
-                    "data": data,
-                    "local": local,
-                    "competicao": competicao,
-                    "adversario": adversario,
-                    "resultado": resultado,
-                    "tecnico": str(jogo.get("tecnico", "") or "").strip(),
-                    "raw": jogo,
-                    "idx": idx_global,
-                })
-
-            # Cards
-            jogos_disputados = len(jogos_ano)
-            saldo = gols_pro - gols_contra
-            aproveitamento = round(((vitorias * 3 + empates) / (jogos_disputados * 3)) * 100, 1) if jogos_disputados else 0.0
-            media_gols_pro = round(gols_pro / jogos_disputados, 2) if jogos_disputados else 0.0
-            media_gols_contra = round(gols_contra / jogos_disputados, 2) if jogos_disputados else 0.0
-            cards = ttk.Frame(frame_ano)
-            cards.pack(fill="x", pady=(0, 8))
-            cards.columnconfigure((0, 1, 2, 3), weight=1)
-
-            def make_card(parent, titulo, valor):
-                lf = ttk.Labelframe(parent, text=titulo, style="Card.TLabelframe")
-                ttk.Label(lf, text=str(valor), style="CardValue.TLabel").pack()
-                return lf
-
-            make_card(cards, "Jogos", len(jogos_ano)).grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Vitórias", vitorias).grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Empates", empates).grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Derrotas", derrotas).grid(row=0, column=3, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Gols Pró", gols_pro).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
-            make_card(cards, "Maior tempo sem vitórias", sem_vitoria_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
-
-            # ----- Filtro da lista de partidas da temporada
-            filtros_temporada = ttk.Frame(frame_ano)
-            filtros_temporada.pack(fill="x", pady=(0, 6))
-            ttk.Label(filtros_temporada, text="Filtrar (adversário, placar, resultado: vv/ee/dd):").pack(side="left")
-            filtro_adversario_var = tk.StringVar(value="")
-            self._temporadas_filtros_vars.append(filtro_adversario_var)
-            entry_filtro_adversario = ttk.Entry(filtros_temporada, textvariable=filtro_adversario_var, width=28)
-            entry_filtro_adversario.pack(side="left", padx=(6, 6))
-            self._forcar_cursor_visivel(entry_filtro_adversario)
-
-            # ----- Tabela de partidas da temporada
-            table_wrap = ttk.Frame(frame_ano)
-            table_wrap.pack(fill="both", expand=True)
-
-            cols = ("data", "local", "competicao", "adversario", "resultado", "tecnico", "placar")
-            tv = ttk.Treeview(table_wrap, columns=cols, show="headings",
-                              height=min(16, max(8, len(rows))))
-            # larguras para caber placar estendido
-            for c, w in zip(cols, (90, 80, 190, 170, 110, 160, 250)):
-                tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
-                tv.column(c, anchor="w", width=w, stretch=True)
-
-            sy = ttk.Scrollbar(table_wrap, orient="vertical", command=tv.yview)
-            tv.configure(yscrollcommand=sy.set)
-            tv.pack(side="left", fill="both", expand=True)
-            sy.pack(side="right", fill="y")
-
-            tv.tag_configure("odd", background=self.colors["row_alt_bg"])
-
-            tooltip_map = {}
-            obs_map = {}
-            item_to_idx = {}
-            sort_state = {"col": "data", "reverse": False}
-
-            # Tooltip nos gols (mouse hover)
-            self._bind_treeview_tooltips(tv, tooltip_map)
-            tv._item_to_idx = item_to_idx
-            tv.bind("<Double-1>", self._on_tree_double_click)
-            tv.bind("<Button-3>", self._abrir_menu_contexto_temporadas)
-            tv.bind("<Control-Button-1>", self._abrir_menu_contexto_temporadas)
-
-            # ----- Área de Observações (aparece só se houver texto) -----
-            obs_frame = ttk.Frame(frame_ano)
-
-            # header com título à esquerda e botão X à direita
-            obs_header = ttk.Frame(obs_frame)
-            obs_title = ttk.Label(obs_header, text="Observações:", font=("Segoe UI", 11, "bold"))
-            obs_title.pack(side="left", pady=(8, 2))
-
-            # botão fechar (✕) no canto direito
-            btn_close = ttk.Button(
-                obs_header,
-                text="✕",
-                width=3,
-                command=lambda f=obs_frame: f.pack_forget()  # captura este obs_frame
-            )
-            btn_close.pack(side="right")
-            # (não empacotar obs_frame ainda — só quando houver texto)
-            obs_label = ttk.Label(obs_frame, text="", wraplength=980, justify="left")
-            
-            def _upd_wrap(_e=None, lbl=None, container=None):
-                if lbl and container and container.winfo_width() > 40:
-                    lbl.configure(wraplength=container.winfo_width() - 40)
-
-            frame_ano.bind("<Configure>", lambda e, lbl=obs_label, container=frame_ano: _upd_wrap(e, lbl, container))
-
-            def on_select_factory(tv_ref, obs_frame_ref, obs_header_ref, obs_label_ref, obs_map_ref):
-                def on_select(_):
-                    sel = tv_ref.selection()
-                    if not sel:
-                        obs_frame_ref.pack_forget()
-                        return
-
-                    iid = sel[0]
-                    txt = obs_map_ref.get(iid, "").strip()
-
-                    if txt:
-                        # monta só quando necessário (evita piscada)
-                        if not obs_frame_ref.winfo_ismapped():
-                            obs_frame_ref.pack(fill="x", padx=2, pady=(6, 0))
-                            obs_header_ref.pack(fill="x")
-                            obs_label_ref.pack(anchor="w", pady=(0, 6))
-                        obs_label_ref.configure(text=txt)
-                    else:
-                        obs_frame_ref.pack_forget()
-                return on_select
-
-            # bind usando factory para não “colar” no último tv do loop
-            tv.bind("<<TreeviewSelect>>",
-                    on_select_factory(tv, obs_frame, obs_header, obs_label, obs_map))
-
-            def _render_rows_temporada(
-                rows_base,
-                termo_busca="",
-                tv_ref=tv,
-                tooltip_map_ref=tooltip_map,
-                obs_map_ref=obs_map,
-                item_to_idx_ref=item_to_idx,
-                obs_frame_ref=obs_frame,
-                sort_state_ref=sort_state,
-            ):
-                termo_txt = str(termo_busca or "").strip()
-                termo_cf = termo_txt.casefold()
-                termo_norm = _chave_nome_jogador(termo_txt)
-                resultado_por_termo = None
-                if termo_cf == "vv":
-                    resultado_por_termo = "vitoria"
-                elif termo_cf == "ee":
-                    resultado_por_termo = "empate"
-                elif termo_cf == "dd":
-                    resultado_por_termo = "derrota"
-                score_match = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", termo_txt, flags=re.IGNORECASE)
-                tv_ref.delete(*tv_ref.get_children())
-                tooltip_map_ref.clear()
-                obs_map_ref.clear()
-                item_to_idx_ref.clear()
-                obs_frame_ref.pack_forget()
-
-                linhas = rows_base
-                if termo_cf:
-                    if score_match:
-                        vasco_q = int(score_match.group(1))
-                        adv_q = int(score_match.group(2))
-                        linhas = []
-                        for r in rows_base:
-                            placar = (r.get("raw") or {}).get("placar", {})
-                            try:
-                                v = int(placar.get("vasco", -999))
-                                a = int(placar.get("adversario", -999))
-                            except Exception:
-                                continue
-                            if v == vasco_q and a == adv_q:
-                                linhas.append(r)
-                    else:
-                        linhas = [
-                            r for r in rows_base
-                            if (
-                                termo_cf in str(r.get("adversario", "")).casefold()
-                                or termo_norm in _chave_nome_jogador(r.get("adversario", ""))
-                                or termo_cf in str(r.get("competicao", "")).casefold()
-                                or termo_norm in _chave_nome_jogador(r.get("competicao", ""))
-                                or termo_cf in str(r.get("tecnico", "")).casefold()
-                                or termo_norm in _chave_nome_jogador(r.get("tecnico", ""))
-                                or (
-                                    resultado_por_termo is not None
-                                    and resultado_por_termo == _chave_nome_jogador(r.get("resultado", ""))
-                                )
-                            )
-                        ]
-
-                def _sort_key(r):
-                    col = sort_state_ref["col"]
-                    jogo_raw = r.get("raw", {})
-                    if col == "data":
-                        return _parse_data_ptbr_safe(str(r.get("data", ""))) or datetime.min
-                    if col == "local":
-                        return str(r.get("local", "")).casefold()
-                    if col == "competicao":
-                        return str(r.get("competicao", "")).casefold()
-                    if col == "adversario":
-                        return _chave_nome_jogador(r.get("adversario", ""))
-                    if col == "resultado":
-                        ordem_resultado = {"vitoria": 0, "empate": 1, "derrota": 2}
-                        return ordem_resultado.get(_chave_nome_jogador(r.get("resultado", "")), 99)
-                    if col == "tecnico":
-                        return _chave_nome_jogador(r.get("tecnico", ""))
-                    if col == "placar":
-                        placar = jogo_raw.get("placar", {})
-                        try:
-                            v = int(placar.get("vasco", -1))
-                            a = int(placar.get("adversario", -1))
-                        except Exception:
-                            v, a = -1, -1
-                        # ordena por gols do Vasco, depois do adversário
-                        return (v, a)
-                    return str(r.get(col, "")).casefold()
-
-                linhas = sorted(linhas, key=_sort_key, reverse=sort_state_ref["reverse"])
-
-                for i, r in enumerate(linhas, start=1):
-                    jogo_raw = r["raw"]
-                    placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
-                    vasco_g = placar.get("vasco", 0)
-                    adv_g = placar.get("adversario", 0)
-                    adversario = jogo_raw.get("adversario", "Adversário")
-                    local_raw = jogo_raw.get("local", "casa")
-                    local_disp = local_raw.capitalize()
-
-                    if local_raw == "casa":
-                        placar_fmt = f"Vasco {vasco_g} x {adv_g} {adversario}"
-                    else:
-                        placar_fmt = f"{adversario} {adv_g} x {vasco_g} Vasco"
-
-                    resultado_txt = str(r.get("resultado", "") or "")
-                    resultado_norm = _chave_nome_jogador(resultado_txt)
-                    bolinha = ""
-                    if resultado_norm == "vitoria":
-                        bolinha = "🟢"
-                    elif resultado_norm == "empate":
-                        bolinha = "🟡"
-                    elif resultado_norm == "derrota":
-                        bolinha = "🔴"
-                    resultado_disp = f"{bolinha} {resultado_txt}".strip()
-
-                    iid = tv_ref.insert(
-                        "", "end",
-                        values=(
-                            r["data"],
-                            local_disp,
-                            r["competicao"],
-                            adversario,
-                            resultado_disp,
-                            r.get("tecnico", ""),
-                            placar_fmt,
-                        ),
-                        tags=("odd" if i % 2 else "",),
-                    )
-                    tooltip_map_ref[iid] = self._tooltip_gols_text(jogo_raw)
-                    obs_map_ref[iid] = jogo_raw.get("observacao", "").strip()
-                    item_to_idx_ref[iid] = r["idx"]
-
-            def _limpar_filtro_temporada():
-                for filtro_var in getattr(self, "_temporadas_filtros_vars", []):
-                    filtro_var.set("")
-
-            def _toggle_sort_temporada(
-                coluna,
-                sort_state_ref=sort_state,
-                rows_ref=rows,
-                filtro_var=filtro_adversario_var,
-                render_fn=_render_rows_temporada,
-            ):
-                if sort_state_ref["col"] == coluna:
-                    sort_state_ref["reverse"] = not sort_state_ref["reverse"]
-                else:
-                    sort_state_ref["col"] = coluna
-                    sort_state_ref["reverse"] = False
-                render_fn(rows_ref, filtro_var.get())
-
-            ttk.Button(filtros_temporada, text="Limpar", command=_limpar_filtro_temporada).pack(side="left")
-            filtro_adversario_var.trace_add(
-                "write",
-                lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get())
-            )
-            for c in cols:
-                if c == "tecnico":
-                    titulo = "Técnico"
-                elif c == "resultado":
-                    titulo = "Resultado"
-                else:
-                    titulo = c.capitalize() if c != "placar" else "Placar"
-                tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
-            _render_rows_temporada(rows, "")
-
-
+            self._montar_conteudo_temporada(frame_ano, ano, temporadas[ano])
 
         try:
             if nb.tabs():
-                nb.select(indice_atual)
+                nb.select(len(nb.tabs()) - 1)
         except tk.TclError:
             pass
+
+    def _montar_conteudo_temporada(self, frame_ano, ano, jogos_ano):
+        vitorias = empates = derrotas = 0
+        gols_pro = gols_contra = 0
+        artilheiros = Counter()
+        carrascos = Counter()
+
+        rows = []
+        streak_inv = streak_sem_vitoria = 0
+        invicto_max = sem_vitoria_max = 0
+        for idx_global, jogo in sorted(jogos_ano, key=lambda j: _parse_data_ptbr(j[1]["data"])):
+            local = jogo.get("local", "desconhecido").capitalize()
+            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+            competicao = jogo.get("competicao", "Competição Desconhecida")
+            data = jogo["data"]
+            adversario = jogo["adversario"]
+
+            resultado = "Empate"
+            if placar["vasco"] > placar["adversario"]:
+                resultado = "Vitória"
+                vitorias += 1
+                streak_inv += 1
+                invicto_max = max(invicto_max, streak_inv)
+                streak_sem_vitoria = 0
+            elif placar["vasco"] < placar["adversario"]:
+                resultado = "Derrota"
+                derrotas += 1
+                streak_sem_vitoria += 1
+                sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
+                streak_inv = 0
+            else:
+                empates += 1
+                streak_inv += 1
+                invicto_max = max(invicto_max, streak_inv)
+                streak_sem_vitoria += 1
+                sem_vitoria_max = max(sem_vitoria_max, streak_sem_vitoria)
+
+            gols_pro += placar.get("vasco", 0)
+            gols_contra += placar.get("adversario", 0)
+
+            for g in jogo.get("gols_vasco", []):
+                if isinstance(g, dict):
+                    artilheiros[g["nome"]] += g["gols"]
+            for g in jogo.get("gols_adversario", []):
+                if isinstance(g, dict):
+                    carrascos[g["nome"]] += g["gols"]
+
+            rows.append({
+                "data": data,
+                "local": local,
+                "competicao": competicao,
+                "adversario": adversario,
+                "resultado": resultado,
+                "tecnico": str(jogo.get("tecnico", "") or "").strip(),
+                "raw": jogo,
+                "idx": idx_global,
+            })
+
+        jogos_disputados = len(jogos_ano)
+        saldo = gols_pro - gols_contra
+        aproveitamento = round(((vitorias * 3 + empates) / (jogos_disputados * 3)) * 100, 1) if jogos_disputados else 0.0
+        media_gols_pro = round(gols_pro / jogos_disputados, 2) if jogos_disputados else 0.0
+        media_gols_contra = round(gols_contra / jogos_disputados, 2) if jogos_disputados else 0.0
+        cards = ttk.Frame(frame_ano)
+        cards.pack(fill="x", pady=(0, 8))
+        cards.columnconfigure((0, 1, 2, 3), weight=1)
+
+        def make_card(parent, titulo, valor):
+            lf = ttk.Labelframe(parent, text=titulo, style="Card.TLabelframe")
+            ttk.Label(lf, text=str(valor), style="CardValue.TLabel").pack()
+            return lf
+
+        make_card(cards, "Jogos", len(jogos_ano)).grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Vitórias", vitorias).grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Empates", empates).grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Derrotas", derrotas).grid(row=0, column=3, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Gols Pró", gols_pro).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
+        make_card(cards, "Maior tempo sem vitórias", sem_vitoria_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
+
+        filtros_temporada = ttk.Frame(frame_ano)
+        filtros_temporada.pack(fill="x", pady=(0, 6))
+        ttk.Label(filtros_temporada, text="Filtrar (adversário, placar, resultado: vv/ee/dd):").pack(side="left")
+        filtro_adversario_var = tk.StringVar(value="")
+        self._temporadas_filtros_vars.append(filtro_adversario_var)
+        entry_filtro_adversario = ttk.Entry(filtros_temporada, textvariable=filtro_adversario_var, width=28)
+        entry_filtro_adversario.pack(side="left", padx=(6, 6))
+        self._forcar_cursor_visivel(entry_filtro_adversario)
+
+        table_wrap = ttk.Frame(frame_ano)
+        table_wrap.pack(fill="both", expand=True)
+
+        cols = ("data", "local", "competicao", "adversario", "resultado", "tecnico", "placar")
+        tv = ttk.Treeview(table_wrap, columns=cols, show="headings", height=min(16, max(8, len(rows))))
+        for c, w in zip(cols, (90, 80, 190, 170, 110, 160, 250)):
+            tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
+            tv.column(c, anchor="w", width=w, stretch=True)
+
+        sy = ttk.Scrollbar(table_wrap, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sy.set)
+        tv.pack(side="left", fill="both", expand=True)
+        sy.pack(side="right", fill="y")
+
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+
+        tooltip_map = {}
+        obs_map = {}
+        item_to_idx = {}
+        sort_state = {"col": "data", "reverse": False}
+
+        self._bind_treeview_tooltips(tv, tooltip_map)
+        tv._item_to_idx = item_to_idx
+        tv.bind("<Double-1>", self._on_tree_double_click)
+        tv.bind("<Button-3>", self._abrir_menu_contexto_temporadas)
+        tv.bind("<Control-Button-1>", self._abrir_menu_contexto_temporadas)
+
+        obs_frame = ttk.Frame(frame_ano)
+        obs_header = ttk.Frame(obs_frame)
+        obs_title = ttk.Label(obs_header, text="Observações:", font=("Segoe UI", 11, "bold"))
+        obs_title.pack(side="left", pady=(8, 2))
+        btn_close = ttk.Button(
+            obs_header,
+            text="✕",
+            width=3,
+            command=lambda f=obs_frame: f.pack_forget()
+        )
+        btn_close.pack(side="right")
+        obs_label = ttk.Label(obs_frame, text="", wraplength=980, justify="left")
+
+        def _upd_wrap(_e=None, lbl=None, container=None):
+            if lbl and container and container.winfo_width() > 40:
+                lbl.configure(wraplength=container.winfo_width() - 40)
+
+        frame_ano.bind("<Configure>", lambda e, lbl=obs_label, container=frame_ano: _upd_wrap(e, lbl, container))
+
+        def on_select_factory(tv_ref, obs_frame_ref, obs_header_ref, obs_label_ref, obs_map_ref):
+            def on_select(_):
+                sel = tv_ref.selection()
+                if not sel:
+                    obs_frame_ref.pack_forget()
+                    return
+
+                iid = sel[0]
+                txt = obs_map_ref.get(iid, "").strip()
+
+                if txt:
+                    if not obs_frame_ref.winfo_ismapped():
+                        obs_frame_ref.pack(fill="x", padx=2, pady=(6, 0))
+                        obs_header_ref.pack(fill="x")
+                        obs_label_ref.pack(anchor="w", pady=(0, 6))
+                    obs_label_ref.configure(text=txt)
+                else:
+                    obs_frame_ref.pack_forget()
+            return on_select
+
+        tv.bind("<<TreeviewSelect>>", on_select_factory(tv, obs_frame, obs_header, obs_label, obs_map))
+
+        def _render_rows_temporada(
+            rows_base,
+            termo_busca="",
+            tv_ref=tv,
+            tooltip_map_ref=tooltip_map,
+            obs_map_ref=obs_map,
+            item_to_idx_ref=item_to_idx,
+            obs_frame_ref=obs_frame,
+            sort_state_ref=sort_state,
+        ):
+            termo_txt = str(termo_busca or "").strip()
+            termo_cf = termo_txt.casefold()
+            termo_norm = _chave_nome_jogador(termo_txt)
+            resultado_por_termo = None
+            if termo_cf == "vv":
+                resultado_por_termo = "vitoria"
+            elif termo_cf == "ee":
+                resultado_por_termo = "empate"
+            elif termo_cf == "dd":
+                resultado_por_termo = "derrota"
+            score_match = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", termo_txt, flags=re.IGNORECASE)
+            tv_ref.delete(*tv_ref.get_children())
+            tooltip_map_ref.clear()
+            obs_map_ref.clear()
+            item_to_idx_ref.clear()
+            obs_frame_ref.pack_forget()
+
+            linhas = rows_base
+            if termo_cf:
+                if score_match:
+                    vasco_q = int(score_match.group(1))
+                    adv_q = int(score_match.group(2))
+                    linhas = []
+                    for r in rows_base:
+                        placar = (r.get("raw") or {}).get("placar", {})
+                        try:
+                            v = int(placar.get("vasco", -999))
+                            a = int(placar.get("adversario", -999))
+                        except Exception:
+                            continue
+                        if v == vasco_q and a == adv_q:
+                            linhas.append(r)
+                else:
+                    linhas = [
+                        r for r in rows_base
+                        if (
+                            termo_cf in str(r.get("adversario", "")).casefold()
+                            or termo_norm in _chave_nome_jogador(r.get("adversario", ""))
+                            or termo_cf in str(r.get("competicao", "")).casefold()
+                            or termo_norm in _chave_nome_jogador(r.get("competicao", ""))
+                            or termo_cf in str(r.get("tecnico", "")).casefold()
+                            or termo_norm in _chave_nome_jogador(r.get("tecnico", ""))
+                            or (
+                                resultado_por_termo is not None
+                                and resultado_por_termo == _chave_nome_jogador(r.get("resultado", ""))
+                            )
+                        )
+                    ]
+
+            def _sort_key(r):
+                col = sort_state_ref["col"]
+                jogo_raw = r.get("raw", {})
+                if col == "data":
+                    return _parse_data_ptbr_safe(str(r.get("data", ""))) or datetime.min
+                if col == "local":
+                    return str(r.get("local", "")).casefold()
+                if col == "competicao":
+                    return str(r.get("competicao", "")).casefold()
+                if col == "adversario":
+                    return _chave_nome_jogador(r.get("adversario", ""))
+                if col == "resultado":
+                    ordem_resultado = {"vitoria": 0, "empate": 1, "derrota": 2}
+                    return ordem_resultado.get(_chave_nome_jogador(r.get("resultado", "")), 99)
+                if col == "tecnico":
+                    return _chave_nome_jogador(r.get("tecnico", ""))
+                if col == "placar":
+                    placar = jogo_raw.get("placar", {})
+                    try:
+                        v = int(placar.get("vasco", -1))
+                        a = int(placar.get("adversario", -1))
+                    except Exception:
+                        v, a = -1, -1
+                    return (v, a)
+                return str(r.get(col, "")).casefold()
+
+            linhas = sorted(linhas, key=_sort_key, reverse=sort_state_ref["reverse"])
+
+            for i, r in enumerate(linhas, start=1):
+                jogo_raw = r["raw"]
+                placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
+                vasco_g = placar.get("vasco", 0)
+                adv_g = placar.get("adversario", 0)
+                adversario = jogo_raw.get("adversario", "Adversário")
+                local_raw = jogo_raw.get("local", "casa")
+                local_disp = local_raw.capitalize()
+
+                if local_raw == "casa":
+                    placar_fmt = f"Vasco {vasco_g} x {adv_g} {adversario}"
+                else:
+                    placar_fmt = f"{adversario} {adv_g} x {vasco_g} Vasco"
+
+                iid = tv_ref.insert(
+                    "",
+                    "end",
+                    values=(
+                        r["data"],
+                        local_disp,
+                        r["competicao"],
+                        adversario,
+                        self._formatar_resultado_com_bolinha(r.get("resultado", "")),
+                        r.get("tecnico", ""),
+                        placar_fmt,
+                    ),
+                    tags=("odd" if i % 2 else "",),
+                )
+                tooltip_map_ref[iid] = self._tooltip_gols_text(jogo_raw)
+                obs_map_ref[iid] = jogo_raw.get("observacao", "").strip()
+                item_to_idx_ref[iid] = r["idx"]
+
+        def _limpar_filtro_temporada():
+            for filtro_var in getattr(self, "_temporadas_filtros_vars", []):
+                filtro_var.set("")
+
+        def _toggle_sort_temporada(
+            coluna,
+            sort_state_ref=sort_state,
+            rows_ref=rows,
+            filtro_var=filtro_adversario_var,
+            render_fn=_render_rows_temporada,
+        ):
+            if sort_state_ref["col"] == coluna:
+                sort_state_ref["reverse"] = not sort_state_ref["reverse"]
+            else:
+                sort_state_ref["col"] = coluna
+                sort_state_ref["reverse"] = False
+            render_fn(rows_ref, filtro_var.get())
+
+        ttk.Button(filtros_temporada, text="Limpar", command=_limpar_filtro_temporada).pack(side="left")
+        filtro_adversario_var.trace_add(
+            "write",
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get())
+        )
+        for c in cols:
+            if c == "tecnico":
+                titulo = "Técnico"
+            elif c == "resultado":
+                titulo = "Resultado"
+            else:
+                titulo = c.capitalize() if c != "placar" else "Placar"
+            tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
+        _render_rows_temporada(rows, "")
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):
