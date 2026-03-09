@@ -5753,13 +5753,61 @@ class App:
         nb_root.add(frame_geral, text="Geral")
         self._render_graficos_para_dataset(frame_geral, jogos, is_geral=True)
 
-        for ano in sorted(temporadas.keys()):
+        anos_ordenados = sorted(temporadas.keys())
+        limite_abas = 10
+        limite_temporadas_visiveis = max(1, limite_abas - 1) if len(anos_ordenados) <= (limite_abas - 1) else max(1, limite_abas - 2)
+        anos_visiveis = anos_ordenados[-limite_temporadas_visiveis:]
+        anos_ocultos = anos_ordenados[:-limite_temporadas_visiveis]
+
+        if anos_ocultos:
+            frame_mais = ttk.Frame(nb_root, padding=6)
+            nb_root.add(frame_mais, text="Mais")
+
+            topo = ttk.Frame(frame_mais)
+            topo.pack(fill="x", pady=(0, 8))
+            ttk.Label(
+                topo,
+                text="Temporadas antigas ficam aqui para manter no máximo 10 abas visíveis.",
+            ).pack(side="left")
+
+            seletor_wrap = ttk.Frame(frame_mais)
+            seletor_wrap.pack(fill="x", pady=(0, 8))
+            ttk.Label(seletor_wrap, text="Carregar temporada:").pack(side="left")
+            evolucao_antiga_var = tk.StringVar(value=str(anos_ocultos[-1]))
+            combo_evolucao_antiga = ttk.Combobox(
+                seletor_wrap,
+                textvariable=evolucao_antiga_var,
+                values=list(reversed(anos_ocultos)),
+                state="readonly",
+                width=10,
+            )
+            combo_evolucao_antiga.pack(side="left", padx=(8, 8))
+
+            container_evolucao_antiga = ttk.Frame(frame_mais)
+            container_evolucao_antiga.pack(fill="both", expand=True)
+
+            def _render_evolucao_antiga(_event=None):
+                ano_sel = evolucao_antiga_var.get().strip()
+                if not ano_sel:
+                    return
+                try:
+                    ano_int = int(ano_sel)
+                except Exception:
+                    return
+                if ano_int not in temporadas:
+                    return
+                for child in container_evolucao_antiga.winfo_children():
+                    child.destroy()
+                self._montar_aba_evolucao_ano(container_evolucao_antiga, temporadas, ano_int)
+
+            combo_evolucao_antiga.bind("<<ComboboxSelected>>", _render_evolucao_antiga)
+            ttk.Button(seletor_wrap, text="Carregar", command=_render_evolucao_antiga).pack(side="left")
+            _render_evolucao_antiga()
+
+        for ano in anos_visiveis:
             frame_ano = ttk.Frame(nb_root, padding=6)
             nb_root.add(frame_ano, text=str(ano))
-            prev = temporadas.get(ano - 1)
-            prev_label = str(ano - 1) if prev else None
-            self._render_graficos_para_dataset(frame_ano, temporadas[ano], is_geral=False,
-                                               prev_jogos=prev, prev_label=prev_label)
+            self._montar_aba_evolucao_ano(frame_ano, temporadas, ano)
 
         ttk.Button(self.frame_graficos, text="Recarregar Gráficos", command=self._carregar_graficos).pack(pady=8)
 
@@ -5778,6 +5826,17 @@ class App:
                 pass
 
         notebook.bind("<<NotebookTabChanged>>", on_change)
+
+    def _montar_aba_evolucao_ano(self, container, temporadas, ano):
+        prev = temporadas.get(ano - 1)
+        prev_label = str(ano - 1) if prev else None
+        self._render_graficos_para_dataset(
+            container,
+            temporadas[ano],
+            is_geral=False,
+            prev_jogos=prev,
+            prev_label=prev_label,
+        )
 
     def _render_graficos_para_dataset(self, container, jogos, is_geral=False, prev_jogos=None, prev_label=None):
         if not jogos:
