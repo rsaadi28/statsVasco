@@ -4038,15 +4038,29 @@ class App:
         iid = tree.identify_row(event.y)
         if not iid:
             return
-        tree.selection_set(iid)
         tree.focus(iid)
 
+        selecao_atual = tree.selection()
+        if iid not in selecao_atual:
+            tree.selection_set(iid)
+            selecao_atual = (iid,)
+
         mapping = getattr(tree, "_item_to_idx", {})
-        jogo_idx = mapping.get(iid)
-        if jogo_idx is None:
-            return
         jogos = carregar_dados_jogos()
-        if not (0 <= jogo_idx < len(jogos)):
+
+        jogos_selecionados = []
+        for selected_iid in selecao_atual:
+            jogo_idx_sel = mapping.get(selected_iid)
+            if jogo_idx_sel is None:
+                continue
+            if 0 <= jogo_idx_sel < len(jogos):
+                jogos_selecionados.append(jogos[jogo_idx_sel])
+
+        if not jogos_selecionados:
+            return
+
+        jogo_idx = mapping.get(iid)
+        if jogo_idx is None or not (0 <= jogo_idx < len(jogos)):
             return
         jogo = jogos[jogo_idx]
 
@@ -4068,9 +4082,8 @@ class App:
         submenu_copiar.add_separator()
         submenu_copiar.add_command(
             label="ID do confronto no banco",
-            command=lambda item=jogo: self._copiar_campo_banco_temporadas(
-                item.get("db_match_id"),
-                "ID do confronto",
+            command=lambda itens=jogos_selecionados: self._copiar_ids_confrontos_temporadas(
+                itens
             ),
         )
         submenu_copiar.add_command(
@@ -4121,6 +4134,20 @@ class App:
             messagebox.showwarning("Copiar", f"{descricao} não disponível para esta partida.")
             return
         self._copiar_texto_temporadas(str(valor))
+
+    def _copiar_ids_confrontos_temporadas(self, jogos):
+        ids = []
+        for jogo in jogos:
+            valor = jogo.get("db_match_id")
+            if valor in (None, ""):
+                continue
+            ids.append(str(valor))
+
+        if not ids:
+            messagebox.showwarning("Copiar", "ID do confronto não disponível para as partidas selecionadas.")
+            return
+
+        self._copiar_texto_temporadas(",".join(ids) + ",")
 
     def _excluir_jogo_por_indice(self, jogo_idx):
         jogos = carregar_dados_jogos()
@@ -4481,7 +4508,13 @@ class App:
         table_wrap.pack(fill="both", expand=True)
 
         cols = ("data", "local", "competicao", "adversario", "resultado", "tecnico", "placar")
-        tv = ttk.Treeview(table_wrap, columns=cols, show="headings", height=min(16, max(8, len(rows))))
+        tv = ttk.Treeview(
+            table_wrap,
+            columns=cols,
+            show="headings",
+            height=min(16, max(8, len(rows))),
+            selectmode="extended",
+        )
         for c, w in zip(cols, (90, 80, 190, 170, 110, 160, 250)):
             tv.heading(c, text=c.capitalize() if c != "placar" else "Placar")
             tv.column(c, anchor="w", width=w, stretch=True)
