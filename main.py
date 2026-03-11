@@ -492,6 +492,164 @@ def _parse_data_ptbr_safe(s: str):
         return None
 
 
+def _normalizar_nome_tecnico(nome: str) -> str:
+    tecnico = str(nome or "").strip()
+    return tecnico or "(Sem Técnico)"
+
+
+def _criar_stats_tecnico():
+    return {
+        "jogos": 0,
+        "casa": 0,
+        "fora": 0,
+        "vitorias": 0,
+        "empates": 0,
+        "derrotas": 0,
+        "gols_pro": 0,
+        "gols_contra": 0,
+        "artilheiros": Counter(),
+    }
+
+
+def _acumular_stats_tecnico(info: dict, jogo: dict):
+    info["jogos"] += 1
+    local = jogo.get("local", "casa")
+    if local == "fora":
+        info["fora"] += 1
+    else:
+        info["casa"] += 1
+
+    placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    info["gols_pro"] += gols_vasco
+    info["gols_contra"] += gols_adv
+
+    for g in jogo.get("gols_vasco", []):
+        if isinstance(g, dict):
+            nome = str(g.get("nome", "Desconhecido")).strip() or "Desconhecido"
+            info["artilheiros"][nome] += int(g.get("gols", 0) or 0)
+        elif isinstance(g, str):
+            nome = g.strip()
+            if nome:
+                info["artilheiros"][nome] += 1
+
+    if gols_vasco > gols_adv:
+        info["vitorias"] += 1
+    elif gols_vasco < gols_adv:
+        info["derrotas"] += 1
+    else:
+        info["empates"] += 1
+
+
+def _texto_artilheiro_counter(artilheiros: Counter) -> str:
+    top = artilheiros.most_common(1)
+    if not top:
+        return "—"
+    nome, gols = top[0]
+    return f"{nome} ({gols})"
+
+
+def _calcular_aproveitamento_stats(info: dict) -> float:
+    jogos = int(info.get("jogos", 0) or 0)
+    if jogos <= 0:
+        return 0.0
+    pontos = int(info.get("vitorias", 0) or 0) * 3 + int(info.get("empates", 0) or 0)
+    return round((pontos / (jogos * 3)) * 100, 1)
+
+
+def _ordenar_jogos_por_data(jogos):
+    return sorted(
+        jogos,
+        key=lambda j: (
+            _parse_data_ptbr_safe(str(j.get("data", "")).strip()) or datetime.min,
+            str(j.get("adversario", "")).casefold(),
+        ),
+    )
+
+
+def _resumo_partida_tecnico(jogo: dict) -> str:
+    adversario = str(jogo.get("adversario", "Adversário não informado")).strip() or "Adversário não informado"
+    placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    competicao = str(jogo.get("competicao", "")).strip()
+    resumo = f"Vasco {gols_vasco} x {gols_adv} {adversario}"
+    if competicao:
+        resumo = f"{resumo} | {competicao}"
+    return resumo
+
+
+def _resultado_jogo_tecnico(jogo: dict) -> str:
+    placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    if gols_vasco > gols_adv:
+        return "Vitória"
+    if gols_vasco < gols_adv:
+        return "Derrota"
+    return "Empate"
+
+
+def _placar_jogo_tecnico(jogo: dict) -> str:
+    placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    return f"Vasco {gols_vasco} x {gols_adv} {str(jogo.get('adversario', '')).strip() or 'Adversário não informado'}"
+
+
+def _gerar_passagens_tecnico(jogos, tecnico_nome: str):
+    jogos_ordenados = _ordenar_jogos_por_data(jogos)
+    tecnico_alvo = _normalizar_nome_tecnico(tecnico_nome)
+    passagens = []
+    passagem_atual = None
+
+    for jogo in jogos_ordenados:
+        tecnico_jogo = _normalizar_nome_tecnico(jogo.get("tecnico"))
+        if tecnico_jogo != tecnico_alvo:
+            passagem_atual = None
+            continue
+
+        if passagem_atual is None:
+            passagem_atual = {
+                "tecnico": tecnico_alvo,
+                "jogos_lista": [],
+                "stats": _criar_stats_tecnico(),
+            }
+            passagens.append(passagem_atual)
+
+        passagem_atual["jogos_lista"].append(jogo)
+        _acumular_stats_tecnico(passagem_atual["stats"], jogo)
+
+    rows = []
+    for idx, passagem in enumerate(passagens, start=1):
+        jogos_passagem = passagem["jogos_lista"]
+        inicio = jogos_passagem[0]
+        fim = jogos_passagem[-1]
+        info = passagem["stats"]
+        rows.append({
+            "passagem": idx,
+            "periodo": f"{str(inicio.get('data', '—')).strip() or '—'} a {str(fim.get('data', '—')).strip() or '—'}",
+            "inicio_data": str(inicio.get("data", "—")).strip() or "—",
+            "primeiro_jogo": _resumo_partida_tecnico(inicio),
+            "fim_data": str(fim.get("data", "—")).strip() or "—",
+            "ultimo_jogo": _resumo_partida_tecnico(fim),
+            "jogos_lista": jogos_passagem,
+            "jogos": info["jogos"],
+            "casa": info["casa"],
+            "fora": info["fora"],
+            "vitorias": info["vitorias"],
+            "empates": info["empates"],
+            "derrotas": info["derrotas"],
+            "gols_pro": info["gols_pro"],
+            "gols_contra": info["gols_contra"],
+            "saldo": info["gols_pro"] - info["gols_contra"],
+            "aproveitamento": _calcular_aproveitamento_stats(info),
+            "artilheiro": _texto_artilheiro_counter(info["artilheiros"]),
+        })
+    return rows
+
+
 def _extrair_adversario_de_jogo(jogo_txt: str) -> str:
     if not jogo_txt:
         return ""
@@ -5139,53 +5297,19 @@ class App:
         self._limpar_tecnicos_cell_overlays()
 
         jogos = carregar_dados_jogos()
+        self._tecnicos_jogos = list(jogos)
 
-        stats = defaultdict(lambda: {
-            "jogos": 0,
-            "casa": 0,
-            "fora": 0,
-            "vitorias": 0,
-            "empates": 0,
-            "derrotas": 0,
-            "gols_pro": 0,
-            "gols_contra": 0,
-            "artilheiros": Counter(),
-        })
+        stats = defaultdict(_criar_stats_tecnico)
 
         for tecnico in self.listas.get("tecnicos", []):
-            nome = str(tecnico or "").strip()
+            nome = _normalizar_nome_tecnico(tecnico)
             if nome:
                 _ = stats[nome]
 
         for jogo in jogos:
-            tecnico = jogo.get("tecnico") or "(Sem Técnico)"
+            tecnico = _normalizar_nome_tecnico(jogo.get("tecnico"))
             info = stats[tecnico]
-            info["jogos"] += 1
-            local = jogo.get("local", "casa")
-            if local == "fora":
-                info["fora"] += 1
-            else:
-                info["casa"] += 1
-
-            placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
-            gols_vasco = placar.get("vasco", 0)
-            gols_adv = placar.get("adversario", 0)
-            info["gols_pro"] += gols_vasco
-            info["gols_contra"] += gols_adv
-
-            for g in jogo.get("gols_vasco", []):
-                if isinstance(g, dict):
-                    nome = g.get("nome", "Desconhecido")
-                    info["artilheiros"][nome] += int(g.get("gols", 0))
-                elif isinstance(g, str):
-                    info["artilheiros"][g] += 1
-
-            if gols_vasco > gols_adv:
-                info["vitorias"] += 1
-            elif gols_vasco < gols_adv:
-                info["derrotas"] += 1
-            else:
-                info["empates"] += 1
+            _acumular_stats_tecnico(info, jogo)
 
         if not stats:
             ttk.Label(self.frame_tecnicos, text="Nenhum técnico cadastrado.").pack(anchor="w")
@@ -5193,8 +5317,17 @@ class App:
 
         container = ttk.Frame(self.frame_tecnicos)
         container.pack(fill="both", expand=True)
-        cols = ("tecnico", "jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo", "artilheiro")
-        tv = ttk.Treeview(container, columns=cols, show="headings", height=min(18, max(6, len(stats))))
+        resumo = ttk.Label(
+            container,
+            text="Dê dois cliques no nome de um técnico para abrir as passagens separadas por sequências contínuas de jogos.",
+            foreground=self.colors["tree_head_fg"],
+        )
+        resumo.pack(anchor="w", pady=(0, 8))
+
+        tabela_wrap = ttk.Frame(container)
+        tabela_wrap.pack(fill="both", expand=True)
+        cols = ("tecnico", "jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo", "aproveitamento", "artilheiro")
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=min(18, max(6, len(stats))))
         headings = {
             "tecnico": "Técnico",
             "jogos": "Jogos",
@@ -5206,6 +5339,7 @@ class App:
             "gols_pro": "Gols Pró",
             "gols_contra": "Gols Contra",
             "saldo": "Saldo",
+            "aproveitamento": "Aproveitamento",
             "artilheiro": "Maior Goleador",
         }
         widths = {
@@ -5219,6 +5353,7 @@ class App:
             "gols_pro": 90,
             "gols_contra": 100,
             "saldo": 70,
+            "aproveitamento": 110,
             "artilheiro": 180,
         }
         for col in cols:
@@ -5229,7 +5364,7 @@ class App:
             tv.yview(*args)
             self._agendar_repintura_tecnicos()
 
-        sy = ttk.Scrollbar(container, orient="vertical", command=_on_tecnicos_scroll)
+        sy = ttk.Scrollbar(tabela_wrap, orient="vertical", command=_on_tecnicos_scroll)
         tv.configure(yscrollcommand=lambda first, last: (sy.set(first, last), self._agendar_repintura_tecnicos()))
         tv.pack(side="left", fill="both", expand=True)
         sy.pack(side="right", fill="y")
@@ -5242,19 +5377,17 @@ class App:
             "derrotas": {"bg": "#ffd9d6", "fg": "#8a1c16"},
             "gols_pro": {"bg": "#c9f7d2", "fg": "#0f5132"},
             "gols_contra": {"bg": "#ffcfcf", "fg": "#7f1d1d"},
+            "aproveitamento": {"bg": "#dbeafe", "fg": "#1d4ed8"},
         }
         self._tv_tecnicos = tv
         self._tecnicos_cell_overlays = []
         self._tecnicos_overlay_after = None
         tv.bind("<Configure>", lambda _e: self._agendar_repintura_tecnicos())
+        tv.bind("<Double-1>", self._abrir_modal_tecnico_evento)
         self._tecnicos_rows = []
+        self._tecnicos_iid_para_nome = {}
         for tecnico, info in stats.items():
             saldo = info["gols_pro"] - info["gols_contra"]
-            top = info["artilheiros"].most_common(1)
-            artilheiro_txt = "—"
-            if top:
-                nome, gols = top[0]
-                artilheiro_txt = f"{nome} ({gols})"
             self._tecnicos_rows.append({
                 "tecnico": tecnico,
                 "jogos": info["jogos"],
@@ -5266,7 +5399,8 @@ class App:
                 "gols_pro": info["gols_pro"],
                 "gols_contra": info["gols_contra"],
                 "saldo": saldo,
-                "artilheiro": artilheiro_txt,
+                "aproveitamento": _calcular_aproveitamento_stats(info),
+                "artilheiro": _texto_artilheiro_counter(info["artilheiros"]),
             })
 
         self._tecnicos_sort_col = "jogos"
@@ -5336,6 +5470,8 @@ class App:
     def _chave_ordenacao_tecnicos(self, row, coluna):
         if coluna in {"jogos", "casa", "fora", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo"}:
             return int(row.get(coluna, 0))
+        if coluna == "aproveitamento":
+            return float(row.get(coluna, 0.0))
         return str(row.get(coluna, "")).casefold()
 
     def _render_tecnicos_ordenado(self):
@@ -5345,17 +5481,19 @@ class App:
         self._limpar_tecnicos_cell_overlays()
         for iid in tv.get_children():
             tv.delete(iid)
+        self._tecnicos_iid_para_nome = {}
         rows = sorted(
             self._tecnicos_rows,
             key=lambda r: (self._chave_ordenacao_tecnicos(r, self._tecnicos_sort_col), str(r.get("tecnico", "")).casefold()),
             reverse=self._tecnicos_sort_reverse
         )
         tecnico_destacado = self._obter_tecnico_destacado()
+        iid_selecionado = None
         for i, row in enumerate(rows, start=1):
             tags = ["odd"] if i % 2 else []
             if str(row.get("tecnico", "")).strip().casefold() == tecnico_destacado.casefold():
                 tags.append("tecnico_atual")
-            tv.insert(
+            iid = tv.insert(
                 "",
                 "end",
                 values=(
@@ -5369,11 +5507,21 @@ class App:
                     row["gols_pro"],
                     row["gols_contra"],
                     row["saldo"],
+                    f"{float(row['aproveitamento']):.1f}%",
                     row["artilheiro"],
                 ),
                 tags=tuple(tags)
             )
+            self._tecnicos_iid_para_nome[iid] = row["tecnico"]
+            if iid_selecionado is None and str(row.get("tecnico", "")).strip().casefold() == tecnico_destacado.casefold():
+                iid_selecionado = iid
         self._agendar_repintura_tecnicos()
+        if iid_selecionado is None:
+            filhos = tv.get_children()
+            iid_selecionado = filhos[0] if filhos else None
+        if iid_selecionado:
+            tv.selection_set(iid_selecionado)
+            tv.focus(iid_selecionado)
 
     def _ordenar_coluna_tecnicos(self, coluna):
         if not getattr(self, "_tecnicos_rows", None):
@@ -5384,6 +5532,208 @@ class App:
             self._tecnicos_sort_col = coluna
             self._tecnicos_sort_reverse = False
         self._render_tecnicos_ordenado()
+
+    def _abrir_modal_tecnico_evento(self, _event=None):
+        tv = getattr(self, "_tv_tecnicos", None)
+        if not tv:
+            return
+        selecionados = tv.selection()
+        if not selecionados:
+            foco = tv.focus()
+            if foco:
+                selecionados = (foco,)
+        if not selecionados:
+            return
+        tecnico = self._tecnicos_iid_para_nome.get(selecionados[0], "")
+        if tecnico:
+            self._abrir_modal_detalhes_tecnico(tecnico)
+
+    def _ao_selecionar_passagem_tecnico_modal(self, _event=None):
+        tv = getattr(self, "_modal_tecnico_passagens_resumo", None)
+        if not tv:
+            return
+        selecionados = tv.selection()
+        if not selecionados:
+            return
+        row = self._modal_tecnico_passagens_iid_map.get(selecionados[0])
+        if row:
+            self._render_detalhe_passagem_tecnico_modal(row)
+
+    def _abrir_modal_detalhes_tecnico(self, tecnico_nome: str):
+        tecnico = _normalizar_nome_tecnico(tecnico_nome)
+        self.root.update_idletasks()
+        largura = max(900, int(self.root.winfo_width() or 0))
+        altura = max(600, int(self.root.winfo_height() or 0))
+        pos_x = int(self.root.winfo_rootx() or 0)
+        pos_y = int(self.root.winfo_rooty() or 0)
+        top = tk.Toplevel(self.root)
+        top.title(f"Passagens de {tecnico}")
+        top.transient(self.root)
+        top.grab_set()
+        top.geometry(f"{largura}x{altura}+{pos_x}+{pos_y}")
+
+        frame = ttk.Frame(top, padding=10)
+        frame.pack(fill="both", expand=True)
+        cabecalho = tk.Frame(frame, bg=self.colors["bg"], highlightthickness=0)
+        cabecalho.pack(fill="x", pady=(0, 10))
+        titulo_var = tk.StringVar(value=tecnico)
+        subtitulo_var = tk.StringVar(value="")
+        tk.Label(
+            cabecalho,
+            textvariable=titulo_var,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 18, "bold"),
+            anchor="center",
+            justify="center",
+        ).pack(fill="x")
+        tk.Label(
+            cabecalho,
+            textvariable=subtitulo_var,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 10, "bold"),
+            anchor="center",
+            justify="center",
+        ).pack(fill="x", pady=(2, 0))
+        resumo_var = tk.StringVar()
+        ttk.Label(frame, textvariable=resumo_var, justify="left", wraplength=1220).pack(anchor="w", fill="x", pady=(0, 8))
+
+        resumo_wrap = ttk.Frame(frame)
+        resumo_wrap.pack(fill="x", pady=(0, 8))
+        cols = ("passagem", "jogos", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo", "aproveitamento", "artilheiro")
+        tv = ttk.Treeview(resumo_wrap, columns=cols, show="headings", height=6)
+        headings = {
+            "passagem": "Passagem",
+            "jogos": "Jogos",
+            "vitorias": "Vitórias",
+            "empates": "Empates",
+            "derrotas": "Derrotas",
+            "gols_pro": "Gols Pró",
+            "gols_contra": "Gols Contra",
+            "saldo": "Saldo",
+            "aproveitamento": "Aproveitamento",
+            "artilheiro": "Artilheiro",
+        }
+        widths = {
+            "passagem": 100,
+            "jogos": 90,
+            "vitorias": 100,
+            "empates": 100,
+            "derrotas": 100,
+            "gols_pro": 100,
+            "gols_contra": 120,
+            "saldo": 90,
+            "aproveitamento": 120,
+            "artilheiro": 220,
+        }
+        for col in cols:
+            tv.heading(col, text=headings[col])
+            anchor = "w" if col == "artilheiro" else "center"
+            tv.column(col, width=widths[col], anchor=anchor, stretch=True)
+        sy_resumo = ttk.Scrollbar(resumo_wrap, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=sy_resumo.set)
+        tv.pack(side="left", fill="x", expand=True)
+        sy_resumo.pack(side="right", fill="y")
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.bind("<<TreeviewSelect>>", self._ao_selecionar_passagem_tecnico_modal)
+
+        tabela_wrap = ttk.Frame(frame)
+        tabela_wrap.pack(fill="both", expand=True)
+        cols_jogos = ("data", "local", "competicao", "adversario", "resultado", "placar")
+        tv_jogos = ttk.Treeview(tabela_wrap, columns=cols_jogos, show="headings", height=14)
+        larguras = {
+            "data": 90,
+            "local": 80,
+            "competicao": 190,
+            "adversario": 170,
+            "resultado": 110,
+            "placar": 250,
+        }
+        for col in cols_jogos:
+            titulo = col.capitalize() if col != "placar" else "Placar"
+            tv_jogos.heading(col, text=titulo)
+            tv_jogos.column(col, anchor="w", width=larguras[col], stretch=True)
+        sy_jogos = ttk.Scrollbar(tabela_wrap, orient="vertical", command=tv_jogos.yview)
+        sx_jogos = ttk.Scrollbar(frame, orient="horizontal", command=tv_jogos.xview)
+        tv_jogos.configure(yscrollcommand=sy_jogos.set, xscrollcommand=sx_jogos.set)
+        tv_jogos.pack(side="left", fill="both", expand=True)
+        sy_jogos.pack(side="right", fill="y")
+        sx_jogos.pack(fill="x", pady=(6, 0))
+        tv_jogos.tag_configure("odd", background=self.colors["row_alt_bg"])
+
+        self._modal_tecnico_passagens_resumo = tv
+        self._modal_tecnico_passagem_jogos = tv_jogos
+        self._modal_tecnico_passagens_iid_map = {}
+
+        passagens = _gerar_passagens_tecnico(getattr(self, "_tecnicos_jogos", []), tecnico)
+        total_jogos = sum(int(item.get("jogos", 0)) for item in passagens)
+        total_vitorias = sum(int(item.get("vitorias", 0)) for item in passagens)
+        total_empates = sum(int(item.get("empates", 0)) for item in passagens)
+        total_derrotas = sum(int(item.get("derrotas", 0)) for item in passagens)
+        subtitulo_var.set(
+            f"Jogos: {total_jogos} | Vitórias: {total_vitorias} | "
+            f"Empates: {total_empates} | Derrotas: {total_derrotas}"
+        )
+        resumo_txt = f"{tecnico} sem jogos registrados."
+        if passagens:
+            resumo_txt = (
+                f"{tecnico} teve {len(passagens)} passagem(ns) pelo Vasco, somando {total_jogos} jogo(s). "
+                "Selecione uma passagem para ver os jogos."
+            )
+        resumo_var.set(resumo_txt)
+
+        iid_selecionado = None
+        for idx, row in enumerate(passagens, start=1):
+            tags = ("odd",) if idx % 2 else ()
+            iid = tv.insert(
+                "",
+                "end",
+                values=(
+                    row["passagem"],
+                    row["jogos"],
+                    row["vitorias"],
+                    row["empates"],
+                    row["derrotas"],
+                    row["gols_pro"],
+                    row["gols_contra"],
+                    row["saldo"],
+                    f"{float(row['aproveitamento']):.1f}%",
+                    row["artilheiro"],
+                ),
+                tags=tags,
+            )
+            self._modal_tecnico_passagens_iid_map[iid] = row
+            if iid_selecionado is None:
+                iid_selecionado = iid
+
+        if iid_selecionado:
+            tv.selection_set(iid_selecionado)
+            tv.focus(iid_selecionado)
+            self._render_detalhe_passagem_tecnico_modal(self._modal_tecnico_passagens_iid_map[iid_selecionado])
+
+    def _render_detalhe_passagem_tecnico_modal(self, row: dict):
+        tv_jogos = getattr(self, "_modal_tecnico_passagem_jogos", None)
+        if not tv_jogos:
+            return
+        for iid in tv_jogos.get_children():
+            tv_jogos.delete(iid)
+
+        for idx, jogo in enumerate(row["jogos_lista"], start=1):
+            tags = ("odd",) if idx % 2 else ()
+            tv_jogos.insert(
+                "",
+                "end",
+                values=(
+                    str(jogo.get("data", "")).strip(),
+                    str(jogo.get("local", "desconhecido")).capitalize(),
+                    str(jogo.get("competicao", "Competição Desconhecida")).strip(),
+                    str(jogo.get("adversario", "")).strip(),
+                    self._formatar_resultado_com_bolinha(_resultado_jogo_tecnico(jogo)),
+                    _placar_jogo_tecnico(jogo),
+                ),
+                tags=tags,
+            )
 
     # --------------------- Títulos ---------------------
     def _carregar_titulos(self):
