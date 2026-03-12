@@ -9,6 +9,34 @@ from typing import Any
 
 DB_FILENAME = "stats_vasco.sqlite3"
 DEFAULT_TECNICO = "Fernando Diniz"
+DEFAULT_TEAM_STADIUMS = {
+    "Atlético-MG": "Arena MRV",
+    "Atlético Goianiense": "Antônio Accioly",
+    "Athletico-PR": "Ligga Arena",
+    "Bahia": "Arena Fonte Nova",
+    "Botafogo": "Nilton Santos",
+    "Bragantino": "Nabi Abi Chedid",
+    "Ceará": "Arena Castelão",
+    "Corinthians": "Neo Química Arena",
+    "Coritiba": "Couto Pereira",
+    "Cruzeiro": "Mineirão",
+    "Criciúma": "Heriberto Hülse",
+    "Cuiabá": "Arena Pantanal",
+    "Flamengo": "Maracanã",
+    "Fluminense": "Maracanã",
+    "Fortaleza": "Arena Castelão",
+    "Goiás": "Serrinha",
+    "Grêmio": "Arena do Grêmio",
+    "Internacional": "Beira-Rio",
+    "Juventude": "Alfredo Jaconi",
+    "Mirassol": "José Maria de Campos Maia",
+    "Palmeiras": "Allianz Parque",
+    "Red Bull Bragantino": "Nabi Abi Chedid",
+    "Santos": "Vila Belmiro",
+    "São Paulo": "Morumbi",
+    "Sport": "Ilha do Retiro",
+    "Vitória": "Barradão",
+}
 
 LIST_TYPES = (
     "clubes_adversarios",
@@ -16,6 +44,7 @@ LIST_TYPES = (
     "jogadores_contra",
     "competicoes",
     "tecnicos",
+    "estadios",
 )
 
 
@@ -99,6 +128,20 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             team_type TEXT NOT NULL DEFAULT 'adversario'
         );
 
+        CREATE TABLE IF NOT EXISTS stadiums (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        );
+
+        CREATE TABLE IF NOT EXISTS team_stadiums (
+            team_id INTEGER NOT NULL,
+            stadium_id INTEGER NOT NULL,
+            is_primary INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (team_id, stadium_id),
+            FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE,
+            FOREIGN KEY (stadium_id) REFERENCES stadiums (id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE
@@ -129,12 +172,17 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             player_id INTEGER PRIMARY KEY,
             position TEXT NOT NULL,
             condition TEXT NOT NULL,
+            is_captain INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS historic_players (
             player_id INTEGER PRIMARY KEY,
             position TEXT NOT NULL,
+            registered_date_text TEXT NOT NULL DEFAULT '',
+            joined_date_text TEXT NOT NULL DEFAULT '',
+            left_date_text TEXT NOT NULL DEFAULT '',
+            passages_json TEXT NOT NULL DEFAULT '[]',
             FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE
         );
 
@@ -145,9 +193,12 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             opponent_team_id INTEGER,
             competition_id INTEGER,
             location TEXT NOT NULL,
+            stadium TEXT NOT NULL DEFAULT '',
+            match_time TEXT NOT NULL DEFAULT '',
             vasco_goals INTEGER NOT NULL,
             opponent_goals INTEGER NOT NULL,
             observation TEXT NOT NULL DEFAULT '',
+            captain_name TEXT NOT NULL DEFAULT '',
             coach_id INTEGER,
             table_position INTEGER,
             lineup_json TEXT NOT NULL DEFAULT '{}',
@@ -195,10 +246,50 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_titles_year ON vasco_titles(year, id);
         """
     )
+    current_squad_cols = {row["name"] for row in conn.execute("PRAGMA table_info(current_squad)").fetchall()}
+    if "is_captain" not in current_squad_cols:
+        conn.execute("ALTER TABLE current_squad ADD COLUMN is_captain INTEGER NOT NULL DEFAULT 0")
+
+    match_cols = {row["name"] for row in conn.execute("PRAGMA table_info(matches)").fetchall()}
+    if "stadium" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN stadium TEXT NOT NULL DEFAULT ''")
+    if "match_time" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN match_time TEXT NOT NULL DEFAULT ''")
+    if "captain_name" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN captain_name TEXT NOT NULL DEFAULT ''")
+
+    historic_cols = {row["name"] for row in conn.execute("PRAGMA table_info(historic_players)").fetchall()}
+    if "registered_date_text" not in historic_cols:
+        conn.execute("ALTER TABLE historic_players ADD COLUMN registered_date_text TEXT NOT NULL DEFAULT ''")
+    if "joined_date_text" not in historic_cols:
+        conn.execute("ALTER TABLE historic_players ADD COLUMN joined_date_text TEXT NOT NULL DEFAULT ''")
+    if "left_date_text" not in historic_cols:
+        conn.execute("ALTER TABLE historic_players ADD COLUMN left_date_text TEXT NOT NULL DEFAULT ''")
+    if "passages_json" not in historic_cols:
+        conn.execute("ALTER TABLE historic_players ADD COLUMN passages_json TEXT NOT NULL DEFAULT '[]'")
+
+    team_cols = {row["name"] for row in conn.execute("PRAGMA table_info(teams)").fetchall()}
+    legacy_team_stadium_col = "stadium_name" in team_cols
+
     conn.execute(
         "INSERT OR IGNORE INTO teams(name, team_type) VALUES (?, ?)",
         ("Vasco da Gama", "vasco"),
     )
+    vasco_id = conn.execute("SELECT id FROM teams WHERE name = ?", ("Vasco da Gama",)).fetchone()
+    if vasco_id is not None:
+        _ensure_team_stadium(conn, int(vasco_id["id"]), "São Januário", is_primary=True)
+
+    for team_name, stadium_name in DEFAULT_TEAM_STADIUMS.items():
+        team_id = _ensure_team(conn, team_name, "adversario")
+        if team_id is not None and stadium_name:
+            _ensure_team_stadium(conn, team_id, stadium_name, is_primary=True)
+
+    if legacy_team_stadium_col:
+        rows = conn.execute(
+            "SELECT id, stadium_name FROM teams WHERE stadium_name IS NOT NULL AND trim(stadium_name) <> ''"
+        ).fetchall()
+        for row in rows:
+            _ensure_team_stadium(conn, int(row["id"]), str(row["stadium_name"]).strip(), is_primary=True)
 
 
 def _ensure_player(conn: sqlite3.Connection, name: str) -> int | None:
@@ -210,16 +301,101 @@ def _ensure_player(conn: sqlite3.Connection, name: str) -> int | None:
     return int(row["id"]) if row else None
 
 
-def _ensure_team(conn: sqlite3.Connection, name: str, team_type: str = "adversario") -> int | None:
+def _ensure_team(
+    conn: sqlite3.Connection,
+    name: str,
+    team_type: str = "adversario",
+) -> int | None:
     txt = str(name or "").strip()
     if not txt:
         return None
     conn.execute(
-        "INSERT OR IGNORE INTO teams(name, team_type) VALUES (?, ?)",
+        """
+        INSERT INTO teams(name, team_type) VALUES (?, ?)
+        ON CONFLICT(name) DO UPDATE SET
+            team_type = excluded.team_type
+        """,
         (txt, team_type or "adversario"),
     )
     row = conn.execute("SELECT id FROM teams WHERE name = ?", (txt,)).fetchone()
     return int(row["id"]) if row else None
+
+
+def _ensure_stadium(conn: sqlite3.Connection, name: str) -> int | None:
+    txt = str(name or "").strip()
+    if not txt:
+        return None
+    conn.execute("INSERT OR IGNORE INTO stadiums(name) VALUES (?)", (txt,))
+    row = conn.execute("SELECT id FROM stadiums WHERE name = ?", (txt,)).fetchone()
+    return int(row["id"]) if row else None
+
+
+def _ensure_team_stadium(
+    conn: sqlite3.Connection,
+    team_id: int | None,
+    stadium_name: str,
+    *,
+    is_primary: bool = False,
+) -> None:
+    if team_id is None:
+        return
+    stadium_id = _ensure_stadium(conn, stadium_name)
+    if stadium_id is None:
+        return
+    if is_primary:
+        conn.execute("UPDATE team_stadiums SET is_primary = 0 WHERE team_id = ?", (team_id,))
+    conn.execute(
+        """
+        INSERT INTO team_stadiums(team_id, stadium_id, is_primary) VALUES (?, ?, ?)
+        ON CONFLICT(team_id, stadium_id) DO UPDATE SET
+            is_primary = CASE
+                WHEN excluded.is_primary = 1 THEN 1
+                ELSE team_stadiums.is_primary
+            END
+        """,
+        (team_id, stadium_id, 1 if is_primary else 0),
+    )
+
+
+def load_team_stadium(db_path: str, team_name: str) -> str:
+    nome = str(team_name or "").strip()
+    if not nome:
+        return ""
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        row = conn.execute(
+            """
+            SELECT s.name AS stadium_name
+            FROM teams t
+            JOIN team_stadiums ts ON ts.team_id = t.id
+            JOIN stadiums s ON s.id = ts.stadium_id
+            WHERE lower(t.name) = lower(?)
+            ORDER BY ts.is_primary DESC, lower(s.name), s.name
+            LIMIT 1
+            """,
+            (nome,),
+        ).fetchone()
+    return str(row["stadium_name"] or "").strip() if row else ""
+
+
+def load_team_stadiums(db_path: str, team_name: str) -> list[str]:
+    nome = str(team_name or "").strip()
+    if not nome:
+        return []
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        rows = conn.execute(
+            """
+            SELECT s.name AS stadium_name
+            FROM teams t
+            JOIN team_stadiums ts ON ts.team_id = t.id
+            JOIN stadiums s ON s.id = ts.stadium_id
+            WHERE lower(t.name) = lower(?)
+            ORDER BY ts.is_primary DESC, lower(s.name), s.name
+            """,
+            (nome,),
+        ).fetchall()
+    return [str(row["stadium_name"]).strip() for row in rows if str(row["stadium_name"]).strip()]
 
 
 def _ensure_competition(conn: sqlite3.Connection, name: str) -> int | None:
@@ -269,7 +445,10 @@ def save_listas(db_path: str, data: dict[str, Any]) -> None:
                     (list_type, value),
                 )
                 if list_type == "clubes_adversarios":
-                    _ensure_team(conn, value, "adversario")
+                    team_id = _ensure_team(conn, value, "adversario")
+                    estadio_padrao = DEFAULT_TEAM_STADIUMS.get(value)
+                    if team_id is not None and estadio_padrao:
+                        _ensure_team_stadium(conn, team_id, estadio_padrao, is_primary=True)
                 elif list_type in ("jogadores_vasco", "jogadores_contra"):
                     _ensure_player(conn, value)
                 elif list_type == "competicoes":
@@ -315,6 +494,8 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             adversario = str(jogo.get("adversario", "")).strip()
             competicao = str(jogo.get("competicao", "")).strip()
             tecnico = str(jogo.get("tecnico", "")).strip()
+            estadio = str(jogo.get("estadio", "")).strip()
+            local = str(jogo.get("local", "")).strip() or "casa"
             placar = jogo.get("placar") if isinstance(jogo.get("placar"), dict) else {}
             try:
                 vasco_goals = int(placar.get("vasco", 0))
@@ -326,6 +507,8 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                 adv_goals = 0
 
             op_team_id = _ensure_team(conn, adversario, "adversario")
+            if local == "fora" and estadio and op_team_id is not None:
+                _ensure_team_stadium(conn, op_team_id, estadio, is_primary=False)
             comp_id = _ensure_competition(conn, competicao)
             coach_id = _ensure_coach(conn, tecnico)
 
@@ -337,18 +520,22 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                 """
                 INSERT INTO matches(
                     date_text, date_iso, opponent_team_id, competition_id, location,
-                    vasco_goals, opponent_goals, observation, coach_id, table_position, lineup_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    stadium, match_time, vasco_goals, opponent_goals, observation,
+                    captain_name, coach_id, table_position, lineup_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(jogo.get("data", "")).strip(),
                     _parse_data_iso(jogo.get("data")),
                     op_team_id,
                     comp_id,
-                    str(jogo.get("local", "")).strip() or "casa",
+                    local,
+                    estadio,
+                    str(jogo.get("horario", "")).strip(),
                     max(0, vasco_goals),
                     max(0, adv_goals),
                     str(jogo.get("observacao", "")).strip(),
+                    str(jogo.get("capitao", "")).strip(),
                     coach_id,
                     jogo.get("posicao_tabela") if isinstance(jogo.get("posicao_tabela"), int) else None,
                     json.dumps(lineup, ensure_ascii=False),
@@ -415,7 +602,8 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT m.id, m.date_text, t.name AS adversario, c.name AS competicao,
-                   m.location, m.vasco_goals, m.opponent_goals, m.observation,
+                   m.location, m.stadium, m.match_time, m.vasco_goals, m.opponent_goals, m.observation,
+                   m.captain_name,
                    ch.name AS tecnico, m.coach_id, m.table_position, m.lineup_json
             FROM matches m
             LEFT JOIN teams t ON t.id = m.opponent_team_id
@@ -472,6 +660,8 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                 "adversario": row["adversario"] or "",
                 "competicao": row["competicao"] or "",
                 "local": row["location"] or "",
+                "estadio": row["stadium"] or "",
+                "horario": row["match_time"] or "",
                 "placar": {
                     "vasco": int(row["vasco_goals"] or 0),
                     "adversario": int(row["opponent_goals"] or 0),
@@ -483,6 +673,7 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                     "adversario": g.get("anulados_adversario", []),
                 },
                 "observacao": row["observation"] or "",
+                "capitao": row["captain_name"] or "",
                 "tecnico": row["tecnico"] or "",
                 "db_match_id": mid,
                 "db_tecnico_id": int(row["coach_id"]) if row["coach_id"] is not None else None,
@@ -517,6 +708,10 @@ def save_future_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                     adversario = p1.strip()
 
             op_team_id = _ensure_team(conn, adversario, "adversario") if adversario else None
+            if op_team_id is not None:
+                estadio_padrao = DEFAULT_TEAM_STADIUMS.get(adversario)
+                if estadio_padrao:
+                    _ensure_team_stadium(conn, op_team_id, estadio_padrao, is_primary=True)
             comp_id = _ensure_competition(conn, competicao)
             conn.execute(
                 """
@@ -576,18 +771,20 @@ def save_current_squad(db_path: str, dados: dict[str, Any]) -> None:
                 nome = str(item.get("nome", "")).strip()
                 posicao = str(item.get("posicao", "")).strip()
                 condicao = str(item.get("condicao", "")).strip()
+                is_captain = 1 if bool(item.get("capitao", False)) else 0
             else:
                 nome = str(item or "").strip()
                 posicao = ""
                 condicao = ""
+                is_captain = 0
             if not nome:
                 continue
             pid = _ensure_player(conn, nome)
             if pid is None:
                 continue
             conn.execute(
-                "INSERT OR REPLACE INTO current_squad(player_id, position, condition) VALUES (?, ?, ?)",
-                (pid, posicao, condicao),
+                "INSERT OR REPLACE INTO current_squad(player_id, position, condition, is_captain) VALUES (?, ?, ?, ?)",
+                (pid, posicao, condicao, is_captain),
             )
         conn.execute(
             "INSERT INTO settings(key, value) VALUES ('elenco_tecnico', ?) "
@@ -601,7 +798,7 @@ def load_current_squad(db_path: str) -> dict[str, Any]:
         _create_schema(conn)
         rows = conn.execute(
             """
-            SELECT p.name, s.position, s.condition
+            SELECT p.name, s.position, s.condition, s.is_captain
             FROM current_squad s
             JOIN players p ON p.id = s.player_id
             ORDER BY lower(p.name), p.name
@@ -617,6 +814,7 @@ def load_current_squad(db_path: str) -> dict[str, Any]:
                 "nome": row["name"],
                 "posicao": row["position"] or "",
                 "condicao": row["condition"] or "",
+                "capitao": bool(row["is_captain"]),
             }
             for row in rows
         ],
@@ -641,17 +839,29 @@ def save_historic_players(db_path: str, dados: dict[str, Any]) -> None:
             if isinstance(item, dict):
                 nome = str(item.get("nome", "")).strip()
                 posicao = str(item.get("posicao", "")).strip()
+                registered_date = str(item.get("data_registro", "")).strip()
+                joined_date = str(item.get("data_entrada", "")).strip()
+                left_date = str(item.get("data_saida", "")).strip()
+                passages_json = json.dumps(item.get("passagens", []), ensure_ascii=False)
             else:
                 nome = str(item or "").strip()
                 posicao = ""
+                registered_date = ""
+                joined_date = ""
+                left_date = ""
+                passages_json = "[]"
             if not nome:
                 continue
             pid = _ensure_player(conn, nome)
             if pid is None:
                 continue
             conn.execute(
-                "INSERT OR REPLACE INTO historic_players(player_id, position) VALUES (?, ?)",
-                (pid, posicao),
+                """
+                INSERT OR REPLACE INTO historic_players(
+                    player_id, position, registered_date_text, joined_date_text, left_date_text, passages_json
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (pid, posicao, registered_date, joined_date, left_date, passages_json),
             )
 
 
@@ -660,14 +870,39 @@ def load_historic_players(db_path: str) -> dict[str, Any]:
         _create_schema(conn)
         rows = conn.execute(
             """
-            SELECT p.name, h.position
+            SELECT p.name, h.position, h.registered_date_text, h.joined_date_text, h.left_date_text, h.passages_json
             FROM historic_players h
             JOIN players p ON p.id = h.player_id
             ORDER BY lower(p.name), p.name
             """
         ).fetchall()
+    def _load_passagens(row: sqlite3.Row) -> list[dict[str, Any]]:
+        bruto = row["passages_json"] or ""
+        if bruto.strip():
+            try:
+                dados = json.loads(bruto)
+                if isinstance(dados, list):
+                    return dados
+            except Exception:
+                pass
+        if row["joined_date_text"] or row["left_date_text"]:
+            return [{
+                "data_entrada": row["joined_date_text"] or "",
+                "data_saida": row["left_date_text"] or "",
+            }]
+        return []
     return {
-        "jogadores": [{"nome": row["name"], "posicao": row["position"] or ""} for row in rows]
+        "jogadores": [
+            {
+                "nome": row["name"],
+                "posicao": row["position"] or "",
+                "data_registro": row["registered_date_text"] or "",
+                "data_entrada": row["joined_date_text"] or "",
+                "data_saida": row["left_date_text"] or "",
+                "passagens": _load_passagens(row),
+            }
+            for row in rows
+        ]
     }
 
 
