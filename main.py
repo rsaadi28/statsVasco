@@ -3291,14 +3291,12 @@ class App:
             ],
             "passagens": [],
         }
-        detalhes["geral"].extend(
-            self._formatar_detalhes_estatisticas_jogador(
-                self._coletar_estatisticas_jogador_periodo(nome, jogos)
-            )
-        )
+        estatisticas_passagens = []
         for indice, passagem in enumerate(passagens, start=1):
             entrada = str(passagem.get("data_entrada", "")).strip()
             saida = str(passagem.get("data_saida", "")).strip()
+            stats_passagem = self._coletar_estatisticas_jogador_periodo(nome, jogos, entrada, saida)
+            estatisticas_passagens.append(stats_passagem)
             titulo = f"{entrada or '—'} a {saida or 'Atual'}"
             itens = [
                 ("Data inicial", entrada or "—"),
@@ -3306,7 +3304,7 @@ class App:
             ]
             itens.extend(
                 self._formatar_detalhes_estatisticas_jogador(
-                    self._coletar_estatisticas_jogador_periodo(nome, jogos, entrada, saida)
+                    stats_passagem
                 )
             )
             detalhes["passagens"].append({
@@ -3314,6 +3312,18 @@ class App:
                 "itens": itens,
                 "indice": indice,
             })
+        if estatisticas_passagens:
+            detalhes["geral"].extend(
+                self._formatar_detalhes_estatisticas_jogador(
+                    self._somar_estatisticas_passagens(estatisticas_passagens)
+                )
+            )
+        else:
+            detalhes["geral"].extend(
+                self._formatar_detalhes_estatisticas_jogador(
+                    self._coletar_estatisticas_jogador_periodo(nome, jogos, data_entrada, data_saida)
+                )
+            )
         return detalhes
 
     def _coletar_estatisticas_jogador_periodo(self, nome, jogos, data_entrada="", data_saida=""):
@@ -3461,6 +3471,52 @@ class App:
             ("Média de gols por jogo", stats.get("media_gols", 0.0)),
             ("Participação (V/E/D)", stats.get("participacao_ved", "0/0/0")),
         ]
+
+    def _somar_estatisticas_passagens(self, stats_passagens):
+        totais = {
+            "jogos_com_participacao": 0,
+            "jogos_titular": 0,
+            "jogos_reserva": 0,
+            "jogos_nao_rel": 0,
+            "jogos_lesionado": 0,
+            "gols": 0,
+            "jogos_como_capitao": 0,
+            "partidas_com_gol": 0,
+            "gols_titular": 0,
+            "gols_banco": 0,
+            "media_gols": 0.0,
+            "participacao_ved": "0/0/0",
+        }
+        vitorias = empates = derrotas = 0
+        for item in stats_passagens:
+            if not isinstance(item, dict):
+                continue
+            for chave in (
+                "jogos_com_participacao",
+                "jogos_titular",
+                "jogos_reserva",
+                "jogos_nao_rel",
+                "jogos_lesionado",
+                "gols",
+                "jogos_como_capitao",
+                "partidas_com_gol",
+                "gols_titular",
+                "gols_banco",
+            ):
+                totais[chave] += int(item.get(chave, 0) or 0)
+            ved = str(item.get("participacao_ved", "0/0/0"))
+            try:
+                vit, emp, der = [int(p or 0) for p in ved.split("/", 2)]
+            except Exception:
+                vit = emp = der = 0
+            vitorias += vit
+            empates += emp
+            derrotas += der
+        jogos_com_participacao = int(totais.get("jogos_com_participacao", 0) or 0)
+        gols = int(totais.get("gols", 0) or 0)
+        totais["media_gols"] = round(gols / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
+        totais["participacao_ved"] = f"{vitorias}/{empates}/{derrotas}"
+        return totais
 
     def _criar_tree_detalhes_jogador_historico(self, parent):
         frame = ttk.Frame(parent, padding=(0, 4, 0, 0))
