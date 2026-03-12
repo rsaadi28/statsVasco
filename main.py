@@ -5100,6 +5100,25 @@ class App:
             return False
         return nome.strip().casefold() in {item.casefold() for item in COMPETICOES_COM_GRAFICO_POSICAO}
 
+    def _competicao_eh_brasileiro_serie_a_ou_b(self, nome):
+        if not nome:
+            return False
+        nome_cf = nome.strip().casefold()
+        return nome_cf in {
+            "campeonato brasileiro serie a",
+            "campeonato brasileiro série a",
+            "campeonato brasileiro serie b",
+            "campeonato brasileiro série b",
+        }
+
+    def _encontrar_competicao_brasileira_para_comparativo(self, comps_ano, competicao_atual):
+        if not isinstance(comps_ano, dict) or not self._competicao_eh_brasileiro_serie_a_ou_b(competicao_atual):
+            return competicao_atual
+        for nome in comps_ano.keys():
+            if self._competicao_eh_brasileiro_serie_a_ou_b(nome):
+                return nome
+        return competicao_atual
+
     def _atualizar_estado_posicao(self):
         if not hasattr(self, "posicao_entry") or not hasattr(self, "posicao_var"):
             return
@@ -6118,16 +6137,42 @@ class App:
             self._plot_linhas_comparativo(
                 graficos_gerais,
                 series_atual,
-                ["vit_acum", "emp_acum", "der_acum"],
-                ["Vitórias (acum.)", "Empates (acum.)", "Derrotas (acum.)"],
+                ["vit_acum"],
+                ["Vitórias (acum.)"],
                 ano_atual,
                 ano_anterior,
                 prev_series=series_anterior,
-                titulo="Evolução de resultados",
+                titulo="Evolução das vitórias",
                 ylabel="Qtd.",
                 color_override={
                     "vit_acum": ("#15803d", "#86efac"),
+                }
+            )
+            self._plot_linhas_comparativo(
+                graficos_gerais,
+                series_atual,
+                ["emp_acum"],
+                ["Empates (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução dos empates",
+                ylabel="Qtd.",
+                color_override={
                     "emp_acum": ("#ca8a04", "#fde047"),
+                }
+            )
+            self._plot_linhas_comparativo(
+                graficos_gerais,
+                series_atual,
+                ["der_acum"],
+                ["Derrotas (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução das derrotas",
+                ylabel="Qtd.",
+                color_override={
                     "der_acum": ("#b91c1c", "#fca5a5"),
                 }
             )
@@ -6139,7 +6184,11 @@ class App:
 
     def _render_tab_competicao(self, container, competicao, comps_por_ano, ano_atual, ano_anterior):
         jogos_atual = list(comps_por_ano.get(ano_atual, {}).get(competicao, []))
-        jogos_anterior = list(comps_por_ano.get(ano_anterior, {}).get(competicao, []))
+        competicao_anterior = competicao
+        comps_ano_anterior = comps_por_ano.get(ano_anterior, {})
+        if self._competicao_eh_brasileiro_serie_a_ou_b(competicao):
+            competicao_anterior = self._encontrar_competicao_brasileira_para_comparativo(comps_ano_anterior, competicao)
+        jogos_anterior = list(comps_ano_anterior.get(competicao_anterior, []))
 
         if not jogos_atual:
             ttk.Label(
@@ -6168,6 +6217,12 @@ class App:
             )
         )
         detalhes.pack(anchor="w", pady=(0, 6))
+        if competicao_anterior != competicao:
+            ttk.Label(
+                container,
+                text=f"Comparação da temporada anterior usando {competicao_anterior}.",
+                foreground="#475569",
+            ).pack(anchor="w", pady=(0, 6))
         if len(jogos_anterior) < len(jogos_atual):
             ttk.Label(
                 container,
@@ -6246,16 +6301,42 @@ class App:
             self._plot_linhas_comparativo(
                 graf_frame,
                 series_atual,
-                ["vit_acum", "emp_acum", "der_acum"],
-                ["Vitórias (acum.)", "Empates (acum.)", "Derrotas (acum.)"],
+                ["vit_acum"],
+                ["Vitórias (acum.)"],
                 ano_atual,
                 ano_anterior,
                 prev_series=series_anterior,
-                titulo="Evolução dos resultados",
+                titulo="Evolução das vitórias",
                 ylabel="Qtd.",
                 color_override={
                     "vit_acum": ("#15803d", "#86efac"),
+                }
+            )
+            self._plot_linhas_comparativo(
+                graf_frame,
+                series_atual,
+                ["emp_acum"],
+                ["Empates (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução dos empates",
+                ylabel="Qtd.",
+                color_override={
                     "emp_acum": ("#ca8a04", "#fde047"),
+                }
+            )
+            self._plot_linhas_comparativo(
+                graf_frame,
+                series_atual,
+                ["der_acum"],
+                ["Derrotas (acum.)"],
+                ano_atual,
+                ano_anterior,
+                prev_series=series_anterior,
+                titulo="Evolução das derrotas",
+                ylabel="Qtd.",
+                color_override={
                     "der_acum": ("#b91c1c", "#fca5a5"),
                 }
             )
@@ -7325,8 +7406,26 @@ class App:
         def _resize_window(event):
             canvas.itemconfigure(window_id, width=event.width)
 
+        def _scroll_canvas(event):
+            try:
+                if getattr(event, "num", None) == 4:
+                    canvas.yview_scroll(-1, "units")
+                elif getattr(event, "num", None) == 5:
+                    canvas.yview_scroll(1, "units")
+                else:
+                    delta = int(-1 * (event.delta / 120))
+                    if delta:
+                        canvas.yview_scroll(delta, "units")
+            except Exception:
+                return "break"
+            return "break"
+
         scroll_frame.bind("<Configure>", _update_scroll_region)
         canvas.bind("<Configure>", _resize_window)
+        for widget in (canvas, scroll_frame):
+            widget.bind("<MouseWheel>", _scroll_canvas, add="+")
+            widget.bind("<Button-4>", _scroll_canvas, add="+")
+            widget.bind("<Button-5>", _scroll_canvas, add="+")
 
         ttk.Label(
             scroll_frame,
@@ -7353,7 +7452,11 @@ class App:
         for titulo, eixo_x, valores in graficos:
             frame_grafico = ttk.Frame(scroll_frame)
             frame_grafico.pack(fill="both", expand=True, pady=(0, 12))
-            self._plot_barras_h(frame_grafico, labels, valores, titulo, eixo_x, top_to_bottom=True)
+            graf_widget = self._plot_barras_h(frame_grafico, labels, valores, titulo, eixo_x, top_to_bottom=True)
+            for widget in (frame_grafico, graf_widget):
+                widget.bind("<MouseWheel>", _scroll_canvas, add="+")
+                widget.bind("<Button-4>", _scroll_canvas, add="+")
+                widget.bind("<Button-5>", _scroll_canvas, add="+")
 
     def _render_graficos_para_dataset(self, container, jogos, is_geral=False, prev_jogos=None, prev_label=None):
         if not jogos:
@@ -7783,13 +7886,68 @@ class App:
         ax.set_xlabel(xlabel)
         ax.grid(axis="x", linestyle="--", alpha=0.3)
         maxv = max(values) if values else 0
+        minv = min(values) if values else 0
+        max_abs = max([abs(v) for v in values], default=0)
+        texto_offset = 0.01 * max_abs if max_abs else 0.2
+        label_artists = []
+        default_bar_colors = []
         for rect, val in zip(bars, values):
-            ax.text(rect.get_width() + (0.01 * maxv if maxv else 0.2),
-                    rect.get_y() + rect.get_height()/2,
-                    str(val), va="center")
+            default_bar_colors.append(rect.get_facecolor())
+            if val < 0:
+                txt = ax.text(
+                    rect.get_width() + texto_offset,
+                    rect.get_y() + rect.get_height() / 2,
+                    str(val),
+                    va="center",
+                    ha="right",
+                    color="white",
+                    fontweight="bold",
+                )
+            else:
+                txt = ax.text(
+                    rect.get_width() + texto_offset,
+                    rect.get_y() + rect.get_height() / 2,
+                    str(val),
+                    va="center",
+                    ha="left",
+                    color="#111111",
+                )
+            label_artists.append(txt)
+            rect.set_picker(True)
+        if minv < 0:
+            ax.set_xlim(minv - (0.08 * max_abs if max_abs else 1), ax.get_xlim()[1])
+
+        selected = {"index": None}
+
+        def _aplicar_destaque(indice):
+            selected["index"] = indice
+            for idx, rect in enumerate(bars):
+                if idx == indice:
+                    rect.set_edgecolor("#f59e0b")
+                    rect.set_linewidth(3)
+                    rect.set_alpha(1.0)
+                else:
+                    rect.set_edgecolor("none")
+                    rect.set_linewidth(0)
+                    rect.set_alpha(0.9)
+                if idx < len(label_artists):
+                    label_artists[idx].set_fontweight("bold" if idx == indice else "normal")
+            canvas.draw_idle()
+
+        def _on_pick(event):
+            if event.artist not in bars:
+                return
+            for idx, rect in enumerate(bars):
+                if rect == event.artist:
+                    _aplicar_destaque(idx)
+                    break
+
         canvas = FigureCanvasTkAgg(fig, master=container)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
+        widget = canvas.get_tk_widget()
+        widget.pack(fill="both", expand=True)
+        canvas.mpl_connect("pick_event", _on_pick)
+        return widget
 
     def _plot_barras_v(self, container, labels, values, titulo, xlabel, ylabel, colors=None):
         fig = Figure(figsize=(8.5, 5.0), dpi=100)
