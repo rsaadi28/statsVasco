@@ -183,11 +183,12 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Emprestado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
+    ("suspensos", "Suspensos"),
 )
 ELENCO_POSICAO_PLACEHOLDER = "Selecione..."
 ELENCO_CONDICAO_PLACEHOLDER = "Selecione..."
@@ -723,6 +724,144 @@ def _ordenar_jogos_por_data(jogos):
     )
 
 
+def _normalizar_minuto_partida(valor):
+    txt = str(valor or "").strip().replace("'", "")
+    if not txt:
+        return None
+    try:
+        minuto = int(txt)
+    except Exception:
+        return None
+    return minuto if 0 <= minuto <= 120 else None
+
+
+def _normalizar_lista_minutos(minutos):
+    if not isinstance(minutos, list):
+        return []
+    out = []
+    for minuto in minutos:
+        minuto_ok = _normalizar_minuto_partida(minuto)
+        if minuto_ok is not None:
+            out.append(minuto_ok)
+    return out
+
+
+def _expandir_eventos_gol(dados):
+    eventos = []
+    if not isinstance(dados, list):
+        return eventos
+    for item in dados:
+        if isinstance(item, dict):
+            nome = str(item.get("nome", "")).strip()
+            clube = str(item.get("clube", "")).strip()
+            saiu_do_banco = bool(item.get("saiu_do_banco", False))
+            try:
+                qtd = int(item.get("gols", 1))
+            except Exception:
+                qtd = 1
+            qtd = max(1, qtd)
+            minutos = _normalizar_lista_minutos(item.get("minutos", []))
+            if not minutos:
+                minuto_unico = _normalizar_minuto_partida(item.get("minuto"))
+                if minuto_unico is not None:
+                    minutos = [minuto_unico]
+            for idx in range(qtd):
+                eventos.append({
+                    "nome": nome,
+                    "clube": clube,
+                    "minuto": minutos[idx] if idx < len(minutos) else None,
+                    "saiu_do_banco": saiu_do_banco,
+                })
+        else:
+            nome = str(item or "").strip()
+            if nome:
+                eventos.append({"nome": nome, "clube": "", "minuto": None, "saiu_do_banco": False})
+    return [evento for evento in eventos if str(evento.get("nome", "")).strip()]
+
+
+def _agrupar_eventos_gol(eventos):
+    agrupado = {}
+    ordem = []
+    for evento in eventos if isinstance(eventos, list) else []:
+        nome = str(evento.get("nome", "")).strip()
+        if not nome:
+            continue
+        clube = str(evento.get("clube", "")).strip()
+        saiu_do_banco = bool(evento.get("saiu_do_banco", False))
+        chave = (nome.casefold(), clube.casefold(), saiu_do_banco)
+        if chave not in agrupado:
+            agrupado[chave] = {
+                "nome": nome,
+                "gols": 0,
+                "minutos": [],
+                "saiu_do_banco": saiu_do_banco,
+            }
+            if clube:
+                agrupado[chave]["clube"] = clube
+            ordem.append(chave)
+        agrupado[chave]["gols"] += 1
+        minuto = _normalizar_minuto_partida(evento.get("minuto"))
+        if minuto is not None:
+            agrupado[chave]["minutos"].append(minuto)
+
+    saida = []
+    for chave in ordem:
+        item = agrupado[chave]
+        item["minutos"] = sorted(item["minutos"])
+        if not item["minutos"]:
+            item.pop("minutos", None)
+        saida.append(item)
+    return saida
+
+
+def _expandir_eventos_cartao(dados):
+    eventos = []
+    if not isinstance(dados, list):
+        return eventos
+    for item in dados:
+        if isinstance(item, dict):
+            nome = str(item.get("nome", "")).strip()
+            try:
+                qtd = int(item.get("cartoes", item.get("qtd", 1)))
+            except Exception:
+                qtd = 1
+            for _ in range(max(1, qtd)):
+                if nome:
+                    eventos.append({"nome": nome})
+        else:
+            nome = str(item or "").strip()
+            if nome:
+                eventos.append({"nome": nome})
+    return eventos
+
+
+def _agrupar_eventos_cartao(eventos):
+    contagem = Counter()
+    nomes = {}
+    for evento in eventos if isinstance(eventos, list) else []:
+        nome = str(evento.get("nome", "")).strip()
+        if not nome:
+            continue
+        chave = nome.casefold()
+        contagem[chave] += 1
+        nomes.setdefault(chave, nome)
+    return [
+        {"nome": nomes[chave], "cartoes": qtd}
+        for chave, qtd in contagem.items()
+    ]
+
+
+def _formatar_evento_gol(evento):
+    nome = str(evento.get("nome", "")).strip() or "Jogador"
+    minuto = _normalizar_minuto_partida(evento.get("minuto"))
+    prefixo = "🪑 " if bool(evento.get("saiu_do_banco", False)) else ""
+    return f"{prefixo}{nome} - {minuto}'" if minuto is not None else f"{prefixo}{nome}"
+
+
+def _formatar_evento_cartao(evento):
+    return str(evento.get("nome", "")).strip() or "Jogador"
+
+
 def _resumo_partida_tecnico(jogo: dict) -> str:
     adversario = str(jogo.get("adversario", "Adversário não informado")).strip() or "Adversário não informado"
     placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -912,9 +1051,8 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Estatísticas do Vasco")
-        self.root.geometry("1500x1000")
         self.root.minsize(1000, 700)
-        self.root.after(10, self._centralizar_janela)
+        self._ajustar_geometria_inicial()
         
         # Fontes maiores
         default_font = tkFont.nametofont("TkDefaultFont")
@@ -2186,6 +2324,7 @@ class App:
         self.tv_elenco_atual.tag_configure("status_reservas", background="#fff4cf", foreground="#4a3a06")
         self.tv_elenco_atual.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
         self.tv_elenco_atual.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
+        self.tv_elenco_atual.tag_configure("status_suspensos", background="#ffe9bf", foreground="#5c3b00")
         self.tv_elenco_atual.tag_configure("status_emprestados", background="#e8ebf4", foreground="#1f2f57")
         self.tv_elenco_atual.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
         self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
@@ -2239,7 +2378,7 @@ class App:
             self.tv_elenco_atual.delete(iid)
         jogadores = list(self.elenco_atual.get("jogadores", []))
         jogadores = self._ordenar_jogadores_elenco_para_exibicao(jogadores)
-        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0, "Emprestado": 0}
+        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0, "Suspenso": 0, "Emprestado": 0}
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
             cont[condicao] = cont.get(condicao, 0) + 1
@@ -2251,6 +2390,8 @@ class App:
                 tag = "status_nao_relacionados"
             elif condicao == "Lesionado":
                 tag = "status_lesionados"
+            elif condicao == "Suspenso":
+                tag = "status_suspensos"
             elif condicao == "Emprestado":
                 tag = "status_emprestados"
             else:
@@ -2270,6 +2411,7 @@ class App:
             self.elenco_resumo_var.set(
                 f"Titulares: {cont['Titular']} | Reservas: {cont['Reserva']} | "
                 f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']} | "
+                f"Suspensos: {cont['Suspenso']} | "
                 f"Emprestados: {cont['Emprestado']}"
             )
         self._render_campinho_elenco()
@@ -2493,6 +2635,7 @@ class App:
         menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        menu.add_command(label="Enviar para Suspenso", command=lambda: self._enviar_jogador_elenco_para(("extras", "suspensos")))
         menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         try:
             menu.tk_popup(event.x_root, event.y_root)
@@ -2716,6 +2859,10 @@ class App:
         self.listas["jogadores_vasco"] = opcoes
         if hasattr(self, "entry_gol_vasco"):
             self.entry_gol_vasco["values"] = opcoes
+        if hasattr(self, "entry_cartao_amarelo"):
+            self.entry_cartao_amarelo["values"] = opcoes
+        if hasattr(self, "entry_cartao_vermelho"):
+            self.entry_cartao_vermelho["values"] = opcoes
         self._atualizar_opcoes_capitao_partida()
         if persistir:
             salvar_listas(self.listas)
@@ -2749,6 +2896,101 @@ class App:
             self._atualizar_combo_tecnicos()
         self._sincronizar_jogadores_vasco_com_elenco()
 
+    def _nomes_expandidos_cartoes(self, jogo, chave):
+        eventos = _expandir_eventos_cartao(jogo.get(chave, []))
+        return [
+            str(evento.get("nome", "")).strip()
+            for evento in eventos
+            if str(evento.get("nome", "")).strip()
+        ]
+
+    def _calcular_status_disciplinar_jogadores(self, jogos=None):
+        jogos_ordenados = _ordenar_jogos_por_data(jogos if isinstance(jogos, list) else carregar_dados_jogos())
+        status = defaultdict(lambda: {
+            "cartoes_amarelos_total": 0,
+            "cartoes_vermelhos_total": 0,
+            "amarelos_acumulados": 0,
+            "suspensoes_pendentes": 0,
+        })
+
+        for jogo in jogos_ordenados:
+            esc = jogo.get("escalacao_partida", jogo.get("escalacao", {}))
+            suspensos_match = set()
+            if isinstance(esc, dict):
+                suspensos_match = {
+                    _chave_nome_jogador(nome)
+                    for nome in esc.get("suspensos", [])
+                    if str(nome).strip()
+                }
+            for nome_cf in suspensos_match:
+                if status[nome_cf]["suspensoes_pendentes"] > 0:
+                    status[nome_cf]["suspensoes_pendentes"] -= 1
+
+            for nome in self._nomes_expandidos_cartoes(jogo, "cartoes_amarelos_vasco"):
+                nome_cf = _chave_nome_jogador(nome)
+                info = status[nome_cf]
+                info["cartoes_amarelos_total"] += 1
+                info["amarelos_acumulados"] += 1
+                while info["amarelos_acumulados"] >= 3:
+                    info["amarelos_acumulados"] -= 3
+                    info["suspensoes_pendentes"] += 1
+
+            for nome in self._nomes_expandidos_cartoes(jogo, "cartoes_vermelhos_vasco"):
+                nome_cf = _chave_nome_jogador(nome)
+                info = status[nome_cf]
+                info["cartoes_vermelhos_total"] += 1
+                info["suspensoes_pendentes"] += 1
+        return status
+
+    def _ultima_condicao_util_do_jogador(self, nome, jogos=None):
+        alvo = _chave_nome_jogador(nome)
+        for jogo in reversed(_ordenar_jogos_por_data(jogos if isinstance(jogos, list) else carregar_dados_jogos())):
+            esc = jogo.get("escalacao_partida", jogo.get("escalacao", {}))
+            if not isinstance(esc, dict):
+                continue
+            tit_por_pos = esc.get("titulares_por_posicao", {})
+            if isinstance(tit_por_pos, dict):
+                for pos in POSICOES_ELENCO:
+                    if any(_chave_nome_jogador(nm) == alvo for nm in tit_por_pos.get(pos, [])):
+                        return "Titular"
+            for chave, condicao in (
+                ("reservas", "Reserva"),
+                ("nao_relacionados", "Não Relacionado"),
+                ("lesionados", "Lesionado"),
+            ):
+                if any(_chave_nome_jogador(nm) == alvo for nm in esc.get(chave, [])):
+                    return condicao
+        return "Reserva"
+
+    def _aplicar_suspensoes_pendentes_no_elenco(self, jogos=None):
+        jogos_base = jogos if isinstance(jogos, list) else carregar_dados_jogos()
+        status = self._calcular_status_disciplinar_jogadores(jogos_base)
+        alterou = False
+        for jogador in self.elenco_atual.get("jogadores", []):
+            if not isinstance(jogador, dict):
+                continue
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            if _normalizar_condicao_elenco(jogador.get("condicao")) == "Emprestado":
+                continue
+            info = status.get(_chave_nome_jogador(nome), {})
+            pendente = int(info.get("suspensoes_pendentes", 0) or 0)
+            if pendente > 0:
+                nova_condicao = "Suspenso"
+            elif _normalizar_condicao_elenco(jogador.get("condicao")) == "Suspenso":
+                nova_condicao = self._ultima_condicao_util_do_jogador(nome, jogos_base)
+            else:
+                continue
+            if jogador.get("condicao") != nova_condicao:
+                jogador["condicao"] = nova_condicao
+                alterou = True
+
+        if alterou:
+            salvar_elenco_atual(self.elenco_atual)
+            self.elenco_atual = carregar_elenco_atual()
+            self._sincronizar_jogadores_vasco_com_elenco()
+
     def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
         if not isinstance(escalacao_partida, dict):
             return
@@ -2767,6 +3009,7 @@ class App:
             ("reservas", "Reserva"),
             ("nao_relacionados", "Não Relacionado"),
             ("lesionados", "Lesionado"),
+            ("suspensos", "Suspenso"),
         ):
             nomes = escalacao_partida.get(chave, [])
             if not isinstance(nomes, list):
@@ -3312,44 +3555,47 @@ class App:
                 "itens": itens,
                 "indice": indice,
             })
-        if estatisticas_passagens:
-            detalhes["geral"].extend(
-                self._formatar_detalhes_estatisticas_jogador(
-                    self._somar_estatisticas_passagens(estatisticas_passagens)
-                )
+        detalhes["geral"].extend(
+            self._formatar_detalhes_estatisticas_jogador(
+                self._coletar_estatisticas_jogador_periodo(nome, jogos)
             )
-        else:
-            detalhes["geral"].extend(
-                self._formatar_detalhes_estatisticas_jogador(
-                    self._coletar_estatisticas_jogador_periodo(nome, jogos, data_entrada, data_saida)
-                )
-            )
+        )
         return detalhes
 
     def _coletar_estatisticas_jogador_periodo(self, nome, jogos, data_entrada="", data_saida=""):
         alvo = _chave_nome_jogador(nome)
         data_entrada_dt = _parse_data_ptbr_safe(data_entrada) if data_entrada else None
         data_saida_dt = _parse_data_ptbr_safe(data_saida) if data_saida else None
-        jogos_com_escalacao = 0
-        jogos_com_participacao = 0
-        jogos_titular = 0
-        jogos_reserva = 0
-        jogos_nao_rel = 0
-        jogos_lesionado = 0
-        gols = 0
-        partidas_com_gol = 0
-        gols_banco = 0
-        gols_titular = 0
-        jogos_como_capitao = 0
-        vitorias = empates = derrotas = 0
-
-        for jogo in jogos:
+        jogos_filtrados = []
+        for jogo in _ordenar_jogos_por_data(jogos):
             data_jogo = str(jogo.get("data", "")).strip()
             data_jogo_dt = _parse_data_ptbr_safe(data_jogo)
             if data_entrada_dt and data_jogo_dt and data_jogo_dt < data_entrada_dt:
                 continue
             if data_saida_dt and data_jogo_dt and data_jogo_dt > data_saida_dt:
                 continue
+            jogos_filtrados.append(jogo)
+
+        jogos_com_escalacao = 0
+        jogos_com_participacao = 0
+        jogos_titular = 0
+        jogos_reserva = 0
+        jogos_nao_rel = 0
+        jogos_lesionado = 0
+        jogos_suspenso = 0
+        gols = 0
+        partidas_com_gol = 0
+        gols_banco = 0
+        gols_titular = 0
+        jogos_como_capitao = 0
+        vitorias = empates = derrotas = 0
+        cartoes_amarelos = 0
+        cartoes_vermelhos = 0
+        amarelos_acumulados = 0
+        suspensoes_pendentes = 0
+        marcacoes_gol = []
+
+        for indice_jogo, jogo in enumerate(jogos_filtrados):
             participou = False
             gol_no_jogo = 0
             gol_banco_jogo = 0
@@ -3358,6 +3604,7 @@ class App:
             em_reservas = False
             em_nao_rel = False
             em_lesionados = False
+            em_suspensos = False
 
             if isinstance(esc, dict):
                 jogos_com_escalacao += 1
@@ -3378,6 +3625,9 @@ class App:
                 em_reservas = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("reservas", []))
                 em_nao_rel = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("nao_relacionados", []))
                 em_lesionados = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("lesionados", []))
+                em_suspensos = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("suspensos", []))
+                if em_suspensos and suspensoes_pendentes > 0:
+                    suspensoes_pendentes -= 1
 
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
@@ -3391,6 +3641,9 @@ class App:
                     if qtd <= 0:
                         continue
                     gol_no_jogo += qtd
+                    minutos = _normalizar_lista_minutos(g.get("minutos", []))
+                    for idx in range(min(qtd, len(minutos))):
+                        marcacoes_gol.append(indice_jogo * 90 + minutos[idx])
                     saiu_do_banco = bool(g.get("saiu_do_banco", False))
                     if not saiu_do_banco and em_reservas and not em_titulares:
                         saiu_do_banco = True
@@ -3402,6 +3655,22 @@ class App:
                         gol_no_jogo += 1
                         if em_reservas and not em_titulares:
                             gol_banco_jogo += 1
+
+            amarelos_jogo = sum(
+                1 for nome_cartao in self._nomes_expandidos_cartoes(jogo, "cartoes_amarelos_vasco")
+                if _chave_nome_jogador(nome_cartao) == alvo
+            )
+            vermelhos_jogo = sum(
+                1 for nome_cartao in self._nomes_expandidos_cartoes(jogo, "cartoes_vermelhos_vasco")
+                if _chave_nome_jogador(nome_cartao) == alvo
+            )
+            cartoes_amarelos += amarelos_jogo
+            cartoes_vermelhos += vermelhos_jogo
+            amarelos_acumulados += amarelos_jogo
+            while amarelos_acumulados >= 3:
+                amarelos_acumulados -= 3
+                suspensoes_pendentes += 1
+            suspensoes_pendentes += vermelhos_jogo
 
             if gol_no_jogo > 0:
                 participou = True
@@ -3424,6 +3693,8 @@ class App:
                     jogos_nao_rel += 1
                 elif em_lesionados:
                     jogos_lesionado += 1
+                elif em_suspensos:
+                    jogos_suspenso += 1
 
             if participou:
                 jogos_com_participacao += 1
@@ -3441,18 +3712,32 @@ class App:
                     derrotas += 1
 
         media_gols = round(gols / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
+        media_minutos_entre_gols = None
+        if len(marcacoes_gol) >= 2:
+            diferencas = [
+                marcacoes_gol[i] - marcacoes_gol[i - 1]
+                for i in range(1, len(marcacoes_gol))
+            ]
+            if diferencas:
+                media_minutos_entre_gols = round(sum(diferencas) / len(diferencas), 2)
         return {
             "jogos_com_participacao": jogos_com_participacao,
             "jogos_titular": jogos_titular,
             "jogos_reserva": jogos_reserva,
             "jogos_nao_rel": jogos_nao_rel,
             "jogos_lesionado": jogos_lesionado,
+            "jogos_suspenso": jogos_suspenso,
             "gols": gols,
             "jogos_como_capitao": jogos_como_capitao,
             "partidas_com_gol": partidas_com_gol,
             "gols_titular": gols_titular,
             "gols_banco": gols_banco,
             "media_gols": media_gols,
+            "cartoes_amarelos": cartoes_amarelos,
+            "cartoes_vermelhos": cartoes_vermelhos,
+            "amarelos_acumulados": amarelos_acumulados,
+            "suspensoes_pendentes": suspensoes_pendentes,
+            "media_minutos_entre_gols": media_minutos_entre_gols,
             "participacao_ved": f"{vitorias}/{empates}/{derrotas}",
         }
 
@@ -3463,12 +3748,23 @@ class App:
             ("Jogos como reserva", stats.get("jogos_reserva", 0)),
             ("Jogos como não relacionado", stats.get("jogos_nao_rel", 0)),
             ("Jogos como lesionado", stats.get("jogos_lesionado", 0)),
+            ("Jogos como suspenso", stats.get("jogos_suspenso", 0)),
             ("Gols pelo Vasco", stats.get("gols", 0)),
             ("Jogos como capitão", stats.get("jogos_como_capitao", 0)),
             ("Partidas em que marcou", stats.get("partidas_com_gol", 0)),
             ("Gols como titular", stats.get("gols_titular", 0)),
             ("Gols saindo do banco", stats.get("gols_banco", 0)),
             ("Média de gols por jogo", stats.get("media_gols", 0.0)),
+            ("Cartões amarelos", stats.get("cartoes_amarelos", 0)),
+            ("Cartões vermelhos", stats.get("cartoes_vermelhos", 0)),
+            ("Amarelos acumulados atuais", stats.get("amarelos_acumulados", 0)),
+            ("Suspensão pendente", "Sim" if int(stats.get("suspensoes_pendentes", 0) or 0) > 0 else "Não"),
+            (
+                "Média de minutos entre gols",
+                stats.get("media_minutos_entre_gols")
+                if stats.get("media_minutos_entre_gols") is not None
+                else "—",
+            ),
             ("Participação (V/E/D)", stats.get("participacao_ved", "0/0/0")),
         ]
 
@@ -3479,12 +3775,18 @@ class App:
             "jogos_reserva": 0,
             "jogos_nao_rel": 0,
             "jogos_lesionado": 0,
+            "jogos_suspenso": 0,
             "gols": 0,
             "jogos_como_capitao": 0,
             "partidas_com_gol": 0,
             "gols_titular": 0,
             "gols_banco": 0,
             "media_gols": 0.0,
+            "cartoes_amarelos": 0,
+            "cartoes_vermelhos": 0,
+            "amarelos_acumulados": 0,
+            "suspensoes_pendentes": 0,
+            "media_minutos_entre_gols": None,
             "participacao_ved": "0/0/0",
         }
         vitorias = empates = derrotas = 0
@@ -3497,13 +3799,18 @@ class App:
                 "jogos_reserva",
                 "jogos_nao_rel",
                 "jogos_lesionado",
+                "jogos_suspenso",
                 "gols",
                 "jogos_como_capitao",
                 "partidas_com_gol",
                 "gols_titular",
                 "gols_banco",
+                "cartoes_amarelos",
+                "cartoes_vermelhos",
             ):
                 totais[chave] += int(item.get(chave, 0) or 0)
+            totais["amarelos_acumulados"] = int(item.get("amarelos_acumulados", 0) or 0)
+            totais["suspensoes_pendentes"] = int(item.get("suspensoes_pendentes", 0) or 0)
             ved = str(item.get("participacao_ved", "0/0/0"))
             try:
                 vit, emp, der = [int(p or 0) for p in ved.split("/", 2)]
@@ -3567,7 +3874,7 @@ class App:
             for pos in POSICOES_ELENCO:
                 if any(_chave_nome_jogador(nm) == alvo for nm in tit_por_pos.get(pos, [])):
                     return True
-        for chave in ("titulares", "reservas", "nao_relacionados", "lesionados"):
+        for chave in ("titulares", "reservas", "nao_relacionados", "lesionados", "suspensos"):
             if any(_chave_nome_jogador(nm) == alvo for nm in esc.get(chave, [])):
                 return True
         return False
@@ -3676,6 +3983,7 @@ class App:
         menu.add_command(label="Enviar para Reserva", command=lambda: self._enviar_jogador_elenco_para(("extras", "reservas")))
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
+        menu.add_command(label="Enviar para Suspenso", command=lambda: self._enviar_jogador_elenco_para(("extras", "suspensos")))
         menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         menu.add_separator()
         menu.add_command(
@@ -3754,6 +4062,8 @@ class App:
                 nova_condicao = "Não Relacionado"
             elif chave == "lesionados":
                 nova_condicao = "Lesionado"
+            elif chave == "suspensos":
+                nova_condicao = "Suspenso"
             elif chave == "emprestados":
                 nova_condicao = "Emprestado"
 
@@ -3830,6 +4140,8 @@ class App:
         self.horario_hora_var = tk.StringVar()
         self.horario_minuto_var = tk.StringVar()
         self.capitao_partida_var = tk.StringVar()
+        self.gol_vasco_minuto_var = tk.StringVar()
+        self.gol_contra_minuto_var = tk.StringVar()
         self.estadio_var.trace_add("write", self._sincronizar_local_por_estadio)
         self.local_var.trace_add("write", self._ao_mudar_local_registro)
         self.adversario_var.trace_add("write", self._ao_mudar_adversario_registro)
@@ -3928,19 +4240,34 @@ class App:
         gols_card.columnconfigure(0, weight=1)
         gols_card.rowconfigure(1, weight=1)
         gols_card.rowconfigure(3, weight=1)
+        gols_card.rowconfigure(5, weight=1)
+        gols_card.rowconfigure(7, weight=1)
 
         ttk.Label(gols_card, text="Gols do Vasco (Enter para adicionar):").grid(row=0, column=0, sticky="w")
         col_vasco = ttk.Frame(gols_card)
         col_vasco.grid(row=1, column=0, sticky="nsew", pady=(4, 8))
         col_vasco.columnconfigure(0, weight=1)
         col_vasco.rowconfigure(1, weight=1)
-        self.entry_gol_vasco = ttk.Combobox(col_vasco)
+        input_vasco = ttk.Frame(col_vasco)
+        input_vasco.grid(row=0, column=0, sticky="ew")
+        input_vasco.columnconfigure(0, weight=1)
+        self.entry_gol_vasco = ttk.Combobox(input_vasco)
         self.entry_gol_vasco["values"] = self.listas["jogadores_vasco"]
         self.entry_gol_vasco.bind("<Return>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<<ComboboxSelected>>", self.adicionar_gol_vasco)
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_vasco)
+        ttk.Label(input_vasco, text="Min:").grid(row=0, column=1, padx=(8, 4))
+        self.entry_gol_vasco_minuto = ttk.Entry(
+            input_vasco,
+            width=5,
+            textvariable=self.gol_vasco_minuto_var,
+            justify="center",
+        )
+        self.entry_gol_vasco_minuto.grid(row=0, column=2, sticky="e")
+        self.entry_gol_vasco_minuto.bind("<Return>", self.adicionar_gol_vasco)
+        self._forcar_cursor_visivel(self.entry_gol_vasco_minuto)
         self.lista_gols_vasco = tk.Listbox(
             col_vasco,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
@@ -3957,13 +4284,26 @@ class App:
         col_contra.grid(row=3, column=0, sticky="nsew", pady=(4, 0))
         col_contra.columnconfigure(0, weight=1)
         col_contra.rowconfigure(1, weight=1)
-        self.entry_gol_contra = ttk.Combobox(col_contra)
+        input_contra = ttk.Frame(col_contra)
+        input_contra.grid(row=0, column=0, sticky="ew")
+        input_contra.columnconfigure(0, weight=1)
+        self.entry_gol_contra = ttk.Combobox(input_contra)
         self.entry_gol_contra["values"] = self.listas["jogadores_contra"]
         self.entry_gol_contra.bind("<Return>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<<ComboboxSelected>>", self.adicionar_gol_contra)
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_contra)
+        ttk.Label(input_contra, text="Min:").grid(row=0, column=1, padx=(8, 4))
+        self.entry_gol_contra_minuto = ttk.Entry(
+            input_contra,
+            width=5,
+            textvariable=self.gol_contra_minuto_var,
+            justify="center",
+        )
+        self.entry_gol_contra_minuto.grid(row=0, column=2, sticky="e")
+        self.entry_gol_contra_minuto.bind("<Return>", self.adicionar_gol_contra)
+        self._forcar_cursor_visivel(self.entry_gol_contra_minuto)
         self.lista_gols_contra = tk.Listbox(
             col_contra,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
@@ -3975,11 +4315,55 @@ class App:
             row=2, column=0, sticky="e", pady=(6, 0)
         )
 
+        ttk.Label(gols_card, text="Cartões Amarelos do Vasco:").grid(row=4, column=0, sticky="w", pady=(10, 0))
+        col_amarelos = ttk.Frame(gols_card)
+        col_amarelos.grid(row=5, column=0, sticky="nsew", pady=(4, 8))
+        col_amarelos.columnconfigure(0, weight=1)
+        col_amarelos.rowconfigure(1, weight=1)
+        self.entry_cartao_amarelo = ttk.Combobox(col_amarelos)
+        self.entry_cartao_amarelo["values"] = self.listas["jogadores_vasco"]
+        self.entry_cartao_amarelo.bind("<Return>", self.adicionar_cartao_amarelo)
+        self.entry_cartao_amarelo.bind("<<ComboboxSelected>>", self.adicionar_cartao_amarelo)
+        self.entry_cartao_amarelo.grid(row=0, column=0, sticky="ew")
+        self._forcar_cursor_visivel(self.entry_cartao_amarelo)
+        self.lista_cartoes_amarelos = tk.Listbox(
+            col_amarelos,
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
+        )
+        self.lista_cartoes_amarelos.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+        self.lista_cartoes_amarelos.bind("<Delete>", self.remover_cartao_amarelo)
+        ttk.Button(col_amarelos, text="Remover Selecionado", command=self.remover_cartao_amarelo).grid(
+            row=2, column=0, sticky="e", pady=(6, 0)
+        )
+
+        ttk.Label(gols_card, text="Cartões Vermelhos do Vasco:").grid(row=6, column=0, sticky="w")
+        col_vermelhos = ttk.Frame(gols_card)
+        col_vermelhos.grid(row=7, column=0, sticky="nsew", pady=(4, 0))
+        col_vermelhos.columnconfigure(0, weight=1)
+        col_vermelhos.rowconfigure(1, weight=1)
+        self.entry_cartao_vermelho = ttk.Combobox(col_vermelhos)
+        self.entry_cartao_vermelho["values"] = self.listas["jogadores_vasco"]
+        self.entry_cartao_vermelho.bind("<Return>", self.adicionar_cartao_vermelho)
+        self.entry_cartao_vermelho.bind("<<ComboboxSelected>>", self.adicionar_cartao_vermelho)
+        self.entry_cartao_vermelho.grid(row=0, column=0, sticky="ew")
+        self._forcar_cursor_visivel(self.entry_cartao_vermelho)
+        self.lista_cartoes_vermelhos = tk.Listbox(
+            col_vermelhos,
+            bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
+            selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
+        )
+        self.lista_cartoes_vermelhos.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+        self.lista_cartoes_vermelhos.bind("<Delete>", self.remover_cartao_vermelho)
+        ttk.Button(col_vermelhos, text="Remover Selecionado", command=self.remover_cartao_vermelho).grid(
+            row=2, column=0, sticky="e", pady=(6, 0)
+        )
+
         # Coluna direita: preview de escalação
         escalacao_card = ttk.Labelframe(meio, text="Escalação da Partida", padding=10)
         escalacao_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
         escalacao_card.columnconfigure(0, weight=1)
-        escalacao_card.rowconfigure(3, weight=1)
+        escalacao_card.rowconfigure(2, weight=1)
 
         ttk.Label(
             escalacao_card,
@@ -3996,6 +4380,7 @@ class App:
 
         self.canvas_campinho_preview = tk.Canvas(
             preview_wrap,
+            height=340,
             background="#0f6a35",
             highlightthickness=1,
             highlightbackground="#1a1a1a"
@@ -4042,6 +4427,10 @@ class App:
         self.btn_cancelar_edicao.state(["disabled"])
         ttk.Button(botoes, text="Atualizar Abas", command=self._atualizar_abas).pack(side="left", padx=6)
 
+        self.gols_vasco_eventos = []
+        self.gols_contra_eventos = []
+        self.cartoes_amarelos_eventos = []
+        self.cartoes_vermelhos_eventos = []
         self._inicializar_escalacao_partida()
         self._atualizar_opcoes_capitao_partida(preservar_valor=False)
 
@@ -4216,6 +4605,7 @@ class App:
             "reservas": [],
             "nao_relacionados": [],
             "lesionados": [],
+            "suspensos": [],
         }
 
     def _normalizar_escalacao_partida(self, escalacao):
@@ -4275,9 +4665,10 @@ class App:
         reservas = len(esc.get("reservas", []))
         nao_rel = len(esc.get("nao_relacionados", []))
         lesionados = len(esc.get("lesionados", []))
+        suspensos = len(esc.get("suspensos", []))
         self.escalacao_resumo_var.set(
             f"Titulares: {titulares}/11 | Reservas: {reservas} (mín. 4) | "
-            f"Não Relac.: {nao_rel} | Lesionados: {lesionados}"
+            f"Não Relac.: {nao_rel} | Lesionados: {lesionados} | Suspensos: {suspensos}"
         )
 
     def _inicializar_escalacao_partida(self):
@@ -4296,6 +4687,8 @@ class App:
                 base["nao_relacionados"].append(nome)
             elif condicao == "Lesionado":
                 base["lesionados"].append(nome)
+            elif condicao == "Suspenso":
+                base["suspensos"].append(nome)
             # Emprestados ficam fora da escalação da partida.
         self._carregar_escalacao_partida(base)
 
@@ -4344,6 +4737,20 @@ class App:
         self._atualizar_resumo_escalacao()
         self._render_preview_escalacao()
         self._atualizar_opcoes_gol_vasco()
+
+    def _ajustar_geometria_inicial(self):
+        try:
+            self.root.update_idletasks()
+            largura_tela = self.root.winfo_screenwidth()
+            altura_tela = self.root.winfo_screenheight()
+            largura_janela = max(1000, int(largura_tela * 0.7))
+            altura_janela = max(700, altura_tela)
+            pos_x = max(0, (largura_tela - largura_janela) // 2)
+            pos_y = max(0, (altura_tela - altura_janela) // 2)
+            self.root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+        except Exception:
+            self.root.geometry("1500x1000")
+            self.root.after(10, self._centralizar_janela)
 
     def _centralizar_janela(self):
         try:
@@ -4446,34 +4853,51 @@ class App:
         self._calendar_target_var = None
 
     # --------------------- Handlers de Gols ---------------------
+    def _renderizar_lista_eventos(self, listbox, eventos, formatter):
+        listbox.delete(0, tk.END)
+        for evento in eventos:
+            listbox.insert(tk.END, formatter(evento))
+
     def adicionar_gol_vasco(self, event):
         jogador = self.entry_gol_vasco.get().strip()
         if not jogador:
             return
         limite = self._obter_limite_gols("vasco")
-        if self.lista_gols_vasco.size() >= limite:
+        if len(getattr(self, "gols_vasco_eventos", [])) >= limite:
             messagebox.showwarning("Limite Atingido", f"O Vasco só fez {limite} gol(s).")
             return
-        self.lista_gols_vasco.insert(tk.END, jogador)
+        minuto = _normalizar_minuto_partida(self.gol_vasco_minuto_var.get())
+        if self.gol_vasco_minuto_var.get().strip() and minuto is None:
+            messagebox.showwarning("Minuto inválido", "Informe um minuto inteiro entre 0 e 120.")
+            return
         if jogador not in self.listas["jogadores_vasco"]:
             self.listas["jogadores_vasco"].append(jogador)
             self._atualizar_opcoes_gol_vasco()
+        self.gols_vasco_eventos.append({"nome": jogador, "minuto": minuto})
+        self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
         self.entry_gol_vasco.delete(0, tk.END)
+        self.gol_vasco_minuto_var.set("")
 
     def adicionar_gol_contra(self, event):
         jogador = self.entry_gol_contra.get().strip()
         if not jogador:
             return
         limite = self._obter_limite_gols("adversario")
-        if self.lista_gols_contra.size() >= limite:
+        if len(getattr(self, "gols_contra_eventos", [])) >= limite:
             messagebox.showwarning("Limite Atingido", f"O adversário só fez {limite} gol(s).")
             return
-        self.lista_gols_contra.insert(tk.END, jogador)
+        minuto = _normalizar_minuto_partida(self.gol_contra_minuto_var.get())
+        if self.gol_contra_minuto_var.get().strip() and minuto is None:
+            messagebox.showwarning("Minuto inválido", "Informe um minuto inteiro entre 0 e 120.")
+            return
         if jogador not in self.listas["jogadores_contra"]:
             self.listas["jogadores_contra"].append(jogador)
             self.listas["jogadores_contra"] = sorted(self.listas["jogadores_contra"], key=lambda s: s.casefold())
             self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
+        self.gols_contra_eventos.append({"nome": jogador, "minuto": minuto, "clube": self.adversario_var.get().strip()})
+        self._renderizar_lista_eventos(self.lista_gols_contra, self.gols_contra_eventos, _formatar_evento_gol)
         self.entry_gol_contra.delete(0, tk.END)
+        self.gol_contra_minuto_var.set("")
 
     def _obter_limite_gols(self, time):
         try:
@@ -4488,12 +4912,42 @@ class App:
     def remover_gol_vasco(self, event=None):
         sel = self.lista_gols_vasco.curselection()
         if sel:
-            self.lista_gols_vasco.delete(sel[0])
+            del self.gols_vasco_eventos[sel[0]]
+            self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
 
     def remover_gol_contra(self, event=None):
         sel = self.lista_gols_contra.curselection()
         if sel:
-            self.lista_gols_contra.delete(sel[0])
+            del self.gols_contra_eventos[sel[0]]
+            self._renderizar_lista_eventos(self.lista_gols_contra, self.gols_contra_eventos, _formatar_evento_gol)
+
+    def adicionar_cartao_amarelo(self, event=None):
+        jogador = self.entry_cartao_amarelo.get().strip()
+        if not jogador:
+            return
+        self.cartoes_amarelos_eventos.append({"nome": jogador})
+        self._renderizar_lista_eventos(self.lista_cartoes_amarelos, self.cartoes_amarelos_eventos, _formatar_evento_cartao)
+        self.entry_cartao_amarelo.delete(0, tk.END)
+
+    def remover_cartao_amarelo(self, event=None):
+        sel = self.lista_cartoes_amarelos.curselection()
+        if sel:
+            del self.cartoes_amarelos_eventos[sel[0]]
+            self._renderizar_lista_eventos(self.lista_cartoes_amarelos, self.cartoes_amarelos_eventos, _formatar_evento_cartao)
+
+    def adicionar_cartao_vermelho(self, event=None):
+        jogador = self.entry_cartao_vermelho.get().strip()
+        if not jogador:
+            return
+        self.cartoes_vermelhos_eventos.append({"nome": jogador})
+        self._renderizar_lista_eventos(self.lista_cartoes_vermelhos, self.cartoes_vermelhos_eventos, _formatar_evento_cartao)
+        self.entry_cartao_vermelho.delete(0, tk.END)
+
+    def remover_cartao_vermelho(self, event=None):
+        sel = self.lista_cartoes_vermelhos.curselection()
+        if sel:
+            del self.cartoes_vermelhos_eventos[sel[0]]
+            self._renderizar_lista_eventos(self.lista_cartoes_vermelhos, self.cartoes_vermelhos_eventos, _formatar_evento_cartao)
 
     # --------------------- Salvar ---------------------
     def salvar_partida(self):
@@ -4539,8 +4993,6 @@ class App:
             return
 
         # Gols (contados)
-        nomes_vasco = list(self.lista_gols_vasco.get(0, tk.END))
-        contagem_vasco = Counter(nomes_vasco)
         titulares_cf = set()
         reservas_cf = set()
         tit_por_pos = escalacao_partida.get("titulares_por_posicao", {})
@@ -4555,19 +5007,33 @@ class App:
             if nome_limpo:
                 reservas_cf.add(nome_limpo.casefold())
 
-        gols_vasco = []
-        for nome, qtd in contagem_vasco.items():
-            nome_cf = str(nome).strip().casefold()
-            saiu_do_banco = nome_cf in reservas_cf and nome_cf not in titulares_cf
-            gols_vasco.append({
+        eventos_gols_vasco = []
+        for evento in getattr(self, "gols_vasco_eventos", []):
+            nome = str(evento.get("nome", "")).strip()
+            if not nome:
+                continue
+            nome_cf = nome.casefold()
+            eventos_gols_vasco.append({
                 "nome": nome,
-                "gols": qtd,
-                "saiu_do_banco": saiu_do_banco,
+                "minuto": _normalizar_minuto_partida(evento.get("minuto")),
+                "saiu_do_banco": nome_cf in reservas_cf and nome_cf not in titulares_cf,
             })
+        gols_vasco = _agrupar_eventos_gol(eventos_gols_vasco)
 
-        nomes_contra = list(self.lista_gols_contra.get(0, tk.END))
-        contagem_contra = Counter(nomes_contra)
-        gols_contra = [{"nome": nome, "clube": adversario, "gols": qtd} for nome, qtd in contagem_contra.items()]
+        eventos_gols_contra = []
+        for evento in getattr(self, "gols_contra_eventos", []):
+            nome = str(evento.get("nome", "")).strip()
+            if not nome:
+                continue
+            eventos_gols_contra.append({
+                "nome": nome,
+                "minuto": _normalizar_minuto_partida(evento.get("minuto")),
+                "clube": adversario,
+            })
+        gols_contra = _agrupar_eventos_gol(eventos_gols_contra)
+
+        cartoes_amarelos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_amarelos_eventos", []))
+        cartoes_vermelhos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_vermelhos_eventos", []))
 
         if adversario not in self.listas["clubes_adversarios"]:
             self.listas["clubes_adversarios"].append(adversario)
@@ -4602,6 +5068,8 @@ class App:
             "placar": {"vasco": int(placar_vasco), "adversario": int(placar_adv)},
             "gols_vasco": gols_vasco,
             "gols_adversario": gols_contra,
+            "cartoes_amarelos_vasco": cartoes_amarelos_vasco,
+            "cartoes_vermelhos_vasco": cartoes_vermelhos_vasco,
             "observacao": observacao,  # <<< novo campo
             "capitao": capitao,
             "tecnico": tecnico,
@@ -4624,6 +5092,7 @@ class App:
             msg = "Partida registrada com sucesso!"
 
         self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
+        self._aplicar_suspensoes_pendentes_no_elenco()
         self._limpar_formulario()
         self._atualizar_abas()
         self.notebook.select(self.frame_temporadas)
@@ -4655,10 +5124,20 @@ class App:
             self.tecnico_var.set(self.listas.get("tecnico_atual", "Fernando Diniz"))
         self.placar_vasco.delete(0, tk.END)
         self.placar_adversario.delete(0, tk.END)
+        self.gols_vasco_eventos = []
+        self.gols_contra_eventos = []
+        self.cartoes_amarelos_eventos = []
+        self.cartoes_vermelhos_eventos = []
         self.lista_gols_vasco.delete(0, tk.END)
         self.lista_gols_contra.delete(0, tk.END)
+        self.lista_cartoes_amarelos.delete(0, tk.END)
+        self.lista_cartoes_vermelhos.delete(0, tk.END)
         self.entry_gol_vasco.delete(0, tk.END)
         self.entry_gol_contra.delete(0, tk.END)
+        self.gol_vasco_minuto_var.set("")
+        self.gol_contra_minuto_var.set("")
+        self.entry_cartao_amarelo.delete(0, tk.END)
+        self.entry_cartao_vermelho.delete(0, tk.END)
         self.obs_text.delete("1.0", "end")
         self._sincronizar_local_por_estadio()
         self._atualizar_elenco_disponivel_partida()
@@ -4692,18 +5171,6 @@ class App:
         if removed:
             salvar_lista_futuros(kept)
             self._render_lista_futuros()
-
-    def _preencher_listbox_gols(self, listbox, dados):
-        listbox.delete(0, tk.END)
-        for item in dados:
-            if isinstance(item, dict):
-                nome = item.get("nome", "")
-                qtd = int(item.get("gols", 0))
-                for _ in range(max(1, qtd)):
-                    if nome:
-                        listbox.insert(tk.END, nome)
-            elif isinstance(item, str) and item:
-                listbox.insert(tk.END, item)
 
     def _carregar_jogo_para_edicao(self, jogo_idx):
         jogos = carregar_dados_jogos()
@@ -4750,8 +5217,14 @@ class App:
         self.placar_adversario.delete(0, tk.END)
         self.placar_adversario.insert(0, str(placar.get("adversario", "")))
 
-        self._preencher_listbox_gols(self.lista_gols_vasco, jogo.get("gols_vasco", []))
-        self._preencher_listbox_gols(self.lista_gols_contra, jogo.get("gols_adversario", []))
+        self.gols_vasco_eventos = _expandir_eventos_gol(jogo.get("gols_vasco", []))
+        self.gols_contra_eventos = _expandir_eventos_gol(jogo.get("gols_adversario", []))
+        self.cartoes_amarelos_eventos = _expandir_eventos_cartao(jogo.get("cartoes_amarelos_vasco", []))
+        self.cartoes_vermelhos_eventos = _expandir_eventos_cartao(jogo.get("cartoes_vermelhos_vasco", []))
+        self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
+        self._renderizar_lista_eventos(self.lista_gols_contra, self.gols_contra_eventos, _formatar_evento_gol)
+        self._renderizar_lista_eventos(self.lista_cartoes_amarelos, self.cartoes_amarelos_eventos, _formatar_evento_cartao)
+        self._renderizar_lista_eventos(self.lista_cartoes_vermelhos, self.cartoes_vermelhos_eventos, _formatar_evento_cartao)
         escalacao_salva = jogo.get("escalacao_partida", jogo.get("escalacao", {}))
         tem_escalacao = False
         if isinstance(escalacao_salva, dict):
@@ -4924,6 +5397,8 @@ class App:
         messagebox.showinfo("Sucesso", "Jogo excluído com sucesso.")
 
     def _atualizar_abas(self):
+        self.elenco_atual = carregar_elenco_atual()
+        self._aplicar_suspensoes_pendentes_no_elenco()
         self.elenco_atual = carregar_elenco_atual()
         self.titulos_vasco = carregar_titulos_vasco()
         self.jogadores_historico = carregar_jogadores_historico()
@@ -5648,13 +6123,35 @@ class App:
                     qtd = int(g.get("gols", 0))
                     saiu_banco = bool(g.get("saiu_do_banco", False))
                     nome_fmt = f"🪑 {nome}" if saiu_banco else str(nome)
+                    minutos = _normalizar_lista_minutos(g.get("minutos", []))
+                    if minutos:
+                        minutos_fmt = ", ".join(f"{m}'" for m in minutos)
+                        nome_fmt = f"{nome_fmt} ({minutos_fmt})"
                     partes.append(f"{nome_fmt} x{qtd}" if qtd > 1 else nome_fmt)
                 elif isinstance(g, str):
                     partes.append(g)
             return ", ".join(partes)
 
+        def fmt_cartoes(lst):
+            if not lst:
+                return "—"
+            partes = []
+            for item in lst:
+                if isinstance(item, dict):
+                    nome = str(item.get("nome", "")).strip() or "Desconhecido"
+                    try:
+                        qtd = int(item.get("cartoes", item.get("qtd", 1)))
+                    except Exception:
+                        qtd = 1
+                    partes.append(f"{nome} x{qtd}" if qtd > 1 else nome)
+                elif isinstance(item, str):
+                    partes.append(item)
+            return ", ".join(partes) if partes else "—"
+
         gols_vasco = fmt_lista(jogo.get("gols_vasco", []))
         gols_adv = fmt_lista(jogo.get("gols_adversario", []))
+        amarelos = fmt_cartoes(jogo.get("cartoes_amarelos_vasco", []))
+        vermelhos = fmt_cartoes(jogo.get("cartoes_vermelhos_vasco", []))
         estadio = str(jogo.get("estadio", "")).strip() or "—"
         horario = str(jogo.get("horario", "")).strip() or "—"
         capitao = str(jogo.get("capitao", "")).strip() or "—"
@@ -5663,7 +6160,9 @@ class App:
             f"Horário: {horario}\n"
             f"Capitão: {capitao}\n"
             f"Gols do Vasco: {gols_vasco}\n"
-            f"Gols do {jogo.get('adversario','Adversário')}: {gols_adv}"
+            f"Gols do {jogo.get('adversario','Adversário')}: {gols_adv}\n"
+            f"Amarelos do Vasco: {amarelos}\n"
+            f"Vermelhos do Vasco: {vermelhos}"
         )
 
     # --------------------- Geral ---------------------

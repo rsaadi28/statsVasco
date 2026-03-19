@@ -50,11 +50,12 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Emprestado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
+    ("suspensos", "Suspensos"),
 )
 
 
@@ -196,6 +197,8 @@ def escalacao_padrao_do_elenco(elenco: dict) -> dict:
             base["nao_relacionados"].append(nome)
         elif cond == "Lesionado":
             base["lesionados"].append(nome)
+        elif cond == "Suspenso":
+            base["suspensos"].append(nome)
         # Emprestados ficam fora da escalação padrão da partida.
     return _normalizar_escalacao_partida(base)
 
@@ -1426,6 +1429,7 @@ INDEX_HTML = """<!doctype html>
         <div class="mini-grid" style="margin-top:12px">
           <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Não Relacionados</div>${chipsFromList(esc?.nao_relacionados || [])}</div>
           <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Lesionados</div>${chipsFromList(esc?.lesionados || [])}</div>
+          <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Suspensos</div>${chipsFromList(esc?.suspensos || [])}</div>
         </div>
       `;
     }
@@ -1769,6 +1773,7 @@ INDEX_HTML = """<!doctype html>
       rows.push(linhaTextareaEscalacao("Reservas", "esc-reservas"));
       rows.push(linhaTextareaEscalacao("Não Relacionados", "esc-nao_relacionados"));
       rows.push(linhaTextareaEscalacao("Lesionados", "esc-lesionados"));
+      rows.push(linhaTextareaEscalacao("Suspensos", "esc-suspensos"));
       wrap.innerHTML = rows.join("");
       ["change","input"].forEach(evt => wrap.addEventListener(evt, atualizarResumoEscalacaoWeb));
     }
@@ -1812,6 +1817,7 @@ INDEX_HTML = """<!doctype html>
         reservas: parseTextareaNames($("#esc-reservas")?.value),
         nao_relacionados: parseTextareaNames($("#esc-nao_relacionados")?.value),
         lesionados: parseTextareaNames($("#esc-lesionados")?.value),
+        suspensos: parseTextareaNames($("#esc-suspensos")?.value),
       };
     }
 
@@ -1822,7 +1828,7 @@ INDEX_HTML = """<!doctype html>
         const el = document.getElementById(`esc-${pos}`);
         if (el) el.value = (tit[pos] || []).join("\\n");
       });
-      const extras = ["reservas", "nao_relacionados", "lesionados"];
+      const extras = ["reservas", "nao_relacionados", "lesionados", "suspensos"];
       extras.forEach(k => {
         const el = document.getElementById(`esc-${k}`);
         if (el) el.value = (data[k] || []).join("\\n");
@@ -1837,8 +1843,9 @@ INDEX_HTML = """<!doctype html>
       const reservas = (esc.reservas || []).length;
       const naoRel = (esc.nao_relacionados || []).length;
       const lesionados = (esc.lesionados || []).length;
+      const suspensos = (esc.suspensos || []).length;
       $("#escalacao-resumo-web").textContent =
-        `Titulares: ${titulares}/11 | Reservas: ${reservas} (mín. 4) | Não Relac.: ${naoRel} | Lesionados: ${lesionados}`;
+        `Titulares: ${titulares}/11 | Reservas: ${reservas} (mín. 4) | Não Relac.: ${naoRel} | Lesionados: ${lesionados} | Suspensos: ${suspensos}`;
       atualizarOpcoesGolsVasco();
     }
 
@@ -2154,6 +2161,7 @@ INDEX_HTML = """<!doctype html>
         editEscalacaoField("edit-esc-reservas", "Reservas"),
         editEscalacaoField("edit-esc-nao_relacionados", "Não Relacionados"),
         editEscalacaoField("edit-esc-lesionados", "Lesionados"),
+        editEscalacaoField("edit-esc-suspensos", "Suspensos"),
       ].join("");
     }
 
@@ -2177,6 +2185,7 @@ INDEX_HTML = """<!doctype html>
         reservas: get("edit-esc-reservas"),
         nao_relacionados: get("edit-esc-nao_relacionados"),
         lesionados: get("edit-esc-lesionados"),
+        suspensos: get("edit-esc-suspensos"),
       };
     }
 
@@ -2194,6 +2203,7 @@ INDEX_HTML = """<!doctype html>
       setv("edit-esc-reservas", data.reservas);
       setv("edit-esc-nao_relacionados", data.nao_relacionados);
       setv("edit-esc-lesionados", data.lesionados);
+      setv("edit-esc-suspensos", data.suspensos);
     }
 
     function updateEditPosicaoField() {

@@ -214,8 +214,22 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             player_id INTEGER,
             player_name TEXT NOT NULL,
             goals INTEGER NOT NULL DEFAULT 1,
+            goal_minutes_json TEXT NOT NULL DEFAULT '[]',
             club_name TEXT,
             is_disallowed INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE,
+            FOREIGN KEY (player_id) REFERENCES players (id)
+        );
+
+        CREATE TABLE IF NOT EXISTS match_cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id INTEGER NOT NULL,
+            side TEXT NOT NULL,
+            player_id INTEGER,
+            player_name TEXT NOT NULL,
+            card_type TEXT NOT NULL,
+            card_count INTEGER NOT NULL DEFAULT 1,
+            club_name TEXT,
             FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE,
             FOREIGN KEY (player_id) REFERENCES players (id)
         );
@@ -242,6 +256,7 @@ def _create_schema(conn: sqlite3.Connection) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(date_iso, id);
         CREATE INDEX IF NOT EXISTS idx_goals_match ON match_goals(match_id);
+        CREATE INDEX IF NOT EXISTS idx_cards_match ON match_cards(match_id);
         CREATE INDEX IF NOT EXISTS idx_future_date ON future_matches(date_iso, id);
         CREATE INDEX IF NOT EXISTS idx_titles_year ON vasco_titles(year, id);
         """
@@ -257,6 +272,10 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE matches ADD COLUMN match_time TEXT NOT NULL DEFAULT ''")
     if "captain_name" not in match_cols:
         conn.execute("ALTER TABLE matches ADD COLUMN captain_name TEXT NOT NULL DEFAULT ''")
+
+    goal_cols = {row["name"] for row in conn.execute("PRAGMA table_info(match_goals)").fetchall()}
+    if "goal_minutes_json" not in goal_cols:
+        conn.execute("ALTER TABLE match_goals ADD COLUMN goal_minutes_json TEXT NOT NULL DEFAULT '[]'")
 
     historic_cols = {row["name"] for row in conn.execute("PRAGMA table_info(historic_players)").fetchall()}
     if "registered_date_text" not in historic_cols:
@@ -416,7 +435,21 @@ def _ensure_coach(conn: sqlite3.Connection, name: str) -> int | None:
     return int(row["id"]) if row else None
 
 
-def _parse_goal_item(item: Any) -> tuple[str | None, int, str | None]:
+def _parse_goal_minutes(item: Any) -> list[int]:
+    if not isinstance(item, list):
+        return []
+    out: list[int] = []
+    for minuto in item:
+        try:
+            valor = int(minuto)
+        except Exception:
+            continue
+        if 0 <= valor <= 120:
+            out.append(valor)
+    return out
+
+
+def _parse_goal_item(item: Any) -> tuple[str | None, int, str | None, list[int]]:
     if isinstance(item, dict):
         name = str(item.get("nome", "")).strip()
         club = str(item.get("clube", "")).strip() or None
@@ -424,13 +457,40 @@ def _parse_goal_item(item: Any) -> tuple[str | None, int, str | None]:
             goals = int(item.get("gols", 1))
         except Exception:
             goals = 1
+        minutes = _parse_goal_minutes(item.get("minutos", []))
+        if not minutes:
+            minuto_unico = item.get("minuto")
+            try:
+                minuto_val = int(minuto_unico)
+            except Exception:
+                minuto_val = None
+            if minuto_val is not None and 0 <= minuto_val <= 120:
+                minutes = [minuto_val]
     else:
         name = str(item or "").strip()
         club = None
         goals = 1
+        minutes = []
+    if not name:
+        return None, 0, club, []
+    return name, max(1, goals), club, minutes
+
+
+def _parse_card_item(item: Any) -> tuple[str | None, int, str | None]:
+    if isinstance(item, dict):
+        name = str(item.get("nome", "")).strip()
+        club = str(item.get("clube", "")).strip() or None
+        try:
+            count = int(item.get("cartoes", item.get("qtd", 1)))
+        except Exception:
+            count = 1
+    else:
+        name = str(item or "").strip()
+        club = None
+        count = 1
     if not name:
         return None, 0, club
-    return name, max(1, goals), club
+    return name, max(1, count), club
 
 
 def save_listas(db_path: str, data: dict[str, Any]) -> None:
@@ -486,6 +546,7 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
     with _open(db_path) as conn:
         _create_schema(conn)
         conn.execute("DELETE FROM match_goals")
+        conn.execute("DELETE FROM match_cards")
         conn.execute("DELETE FROM matches")
 
         for jogo in jogos:
@@ -544,55 +605,99 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             match_id = int(cursor.lastrowid)
 
             for item in jogo.get("gols_vasco", []) if isinstance(jogo.get("gols_vasco"), list) else []:
-                name, goals, club = _parse_goal_item(item)
+                name, goals, club, minutes = _parse_goal_item(item)
                 if not name:
                     continue
                 player_id = _ensure_player(conn, name)
                 conn.execute(
                     """
-                    INSERT INTO match_goals(match_id, side, player_id, player_name, goals, club_name, is_disallowed)
-                    VALUES (?, 'vasco', ?, ?, ?, ?, 0)
+                    INSERT INTO match_goals(
+                        match_id, side, player_id, player_name, goals, goal_minutes_json, club_name, is_disallowed
+                    ) VALUES (?, 'vasco', ?, ?, ?, ?, ?, 0)
                     """,
-                    (match_id, player_id, name, goals, club),
+                    (match_id, player_id, name, goals, json.dumps(minutes, ensure_ascii=False), club),
                 )
 
             for item in jogo.get("gols_adversario", []) if isinstance(jogo.get("gols_adversario"), list) else []:
-                name, goals, club = _parse_goal_item(item)
+                name, goals, club, minutes = _parse_goal_item(item)
                 if not name:
                     continue
                 player_id = _ensure_player(conn, name)
                 conn.execute(
                     """
-                    INSERT INTO match_goals(match_id, side, player_id, player_name, goals, club_name, is_disallowed)
-                    VALUES (?, 'adversario', ?, ?, ?, ?, 0)
+                    INSERT INTO match_goals(
+                        match_id, side, player_id, player_name, goals, goal_minutes_json, club_name, is_disallowed
+                    ) VALUES (?, 'adversario', ?, ?, ?, ?, ?, 0)
                     """,
-                    (match_id, player_id, name, goals, club or adversario or None),
+                    (
+                        match_id,
+                        player_id,
+                        name,
+                        goals,
+                        json.dumps(minutes, ensure_ascii=False),
+                        club or adversario or None,
+                    ),
                 )
 
             anulados = jogo.get("gols_anulados") if isinstance(jogo.get("gols_anulados"), dict) else {}
             for item in anulados.get("vasco", []) if isinstance(anulados.get("vasco"), list) else []:
-                name, goals, club = _parse_goal_item(item)
+                name, goals, club, minutes = _parse_goal_item(item)
                 if not name:
                     continue
                 player_id = _ensure_player(conn, name)
                 conn.execute(
                     """
-                    INSERT INTO match_goals(match_id, side, player_id, player_name, goals, club_name, is_disallowed)
-                    VALUES (?, 'vasco', ?, ?, ?, ?, 1)
+                    INSERT INTO match_goals(
+                        match_id, side, player_id, player_name, goals, goal_minutes_json, club_name, is_disallowed
+                    ) VALUES (?, 'vasco', ?, ?, ?, ?, ?, 1)
                     """,
-                    (match_id, player_id, name, goals, club),
+                    (match_id, player_id, name, goals, json.dumps(minutes, ensure_ascii=False), club),
                 )
             for item in anulados.get("adversario", []) if isinstance(anulados.get("adversario"), list) else []:
-                name, goals, club = _parse_goal_item(item)
+                name, goals, club, minutes = _parse_goal_item(item)
                 if not name:
                     continue
                 player_id = _ensure_player(conn, name)
                 conn.execute(
                     """
-                    INSERT INTO match_goals(match_id, side, player_id, player_name, goals, club_name, is_disallowed)
-                    VALUES (?, 'adversario', ?, ?, ?, ?, 1)
+                    INSERT INTO match_goals(
+                        match_id, side, player_id, player_name, goals, goal_minutes_json, club_name, is_disallowed
+                    ) VALUES (?, 'adversario', ?, ?, ?, ?, ?, 1)
                     """,
-                    (match_id, player_id, name, goals, club or adversario or None),
+                    (
+                        match_id,
+                        player_id,
+                        name,
+                        goals,
+                        json.dumps(minutes, ensure_ascii=False),
+                        club or adversario or None,
+                    ),
+                )
+
+            for item in jogo.get("cartoes_amarelos_vasco", []) if isinstance(jogo.get("cartoes_amarelos_vasco"), list) else []:
+                name, count, club = _parse_card_item(item)
+                if not name:
+                    continue
+                player_id = _ensure_player(conn, name)
+                conn.execute(
+                    """
+                    INSERT INTO match_cards(match_id, side, player_id, player_name, card_type, card_count, club_name)
+                    VALUES (?, 'vasco', ?, ?, 'amarelo', ?, ?)
+                    """,
+                    (match_id, player_id, name, count, club),
+                )
+
+            for item in jogo.get("cartoes_vermelhos_vasco", []) if isinstance(jogo.get("cartoes_vermelhos_vasco"), list) else []:
+                name, count, club = _parse_card_item(item)
+                if not name:
+                    continue
+                player_id = _ensure_player(conn, name)
+                conn.execute(
+                    """
+                    INSERT INTO match_cards(match_id, side, player_id, player_name, card_type, card_count, club_name)
+                    VALUES (?, 'vasco', ?, ?, 'vermelho', ?, ?)
+                    """,
+                    (match_id, player_id, name, count, club),
                 )
 
 
@@ -616,7 +721,7 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
         goals_by_match: dict[int, dict[str, list[dict[str, Any]]]] = {}
         goals_rows = conn.execute(
             """
-            SELECT match_id, side, player_name, goals, club_name, is_disallowed
+            SELECT match_id, side, player_name, goals, goal_minutes_json, club_name, is_disallowed
             FROM match_goals
             ORDER BY id
             """
@@ -633,6 +738,13 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                 },
             )
             payload = {"nome": g["player_name"], "gols": int(g["goals"])}
+            try:
+                minutes = json.loads(g["goal_minutes_json"] or "[]")
+            except Exception:
+                minutes = []
+            minutes = _parse_goal_minutes(minutes)
+            if minutes:
+                payload["minutos"] = minutes
             if g["club_name"]:
                 payload["clube"] = g["club_name"]
             side = g["side"]
@@ -642,10 +754,36 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
             else:
                 (bucket["anulados_adversario"] if is_dis else bucket["gols_adversario"]).append(payload)
 
+        cards_by_match: dict[int, dict[str, list[dict[str, Any]]]] = {}
+        cards_rows = conn.execute(
+            """
+            SELECT match_id, side, player_name, card_type, card_count, club_name
+            FROM match_cards
+            ORDER BY id
+            """
+        ).fetchall()
+        for c in cards_rows:
+            mid = int(c["match_id"])
+            bucket = cards_by_match.setdefault(
+                mid,
+                {
+                    "cartoes_amarelos_vasco": [],
+                    "cartoes_vermelhos_vasco": [],
+                },
+            )
+            payload = {"nome": c["player_name"], "cartoes": int(c["card_count"])}
+            if c["club_name"]:
+                payload["clube"] = c["club_name"]
+            if c["side"] == "vasco" and c["card_type"] == "amarelo":
+                bucket["cartoes_amarelos_vasco"].append(payload)
+            elif c["side"] == "vasco" and c["card_type"] == "vermelho":
+                bucket["cartoes_vermelhos_vasco"].append(payload)
+
     jogos: list[dict[str, Any]] = []
     for row in rows:
         mid = int(row["id"])
         g = goals_by_match.get(mid, {})
+        cards = cards_by_match.get(mid, {})
         lineup = {}
         try:
             lineup_raw = row["lineup_json"]
@@ -672,6 +810,8 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                     "vasco": g.get("anulados_vasco", []),
                     "adversario": g.get("anulados_adversario", []),
                 },
+                "cartoes_amarelos_vasco": cards.get("cartoes_amarelos_vasco", []),
+                "cartoes_vermelhos_vasco": cards.get("cartoes_vermelhos_vasco", []),
                 "observacao": row["observation"] or "",
                 "capitao": row["captain_name"] or "",
                 "tecnico": row["tecnico"] or "",
