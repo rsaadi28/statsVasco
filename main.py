@@ -202,7 +202,17 @@ def _ordenar_listas(dados: dict) -> dict:
     """Ordena, alfabeticamente (case-insensitive), as listas auxiliares."""
     if not isinstance(dados, dict):
         return dados
-    chaves = ("clubes_adversarios", "jogadores_vasco", "jogadores_contra", "competicoes", "tecnicos", "estadios")
+    chaves = (
+        "clubes_adversarios",
+        "jogadores_vasco",
+        "jogadores_contra",
+        "competicoes",
+        "tecnicos",
+        "estadios",
+        "arbitros",
+        "auxiliares",
+        "vars",
+    )
     for k in chaves:
         lista = dados.get(k)
         if isinstance(lista, list):
@@ -256,6 +266,36 @@ def carregar_listas():
                 base_cf.add(nome.casefold())
                 alterou = True
         dados["tecnicos"] = sorted(base, key=lambda s: s.casefold())
+
+    arbitros_jogos = set()
+    auxiliares_jogos = set()
+    vars_jogos = set()
+    for jogo in carregar_dados_jogos():
+        arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+        arbitro = arbitragem.get("arbitro", "")
+        if arbitro:
+            arbitros_jogos.add(arbitro)
+        for auxiliar in arbitragem.get("auxiliares", []):
+            if auxiliar:
+                auxiliares_jogos.add(auxiliar)
+        var_nome = arbitragem.get("var", "")
+        if var_nome:
+            vars_jogos.add(var_nome)
+
+    for chave_lista, nomes in (
+        ("arbitros", arbitros_jogos),
+        ("auxiliares", auxiliares_jogos),
+        ("vars", vars_jogos),
+    ):
+        if nomes:
+            base = list(dados.get(chave_lista, []))
+            base_cf = {str(nome).casefold() for nome in base}
+            for nome in sorted(nomes, key=str.casefold):
+                if nome.casefold() not in base_cf:
+                    base.append(nome)
+                    base_cf.add(nome.casefold())
+                    alterou = True
+            dados[chave_lista] = sorted(base, key=lambda s: s.casefold())
 
     if alterou:
         db_save_listas(DB_PATH, dados)
@@ -653,6 +693,83 @@ def _normalizar_nome_tecnico(nome: str) -> str:
     return tecnico or "(Sem Técnico)"
 
 
+def _normalizar_arbitragem(dados):
+    if not isinstance(dados, dict):
+        dados = {}
+    arbitro = str(dados.get("arbitro", "") or "").strip()
+    var = str(dados.get("var", "") or "").strip()
+    auxiliares_brutos = dados.get("auxiliares", [])
+    if not isinstance(auxiliares_brutos, list):
+        auxiliares_brutos = []
+    auxiliares = []
+    vistos = set()
+    for nome in auxiliares_brutos:
+        nome_limpo = str(nome or "").strip()
+        if not nome_limpo:
+            continue
+        chave = nome_limpo.casefold()
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        auxiliares.append(nome_limpo)
+    return {
+        "arbitro": arbitro,
+        "auxiliares": auxiliares,
+        "var": var,
+    }
+
+
+def _normalizar_inteiro_positivo(valor):
+    txt = str(valor or "").strip()
+    if not txt:
+        return None
+    txt = re.sub(r"[^\d]", "", txt)
+    if not txt:
+        return None
+    try:
+        numero = int(txt)
+    except Exception:
+        return None
+    return numero if numero >= 0 else None
+
+
+def _normalizar_renda_brl(valor):
+    txt = str(valor or "").strip()
+    if not txt:
+        return None
+    txt = txt.replace("R$", "").replace(" ", "")
+    if "," in txt:
+        txt = txt.replace(".", "").replace(",", ".")
+    else:
+        txt = txt.replace(",", "")
+    try:
+        numero = float(txt)
+    except Exception:
+        return None
+    return numero if numero >= 0 else None
+
+
+def _formatar_publico(valor):
+    if valor in (None, ""):
+        return "—"
+    try:
+        return f"{int(valor):,}".replace(",", ".")
+    except Exception:
+        return "—"
+
+
+def _formatar_renda_brl(valor):
+    if valor in (None, ""):
+        return "—"
+    try:
+        numero = float(valor)
+    except Exception:
+        return "—"
+    inteiro, decimal = f"{numero:.2f}".split(".")
+    inteiro = f"{int(inteiro):,}".replace(",", ".")
+    return f"R$ {inteiro},{decimal}"
+
+
 def _criar_stats_tecnico():
     return {
         "jogos": 0,
@@ -712,6 +829,61 @@ def _calcular_aproveitamento_stats(info: dict) -> float:
         return 0.0
     pontos = int(info.get("vitorias", 0) or 0) * 3 + int(info.get("empates", 0) or 0)
     return round((pontos / (jogos * 3)) * 100, 1)
+
+
+def _criar_stats_arbitro():
+    return {
+        "jogos": 0,
+        "vitorias": 0,
+        "empates": 0,
+        "derrotas": 0,
+        "gols_pro": 0,
+        "gols_contra": 0,
+        "primeiro_jogo_data": None,
+        "primeiro_jogo_txt": "—",
+        "ultimo_jogo_data": None,
+        "ultimo_jogo_txt": "—",
+    }
+
+
+def _resumo_partida_arbitro(jogo: dict) -> str:
+    placar = jogo.get("placar", {}) if isinstance(jogo.get("placar"), dict) else {}
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    adversario = str(jogo.get("adversario", "") or "").strip() or "Adversário não informado"
+    data = str(jogo.get("data", "") or "").strip()
+    return f"{data} - Vasco {gols_vasco} x {gols_adv} {adversario}" if data else f"Vasco {gols_vasco} x {gols_adv} {adversario}"
+
+
+def _acumular_stats_arbitro(info: dict, jogo: dict):
+    info["jogos"] += 1
+    placar = jogo.get("placar", {}) if isinstance(jogo.get("placar"), dict) else {}
+    gols_vasco = int(placar.get("vasco", 0) or 0)
+    gols_adv = int(placar.get("adversario", 0) or 0)
+    info["gols_pro"] += gols_vasco
+    info["gols_contra"] += gols_adv
+
+    if gols_vasco > gols_adv:
+        info["vitorias"] += 1
+    elif gols_vasco < gols_adv:
+        info["derrotas"] += 1
+    else:
+        info["empates"] += 1
+
+    data_jogo = _parse_data_ptbr_safe(str(jogo.get("data", "")).strip())
+    if data_jogo is None:
+        return
+
+    resumo = _resumo_partida_arbitro(jogo)
+    primeiro = info.get("primeiro_jogo_data")
+    if primeiro is None or data_jogo < primeiro:
+        info["primeiro_jogo_data"] = data_jogo
+        info["primeiro_jogo_txt"] = resumo
+
+    ultimo = info.get("ultimo_jogo_data")
+    if ultimo is None or data_jogo > ultimo:
+        info["ultimo_jogo_data"] = data_jogo
+        info["ultimo_jogo_txt"] = resumo
 
 
 def _ordenar_jogos_por_data(jogos):
@@ -1182,6 +1354,7 @@ class App:
         self.frame_estadios = ttk.Frame(self.notebook, padding=10)
         self.frame_comparativo = ttk.Frame(self.notebook, padding=10)
         self.frame_tecnicos = ttk.Frame(self.notebook, padding=10)
+        self.frame_arbitros = ttk.Frame(self.notebook, padding=10)
         self.frame_titulos = ttk.Frame(self.notebook, padding=10)
         self.frame_graficos = ttk.Frame(self.notebook, padding=10)
         self.frame_jogadores_historico = ttk.Frame(self.notebook, padding=10)
@@ -1195,6 +1368,7 @@ class App:
         self.notebook.add(self.frame_graficos, text="Evolução")
         self.notebook.add(self.frame_elenco_atual, text="Elenco Atual")
         self.notebook.add(self.frame_tecnicos, text="Técnicos")
+        self.notebook.add(self.frame_arbitros, text="Árbitros")
         self.notebook.add(self.frame_jogadores_historico, text="Jogadores")
         self.notebook.add(self.frame_estadios, text="Estádios")
         self.notebook.add(self.frame_titulos, text="Títulos")
@@ -1210,6 +1384,7 @@ class App:
         self._carregar_comparativo()
         self._carregar_graficos()
         self._carregar_tecnicos()
+        self._carregar_arbitros()
         self._carregar_titulos()
         self._criar_aba_retro(self.frame_retro)
         self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
@@ -4195,8 +4370,8 @@ class App:
     # --------------------- Formulário ---------------------
     def _criar_formulario(self, frame):
         frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(2, weight=1)
-        frame.rowconfigure(3, weight=0)
+        frame.rowconfigure(3, weight=1)
+        frame.rowconfigure(4, weight=0)
 
         # Card superior: dados principais da partida
         topo = ttk.Labelframe(frame, text="Dados da Partida", padding=10)
@@ -4214,6 +4389,13 @@ class App:
         self.horario_hora_var = tk.StringVar()
         self.horario_minuto_var = tk.StringVar()
         self.capitao_partida_var = tk.StringVar()
+        self.arbitro_var = tk.StringVar()
+        self.auxiliar_1_var = tk.StringVar()
+        self.auxiliar_2_var = tk.StringVar()
+        self.var_arbitragem_var = tk.StringVar()
+        self.publico_pagante_var = tk.StringVar()
+        self.publico_presente_var = tk.StringVar()
+        self.renda_var = tk.StringVar()
         self.gol_vasco_minuto_var = tk.StringVar()
         self.gol_contra_minuto_var = tk.StringVar()
         self.local_var.trace_add("write", self._ao_mudar_local_registro)
@@ -4287,8 +4469,56 @@ class App:
         self.capitao_partida_entry = ttk.Combobox(topo, textvariable=self.capitao_partida_var, width=22, state="readonly")
         self.capitao_partida_entry.grid(row=2, column=7, sticky="ew", pady=3)
 
+        arbitragem_card = ttk.Labelframe(frame, text="Arbitragem", padding=10)
+        arbitragem_card.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        for i in range(8):
+            arbitragem_card.columnconfigure(i, weight=1 if i in (1, 3, 5, 7) else 0)
+
+        ttk.Label(arbitragem_card, text="Árbitro:").grid(row=0, column=0, sticky="w", pady=3)
+        self.arbitro_entry = ttk.Combobox(arbitragem_card, textvariable=self.arbitro_var)
+        self.arbitro_entry["values"] = self.listas.get("arbitros", [])
+        self.arbitro_entry.grid(row=0, column=1, sticky="ew", pady=3, padx=(0, 10))
+        self.arbitro_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "arbitros"))
+        self._forcar_cursor_visivel(self.arbitro_entry)
+
+        ttk.Label(arbitragem_card, text="Auxiliar 1:").grid(row=0, column=2, sticky="w", pady=3)
+        self.auxiliar_1_entry = ttk.Combobox(arbitragem_card, textvariable=self.auxiliar_1_var)
+        self.auxiliar_1_entry["values"] = self.listas.get("auxiliares", [])
+        self.auxiliar_1_entry.grid(row=0, column=3, sticky="ew", pady=3, padx=(0, 10))
+        self.auxiliar_1_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "auxiliares"))
+        self._forcar_cursor_visivel(self.auxiliar_1_entry)
+
+        ttk.Label(arbitragem_card, text="Auxiliar 2:").grid(row=0, column=4, sticky="w", pady=3)
+        self.auxiliar_2_entry = ttk.Combobox(arbitragem_card, textvariable=self.auxiliar_2_var)
+        self.auxiliar_2_entry["values"] = self.listas.get("auxiliares", [])
+        self.auxiliar_2_entry.grid(row=0, column=5, sticky="ew", pady=3, padx=(0, 10))
+        self.auxiliar_2_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "auxiliares"))
+        self._forcar_cursor_visivel(self.auxiliar_2_entry)
+
+        ttk.Label(arbitragem_card, text="VAR:").grid(row=0, column=6, sticky="w", pady=3)
+        self.var_arbitragem_entry = ttk.Combobox(arbitragem_card, textvariable=self.var_arbitragem_var)
+        self.var_arbitragem_entry["values"] = self.listas.get("vars", [])
+        self.var_arbitragem_entry.grid(row=0, column=7, sticky="ew", pady=3)
+        self.var_arbitragem_entry.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vars"))
+        self._forcar_cursor_visivel(self.var_arbitragem_entry)
+
+        ttk.Label(arbitragem_card, text="Público pagante:").grid(row=1, column=0, sticky="w", pady=3)
+        self.publico_pagante_entry = ttk.Entry(arbitragem_card, textvariable=self.publico_pagante_var)
+        self.publico_pagante_entry.grid(row=1, column=1, sticky="ew", pady=3, padx=(0, 10))
+        self._forcar_cursor_visivel(self.publico_pagante_entry)
+
+        ttk.Label(arbitragem_card, text="Público presente:").grid(row=1, column=2, sticky="w", pady=3)
+        self.publico_presente_entry = ttk.Entry(arbitragem_card, textvariable=self.publico_presente_var)
+        self.publico_presente_entry.grid(row=1, column=3, sticky="ew", pady=3, padx=(0, 10))
+        self._forcar_cursor_visivel(self.publico_presente_entry)
+
+        ttk.Label(arbitragem_card, text="Renda:").grid(row=1, column=4, sticky="w", pady=3)
+        self.renda_entry = ttk.Entry(arbitragem_card, textvariable=self.renda_var)
+        self.renda_entry.grid(row=1, column=5, columnspan=3, sticky="ew", pady=3)
+        self._forcar_cursor_visivel(self.renda_entry)
+
         placar_card = ttk.Labelframe(frame, text="Placar", padding=10)
-        placar_card.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        placar_card.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         placar_card.columnconfigure(0, weight=1)
         placar_card.columnconfigure(6, weight=1)
         ttk.Label(placar_card, text="Vasco").grid(row=0, column=1, sticky="e")
@@ -4302,7 +4532,7 @@ class App:
         ttk.Label(placar_card, textvariable=self.adversario_var).grid(row=0, column=5, sticky="w", padx=(2, 0))
 
         meio = ttk.Frame(frame)
-        meio.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
+        meio.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
         meio.columnconfigure(0, weight=1)
         meio.columnconfigure(1, weight=1)
         meio.rowconfigure(0, weight=1)
@@ -4475,7 +4705,7 @@ class App:
 
         # Observações
         obs_card = ttk.Labelframe(frame, text="Observações da Partida", padding=10)
-        obs_card.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
+        obs_card.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
         obs_card.columnconfigure(0, weight=1)
         obs_card.rowconfigure(0, weight=1)
         self.obs_text = tk.Text(
@@ -4490,7 +4720,7 @@ class App:
         self.salvar_btn_label = tk.StringVar(value="Salvar Partida")
         self.modo_edicao_var = tk.StringVar(value="")
         botoes = ttk.Frame(frame)
-        botoes.grid(row=4, column=0, pady=12, sticky="ew")
+        botoes.grid(row=5, column=0, pady=12, sticky="ew")
         ttk.Label(botoes, textvariable=self.modo_edicao_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 12))
         self.btn_salvar = ttk.Button(botoes, textvariable=self.salvar_btn_label, command=self.salvar_partida)
         self.btn_salvar.pack(side="left", padx=6)
@@ -5033,6 +5263,17 @@ class App:
         estadio = self.estadio_var.get().strip() if hasattr(self, "estadio_var") else ""
         horario = self._obter_horario_formatado()
         capitao = self.capitao_partida_var.get().strip() if hasattr(self, "capitao_partida_var") else ""
+        arbitragem = _normalizar_arbitragem({
+            "arbitro": self.arbitro_var.get().strip() if hasattr(self, "arbitro_var") else "",
+            "auxiliares": [
+                self.auxiliar_1_var.get().strip() if hasattr(self, "auxiliar_1_var") else "",
+                self.auxiliar_2_var.get().strip() if hasattr(self, "auxiliar_2_var") else "",
+            ],
+            "var": self.var_arbitragem_var.get().strip() if hasattr(self, "var_arbitragem_var") else "",
+        })
+        publico_pagante = _normalizar_inteiro_positivo(self.publico_pagante_var.get() if hasattr(self, "publico_pagante_var") else "")
+        publico_presente = _normalizar_inteiro_positivo(self.publico_presente_var.get() if hasattr(self, "publico_presente_var") else "")
+        renda = _normalizar_renda_brl(self.renda_var.get() if hasattr(self, "renda_var") else "")
         observacao = self.obs_text.get("1.0", "end").strip()
         tecnico = self.tecnico_var.get().strip() or self.listas.get("tecnico_atual", "Fernando Diniz")
         posicao_tabela = None
@@ -5056,6 +5297,18 @@ class App:
             return
         if not re.match(r"^\d{2}:\d{2}$", horario):
             messagebox.showerror("Erro", "Informe o horário no formato HH:MM.")
+            return
+        if hasattr(self, "publico_pagante_var") and self.publico_pagante_var.get().strip() and publico_pagante is None:
+            messagebox.showerror("Erro", "Informe um público pagante válido.")
+            return
+        if hasattr(self, "publico_presente_var") and self.publico_presente_var.get().strip() and publico_presente is None:
+            messagebox.showerror("Erro", "Informe um público presente válido.")
+            return
+        if publico_pagante is not None and publico_presente is not None and publico_presente < publico_pagante:
+            messagebox.showerror("Erro", "O público presente não pode ser menor que o público pagante.")
+            return
+        if hasattr(self, "renda_var") and self.renda_var.get().strip() and renda is None:
+            messagebox.showerror("Erro", "Informe uma renda válida.")
             return
         horas, minutos = [int(parte) for parte in horario.split(":", 1)]
         if horas > 23 or minutos > 59:
@@ -5129,6 +5382,44 @@ class App:
             self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
         self.tecnico_var.set(tecnico)
         self._atualizar_combo_tecnicos()
+
+        arbitro = arbitragem.get("arbitro", "")
+        if arbitro:
+            lista_arbitros = self.listas.setdefault("arbitros", [])
+            arbitros_cf = {str(nome).casefold() for nome in lista_arbitros}
+            if arbitro.casefold() not in arbitros_cf:
+                lista_arbitros.append(arbitro)
+                self.listas["arbitros"] = sorted(lista_arbitros, key=lambda s: s.casefold())
+            if hasattr(self, "arbitro_entry"):
+                self.arbitro_entry["values"] = self.listas["arbitros"]
+
+        auxiliares = arbitragem.get("auxiliares", [])
+        if auxiliares:
+            lista_auxiliares = self.listas.setdefault("auxiliares", [])
+            auxiliares_cf = {str(nome).casefold() for nome in lista_auxiliares}
+            alterou_aux = False
+            for nome in auxiliares:
+                if nome.casefold() not in auxiliares_cf:
+                    lista_auxiliares.append(nome)
+                    auxiliares_cf.add(nome.casefold())
+                    alterou_aux = True
+            if alterou_aux:
+                self.listas["auxiliares"] = sorted(lista_auxiliares, key=lambda s: s.casefold())
+            if hasattr(self, "auxiliar_1_entry"):
+                self.auxiliar_1_entry["values"] = self.listas["auxiliares"]
+            if hasattr(self, "auxiliar_2_entry"):
+                self.auxiliar_2_entry["values"] = self.listas["auxiliares"]
+
+        var_nome = arbitragem.get("var", "")
+        if var_nome:
+            lista_vars = self.listas.setdefault("vars", [])
+            vars_cf = {str(nome).casefold() for nome in lista_vars}
+            if var_nome.casefold() not in vars_cf:
+                lista_vars.append(var_nome)
+                self.listas["vars"] = sorted(lista_vars, key=lambda s: s.casefold())
+            if hasattr(self, "var_arbitragem_entry"):
+                self.var_arbitragem_entry["values"] = self.listas["vars"]
+
         salvar_listas(self.listas)
 
         jogo = {
@@ -5145,9 +5436,13 @@ class App:
             "cartoes_vermelhos_vasco": cartoes_vermelhos_vasco,
             "observacao": observacao,  # <<< novo campo
             "capitao": capitao,
+            "publico_pagante": publico_pagante,
+            "publico_presente": publico_presente,
+            "renda": renda,
             "tecnico": tecnico,
             "posicao_tabela": posicao_tabela,
             "escalacao_partida": escalacao_partida,
+            "arbitragem": arbitragem,
         }
 
         jogos = carregar_dados_jogos()
@@ -5190,6 +5485,20 @@ class App:
             self.horario_minuto_var.set("")
         if hasattr(self, "capitao_partida_var"):
             self.capitao_partida_var.set("")
+        if hasattr(self, "arbitro_var"):
+            self.arbitro_var.set("")
+        if hasattr(self, "auxiliar_1_var"):
+            self.auxiliar_1_var.set("")
+        if hasattr(self, "auxiliar_2_var"):
+            self.auxiliar_2_var.set("")
+        if hasattr(self, "var_arbitragem_var"):
+            self.var_arbitragem_var.set("")
+        if hasattr(self, "publico_pagante_var"):
+            self.publico_pagante_var.set("")
+        if hasattr(self, "publico_presente_var"):
+            self.publico_presente_var.set("")
+        if hasattr(self, "renda_var"):
+            self.renda_var.set("")
         if hasattr(self, "posicao_var"):
             self.posicao_var.set("")
         self._atualizar_estado_posicao()
@@ -5314,6 +5623,22 @@ class App:
         if hasattr(self, "capitao_partida_var"):
             self._atualizar_opcoes_capitao_partida(preservar_valor=False)
             self.capitao_partida_var.set(str(jogo.get("capitao", "")).strip())
+        arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+        if hasattr(self, "arbitro_var"):
+            self.arbitro_var.set(arbitragem.get("arbitro", ""))
+        auxiliares = arbitragem.get("auxiliares", [])
+        if hasattr(self, "auxiliar_1_var"):
+            self.auxiliar_1_var.set(auxiliares[0] if len(auxiliares) > 0 else "")
+        if hasattr(self, "auxiliar_2_var"):
+            self.auxiliar_2_var.set(auxiliares[1] if len(auxiliares) > 1 else "")
+        if hasattr(self, "var_arbitragem_var"):
+            self.var_arbitragem_var.set(arbitragem.get("var", ""))
+        if hasattr(self, "publico_pagante_var"):
+            self.publico_pagante_var.set("" if jogo.get("publico_pagante") in (None, "") else str(jogo.get("publico_pagante")))
+        if hasattr(self, "publico_presente_var"):
+            self.publico_presente_var.set("" if jogo.get("publico_presente") in (None, "") else str(jogo.get("publico_presente")))
+        if hasattr(self, "renda_var"):
+            self.renda_var.set("" if jogo.get("renda") in (None, "") else _formatar_renda_brl(jogo.get("renda")))
 
         self.obs_text.delete("1.0", "end")
         self.obs_text.insert("1.0", jogo.get("observacao", ""))
@@ -5481,6 +5806,7 @@ class App:
         self._carregar_estadios()
         self._carregar_comparativo()
         self._carregar_tecnicos()
+        self._carregar_arbitros()
         self._carregar_titulos()
         self._carregar_graficos()
         self._render_aba_jogadores_historico()
@@ -5527,6 +5853,15 @@ class App:
                 if hasattr(self, "tecnico_var"):
                     self.tecnico_var.set(novo)
                 self._atualizar_combo_tecnicos()
+        elif tipo == "arbitros" and nome in self.listas.get("arbitros", []):
+            self.listas["arbitros"].remove(nome); alterou = True
+            self._atualizar_combos_arbitragem()
+        elif tipo == "auxiliares" and nome in self.listas.get("auxiliares", []):
+            self.listas["auxiliares"].remove(nome); alterou = True
+            self._atualizar_combos_arbitragem()
+        elif tipo == "vars" and nome in self.listas.get("vars", []):
+            self.listas["vars"].remove(nome); alterou = True
+            self._atualizar_combos_arbitragem()
 
         if alterou:
             salvar_listas(self.listas)
@@ -5588,6 +5923,16 @@ class App:
     def _atualizar_combo_tecnicos(self):
         if hasattr(self, "tecnico_entry"):
             self.tecnico_entry['values'] = self.listas.get("tecnicos", [])
+
+    def _atualizar_combos_arbitragem(self):
+        if hasattr(self, "arbitro_entry"):
+            self.arbitro_entry["values"] = self.listas.get("arbitros", [])
+        if hasattr(self, "auxiliar_1_entry"):
+            self.auxiliar_1_entry["values"] = self.listas.get("auxiliares", [])
+        if hasattr(self, "auxiliar_2_entry"):
+            self.auxiliar_2_entry["values"] = self.listas.get("auxiliares", [])
+        if hasattr(self, "var_arbitragem_entry"):
+            self.var_arbitragem_entry["values"] = self.listas.get("vars", [])
         if hasattr(self, "elenco_tecnico_entry"):
             self.elenco_tecnico_entry['values'] = self.listas.get("tecnicos", [])
         self._atualizar_combo_estadios()
@@ -5831,6 +6176,15 @@ class App:
         gols_pro = gols_contra = 0
         artilheiros = Counter()
         carrascos = Counter()
+        publico_pagante_total = 0
+        publico_presente_total = 0
+        renda_total = 0.0
+        publico_pagante_casa = 0
+        publico_presente_casa = 0
+        renda_casa = 0.0
+        publico_pagante_fora = 0
+        publico_presente_fora = 0
+        renda_fora = 0.0
 
         rows = []
         streak_inv = streak_sem_vitoria = 0
@@ -5864,6 +6218,34 @@ class App:
 
             gols_pro += placar.get("vasco", 0)
             gols_contra += placar.get("adversario", 0)
+            publico_pagante_jogo = jogo.get("publico_pagante")
+            publico_presente_jogo = jogo.get("publico_presente")
+            renda_jogo = jogo.get("renda")
+            try:
+                publico_pagante_jogo = int(publico_pagante_jogo) if publico_pagante_jogo is not None else 0
+            except Exception:
+                publico_pagante_jogo = 0
+            try:
+                publico_presente_jogo = int(publico_presente_jogo) if publico_presente_jogo is not None else 0
+            except Exception:
+                publico_presente_jogo = 0
+            try:
+                renda_jogo = float(renda_jogo) if renda_jogo is not None else 0.0
+            except Exception:
+                renda_jogo = 0.0
+
+            publico_pagante_total += publico_pagante_jogo
+            publico_presente_total += publico_presente_jogo
+            renda_total += renda_jogo
+            local_jogo = str(jogo.get("local", "")).strip().casefold()
+            if local_jogo == "fora":
+                publico_pagante_fora += publico_pagante_jogo
+                publico_presente_fora += publico_presente_jogo
+                renda_fora += renda_jogo
+            else:
+                publico_pagante_casa += publico_pagante_jogo
+                publico_presente_casa += publico_presente_jogo
+                renda_casa += renda_jogo
 
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
@@ -5888,27 +6270,107 @@ class App:
         aproveitamento = round(((vitorias * 3 + empates) / (jogos_disputados * 3)) * 100, 1) if jogos_disputados else 0.0
         media_gols_pro = round(gols_pro / jogos_disputados, 2) if jogos_disputados else 0.0
         media_gols_contra = round(gols_contra / jogos_disputados, 2) if jogos_disputados else 0.0
+        recorte_wrap = ttk.Frame(frame_ano)
+        recorte_wrap.pack(fill="x", pady=(0, 8))
+        ttk.Label(recorte_wrap, text="Recorte:").pack(side="left")
+        filtro_local_var = tk.StringVar(value="todos")
+        ttk.Radiobutton(recorte_wrap, text="Todos", variable=filtro_local_var, value="todos").pack(side="left", padx=(8, 6))
+        ttk.Radiobutton(recorte_wrap, text="Casa", variable=filtro_local_var, value="casa").pack(side="left", padx=6)
+        ttk.Radiobutton(recorte_wrap, text="Fora", variable=filtro_local_var, value="fora").pack(side="left", padx=6)
+
         cards = ttk.Frame(frame_ano)
         cards.pack(fill="x", pady=(0, 8))
         cards.columnconfigure((0, 1, 2, 3), weight=1)
 
-        def make_card(parent, titulo, valor):
+        def make_card(parent, titulo, var):
             lf = ttk.Labelframe(parent, text=titulo, style="Card.TLabelframe")
-            ttk.Label(lf, text=str(valor), style="CardValue.TLabel").pack()
+            ttk.Label(lf, textvariable=var, style="CardValue.TLabel").pack()
             return lf
 
-        make_card(cards, "Jogos", len(jogos_ano)).grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Vitórias", vitorias).grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Empates", empates).grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Derrotas", derrotas).grid(row=0, column=3, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Gols Pró", gols_pro).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Gols Contra", gols_contra).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Saldo", saldo).grid(row=1, column=2, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Aproveitamento (%)", f"{aproveitamento}").grid(row=1, column=3, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Média gols pró", media_gols_pro).grid(row=2, column=0, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Média gols contra", media_gols_contra).grid(row=2, column=1, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Maior sequência invicta", invicto_max).grid(row=2, column=2, sticky="nsew", padx=4, pady=4)
-        make_card(cards, "Maior tempo sem vitórias", sem_vitoria_max).grid(row=2, column=3, sticky="nsew", padx=4, pady=4)
+        card_specs = [
+            ("Jogos", "jogos"),
+            ("Vitórias", "vitorias"),
+            ("Empates", "empates"),
+            ("Derrotas", "derrotas"),
+            ("Gols Pró", "gols_pro"),
+            ("Gols Contra", "gols_contra"),
+            ("Saldo", "saldo"),
+            ("Aproveitamento (%)", "aproveitamento"),
+            ("Média gols pró", "media_gols_pro"),
+            ("Média gols contra", "media_gols_contra"),
+            ("Maior sequência invicta", "invicto_max"),
+            ("Maior tempo sem vitórias", "sem_vitoria_max"),
+            ("Público Pagante", "publico_pagante"),
+            ("Público Presente", "publico_presente"),
+            ("Renda", "renda"),
+        ]
+        card_vars = {chave: tk.StringVar(value="0") for _titulo, chave in card_specs}
+        for idx_card, (titulo, chave) in enumerate(card_specs):
+            linha, coluna = divmod(idx_card, 4)
+            make_card(cards, titulo, card_vars[chave]).grid(row=linha, column=coluna, sticky="nsew", padx=4, pady=4)
+
+        def _atualizar_cards_temporada(linhas_base):
+            jogos_filtrados = len(linhas_base)
+            vitorias_f = empates_f = derrotas_f = 0
+            gols_pro_f = gols_contra_f = 0
+            publico_pagante_f = 0
+            publico_presente_f = 0
+            renda_f = 0.0
+            streak_inv_f = streak_sem_vitoria_f = 0
+            invicto_max_f = sem_vitoria_max_f = 0
+
+            linhas_ordenadas_data = sorted(
+                linhas_base,
+                key=lambda r: _parse_data_ptbr_safe(str(r.get("data", ""))) or datetime.min,
+            )
+            for r in linhas_ordenadas_data:
+                jogo_raw = r.get("raw", {})
+                placar = jogo_raw.get("placar", {"vasco": 0, "adversario": 0})
+                vasco = int(placar.get("vasco", 0) or 0)
+                adv = int(placar.get("adversario", 0) or 0)
+                gols_pro_f += vasco
+                gols_contra_f += adv
+                publico_pagante_f += _normalizar_inteiro_positivo(jogo_raw.get("publico_pagante")) or 0
+                publico_presente_f += _normalizar_inteiro_positivo(jogo_raw.get("publico_presente")) or 0
+                renda_f += _normalizar_renda_brl(jogo_raw.get("renda")) or 0.0
+
+                if vasco > adv:
+                    vitorias_f += 1
+                    streak_inv_f += 1
+                    invicto_max_f = max(invicto_max_f, streak_inv_f)
+                    streak_sem_vitoria_f = 0
+                elif vasco < adv:
+                    derrotas_f += 1
+                    streak_sem_vitoria_f += 1
+                    sem_vitoria_max_f = max(sem_vitoria_max_f, streak_sem_vitoria_f)
+                    streak_inv_f = 0
+                else:
+                    empates_f += 1
+                    streak_inv_f += 1
+                    invicto_max_f = max(invicto_max_f, streak_inv_f)
+                    streak_sem_vitoria_f += 1
+                    sem_vitoria_max_f = max(sem_vitoria_max_f, streak_sem_vitoria_f)
+
+            saldo_f = gols_pro_f - gols_contra_f
+            aproveitamento_f = round(((vitorias_f * 3 + empates_f) / (jogos_filtrados * 3)) * 100, 1) if jogos_filtrados else 0.0
+            media_gols_pro_f = round(gols_pro_f / jogos_filtrados, 2) if jogos_filtrados else 0.0
+            media_gols_contra_f = round(gols_contra_f / jogos_filtrados, 2) if jogos_filtrados else 0.0
+
+            card_vars["jogos"].set(str(jogos_filtrados))
+            card_vars["vitorias"].set(str(vitorias_f))
+            card_vars["empates"].set(str(empates_f))
+            card_vars["derrotas"].set(str(derrotas_f))
+            card_vars["gols_pro"].set(str(gols_pro_f))
+            card_vars["gols_contra"].set(str(gols_contra_f))
+            card_vars["saldo"].set(str(saldo_f))
+            card_vars["aproveitamento"].set(str(aproveitamento_f))
+            card_vars["media_gols_pro"].set(str(media_gols_pro_f))
+            card_vars["media_gols_contra"].set(str(media_gols_contra_f))
+            card_vars["invicto_max"].set(str(invicto_max_f))
+            card_vars["sem_vitoria_max"].set(str(sem_vitoria_max_f))
+            card_vars["publico_pagante"].set(_formatar_publico(publico_pagante_f))
+            card_vars["publico_presente"].set(_formatar_publico(publico_presente_f))
+            card_vars["renda"].set(_formatar_renda_brl(renda_f))
 
         filtros_temporada = ttk.Frame(frame_ano)
         filtros_temporada.pack(fill="x", pady=(0, 6))
@@ -6013,6 +6475,7 @@ class App:
             rows_base,
             termo_busca="",
             estadio_sel="Todos",
+            local_sel="todos",
             tv_ref=tv,
             tooltip_map_ref=tooltip_map,
             obs_map_ref=obs_map,
@@ -6038,6 +6501,12 @@ class App:
             obs_frame_ref.pack_forget()
 
             linhas = rows_base
+            local_sel = str(local_sel or "todos").strip().casefold()
+            if local_sel in {"casa", "fora"}:
+                linhas = [
+                    r for r in linhas
+                    if str((r.get("raw") or {}).get("local", "")).strip().casefold() == local_sel
+                ]
             if termo_cf:
                 if score_match:
                     vasco_q = int(score_match.group(1))
@@ -6074,6 +6543,8 @@ class App:
                     r for r in linhas
                     if str((r.get("raw") or {}).get("estadio", "")).strip().casefold() == estadio_sel.casefold()
                 ]
+
+            _atualizar_cards_temporada(linhas)
 
             def _sort_key(r):
                 col = sort_state_ref["col"]
@@ -6136,6 +6607,7 @@ class App:
                 item_to_idx_ref[iid] = r["idx"]
 
         def _limpar_filtro_temporada():
+            filtro_local_var.set("todos")
             filtro_adversario_var.set("")
             filtro_estadio_var.set("Todos")
 
@@ -6145,6 +6617,7 @@ class App:
             rows_ref=rows,
             filtro_var=filtro_adversario_var,
             filtro_estadio_var_ref=filtro_estadio_var,
+            filtro_local_var_ref=filtro_local_var,
             render_fn=_render_rows_temporada,
         ):
             if sort_state_ref["col"] == coluna:
@@ -6152,16 +6625,20 @@ class App:
             else:
                 sort_state_ref["col"] = coluna
                 sort_state_ref["reverse"] = False
-            render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get())
+            render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
 
         ttk.Button(filtros_temporada, text="Limpar", command=_limpar_filtro_temporada).pack(side="left")
         filtro_adversario_var.trace_add(
             "write",
-            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get())
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
         )
         filtro_estadio_var.trace_add(
             "write",
-            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get())
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
+        )
+        filtro_local_var.trace_add(
+            "write",
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
         )
         for c in cols:
             if c == "tecnico":
@@ -6171,7 +6648,7 @@ class App:
             else:
                 titulo = c.capitalize() if c != "placar" else "Placar"
             tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
-        _render_rows_temporada(rows, "", filtro_estadio_var.get())
+        _render_rows_temporada(rows, "", filtro_estadio_var.get(), filtro_local_var.get())
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):
@@ -6216,10 +6693,16 @@ class App:
         estadio = str(jogo.get("estadio", "")).strip() or "—"
         horario = str(jogo.get("horario", "")).strip() or "—"
         capitao = str(jogo.get("capitao", "")).strip() or "—"
+        publico_pagante = _formatar_publico(jogo.get("publico_pagante"))
+        publico_presente = _formatar_publico(jogo.get("publico_presente"))
+        renda = _formatar_renda_brl(jogo.get("renda"))
         return (
             f"Estádio: {estadio}\n"
             f"Horário: {horario}\n"
             f"Capitão: {capitao}\n"
+            f"Público pagante: {publico_pagante}\n"
+            f"Público presente: {publico_presente}\n"
+            f"Renda: {renda}\n"
             f"Gols do Vasco: {gols_vasco}\n"
             f"Gols do {jogo.get('adversario','Adversário')}: {gols_adv}\n"
             f"Amarelos do Vasco: {amarelos}\n"
@@ -7543,6 +8026,166 @@ class App:
                 ),
                 tags=tags,
             )
+
+    # --------------------- Árbitros ---------------------
+    def _carregar_arbitros(self):
+        for widget in self.frame_arbitros.winfo_children():
+            widget.destroy()
+
+        jogos = carregar_dados_jogos()
+        stats = defaultdict(_criar_stats_arbitro)
+
+        for jogo in jogos:
+            arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+            arbitro = arbitragem.get("arbitro", "")
+            if not arbitro:
+                continue
+            _acumular_stats_arbitro(stats[arbitro], jogo)
+
+        if not stats:
+            ttk.Label(self.frame_arbitros, text="Nenhum árbitro registrado ainda.").pack(anchor="w")
+            return
+
+        container = ttk.Frame(self.frame_arbitros)
+        container.pack(fill="both", expand=True)
+        ttk.Label(
+            container,
+            text="Lista de árbitros principais que já apitaram jogos do Vasco.",
+            foreground=self.colors["tree_head_fg"],
+        ).pack(anchor="w", pady=(0, 8))
+
+        tabela_wrap = ttk.Frame(container)
+        tabela_wrap.pack(fill="both", expand=True)
+        cols = (
+            "arbitro",
+            "jogos",
+            "primeiro_jogo",
+            "ultimo_jogo",
+            "vitorias",
+            "empates",
+            "derrotas",
+            "gols_pro",
+            "gols_contra",
+            "saldo",
+        )
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=min(18, max(6, len(stats))))
+        headings = {
+            "arbitro": "Árbitro",
+            "jogos": "Jogos",
+            "primeiro_jogo": "Primeiro Jogo",
+            "ultimo_jogo": "Último Jogo",
+            "vitorias": "Vitórias",
+            "empates": "Empates",
+            "derrotas": "Derrotas",
+            "gols_pro": "Gols Feitos",
+            "gols_contra": "Gols Tomados",
+            "saldo": "Saldo",
+        }
+        widths = {
+            "arbitro": 220,
+            "jogos": 60,
+            "primeiro_jogo": 260,
+            "ultimo_jogo": 260,
+            "vitorias": 80,
+            "empates": 80,
+            "derrotas": 80,
+            "gols_pro": 100,
+            "gols_contra": 110,
+            "saldo": 70,
+        }
+        for col in cols:
+            tv.heading(col, text=headings[col], command=lambda c=col: self._ordenar_coluna_arbitros(c))
+            tv.column(col, width=widths[col], anchor="center" if col != "arbitro" else "w", stretch=True)
+
+        sy = ttk.Scrollbar(tabela_wrap, orient="vertical", command=tv.yview)
+        sx = ttk.Scrollbar(container, orient="horizontal", command=tv.xview)
+        tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+        tv.pack(side="left", fill="both", expand=True)
+        sy.pack(side="right", fill="y")
+        sx.pack(fill="x", pady=(6, 0))
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+
+        self._tv_arbitros = tv
+        self._arbitros_headings = headings
+        self._arbitros_rows = []
+        for arbitro, info in stats.items():
+            self._arbitros_rows.append({
+                "arbitro": arbitro,
+                "jogos": info["jogos"],
+                "primeiro_jogo": info["primeiro_jogo_txt"],
+                "ultimo_jogo": info["ultimo_jogo_txt"],
+                "primeiro_jogo_data": info["primeiro_jogo_data"],
+                "ultimo_jogo_data": info["ultimo_jogo_data"],
+                "vitorias": info["vitorias"],
+                "empates": info["empates"],
+                "derrotas": info["derrotas"],
+                "gols_pro": info["gols_pro"],
+                "gols_contra": info["gols_contra"],
+                "saldo": info["gols_pro"] - info["gols_contra"],
+            })
+
+        self._arbitros_sort_col = "jogos"
+        self._arbitros_sort_reverse = True
+        self._render_arbitros_ordenado()
+
+    def _chave_ordenacao_arbitros(self, row, coluna):
+        if coluna in {"jogos", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo"}:
+            return int(row.get(coluna, 0))
+        if coluna == "primeiro_jogo":
+            return row.get("primeiro_jogo_data") or datetime.min
+        if coluna == "ultimo_jogo":
+            return row.get("ultimo_jogo_data") or datetime.min
+        return str(row.get(coluna, "")).casefold()
+
+    def _render_arbitros_ordenado(self):
+        tv = getattr(self, "_tv_arbitros", None)
+        if not tv:
+            return
+        headings = getattr(self, "_arbitros_headings", {})
+        sort_col = getattr(self, "_arbitros_sort_col", "")
+        reverse = bool(getattr(self, "_arbitros_sort_reverse", False))
+        for col, titulo in headings.items():
+            indicador = ""
+            if col == sort_col:
+                indicador = " ▼" if reverse else " ▲"
+            tv.heading(col, text=f"{titulo}{indicador}", command=lambda c=col: self._ordenar_coluna_arbitros(c))
+        for iid in tv.get_children():
+            tv.delete(iid)
+
+        rows = sorted(
+            self._arbitros_rows,
+            key=lambda r: (self._chave_ordenacao_arbitros(r, self._arbitros_sort_col), str(r.get("arbitro", "")).casefold()),
+            reverse=self._arbitros_sort_reverse,
+        )
+        for idx, row in enumerate(rows, start=1):
+            tags = ("odd",) if idx % 2 else ()
+            tv.insert(
+                "",
+                "end",
+                values=(
+                    row["arbitro"],
+                    row["jogos"],
+                    row["primeiro_jogo"],
+                    row["ultimo_jogo"],
+                    row["vitorias"],
+                    row["empates"],
+                    row["derrotas"],
+                    row["gols_pro"],
+                    row["gols_contra"],
+                    row["saldo"],
+                ),
+                tags=tags,
+            )
+
+    def _ordenar_coluna_arbitros(self, coluna):
+        if not getattr(self, "_arbitros_rows", None):
+            return
+        if getattr(self, "_arbitros_sort_col", None) == coluna:
+            self._arbitros_sort_reverse = not self._arbitros_sort_reverse
+        else:
+            self._arbitros_sort_col = coluna
+            self._arbitros_sort_reverse = False
+        self._render_arbitros_ordenado()
 
     # --------------------- Títulos ---------------------
     def _carregar_titulos(self):

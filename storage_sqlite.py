@@ -45,6 +45,9 @@ LIST_TYPES = (
     "competicoes",
     "tecnicos",
     "estadios",
+    "arbitros",
+    "auxiliares",
+    "vars",
 )
 
 
@@ -199,9 +202,13 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             opponent_goals INTEGER NOT NULL,
             observation TEXT NOT NULL DEFAULT '',
             captain_name TEXT NOT NULL DEFAULT '',
+            paid_attendance INTEGER,
+            total_attendance INTEGER,
+            match_revenue REAL,
             coach_id INTEGER,
             table_position INTEGER,
             lineup_json TEXT NOT NULL DEFAULT '{}',
+            arbitration_json TEXT NOT NULL DEFAULT '{}',
             FOREIGN KEY (opponent_team_id) REFERENCES teams (id),
             FOREIGN KEY (competition_id) REFERENCES competitions (id),
             FOREIGN KEY (coach_id) REFERENCES coaches (id)
@@ -272,6 +279,14 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE matches ADD COLUMN match_time TEXT NOT NULL DEFAULT ''")
     if "captain_name" not in match_cols:
         conn.execute("ALTER TABLE matches ADD COLUMN captain_name TEXT NOT NULL DEFAULT ''")
+    if "paid_attendance" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN paid_attendance INTEGER")
+    if "total_attendance" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN total_attendance INTEGER")
+    if "match_revenue" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN match_revenue REAL")
+    if "arbitration_json" not in match_cols:
+        conn.execute("ALTER TABLE matches ADD COLUMN arbitration_json TEXT NOT NULL DEFAULT '{}'")
 
     goal_cols = {row["name"] for row in conn.execute("PRAGMA table_info(match_goals)").fetchall()}
     if "goal_minutes_json" not in goal_cols:
@@ -572,6 +587,13 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                 _ensure_team_stadium(conn, op_team_id, estadio, is_primary=False)
             comp_id = _ensure_competition(conn, competicao)
             coach_id = _ensure_coach(conn, tecnico)
+            publico_pagante = jogo.get("publico_pagante") if isinstance(jogo.get("publico_pagante"), int) else None
+            publico_presente = jogo.get("publico_presente") if isinstance(jogo.get("publico_presente"), int) else None
+            renda = jogo.get("renda")
+            if isinstance(renda, int):
+                renda = float(renda)
+            elif not isinstance(renda, float):
+                renda = None
 
             lineup = jogo.get("escalacao_partida")
             if not isinstance(lineup, dict):
@@ -582,8 +604,9 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                 INSERT INTO matches(
                     date_text, date_iso, opponent_team_id, competition_id, location,
                     stadium, match_time, vasco_goals, opponent_goals, observation,
-                    captain_name, coach_id, table_position, lineup_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    captain_name, paid_attendance, total_attendance, match_revenue,
+                    coach_id, table_position, lineup_json, arbitration_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(jogo.get("data", "")).strip(),
@@ -597,9 +620,13 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                     max(0, adv_goals),
                     str(jogo.get("observacao", "")).strip(),
                     str(jogo.get("capitao", "")).strip(),
+                    publico_pagante,
+                    publico_presente,
+                    renda,
                     coach_id,
                     jogo.get("posicao_tabela") if isinstance(jogo.get("posicao_tabela"), int) else None,
                     json.dumps(lineup, ensure_ascii=False),
+                    json.dumps(jogo.get("arbitragem", {}), ensure_ascii=False),
                 ),
             )
             match_id = int(cursor.lastrowid)
@@ -708,8 +735,8 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
             """
             SELECT m.id, m.date_text, t.name AS adversario, c.name AS competicao,
                    m.location, m.stadium, m.match_time, m.vasco_goals, m.opponent_goals, m.observation,
-                   m.captain_name,
-                   ch.name AS tecnico, m.coach_id, m.table_position, m.lineup_json
+                   m.captain_name, m.paid_attendance, m.total_attendance, m.match_revenue,
+                   ch.name AS tecnico, m.coach_id, m.table_position, m.lineup_json, m.arbitration_json
             FROM matches m
             LEFT JOIN teams t ON t.id = m.opponent_team_id
             LEFT JOIN competitions c ON c.id = m.competition_id
@@ -785,12 +812,19 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
         g = goals_by_match.get(mid, {})
         cards = cards_by_match.get(mid, {})
         lineup = {}
+        arbitragem = {}
         try:
             lineup_raw = row["lineup_json"]
             if lineup_raw:
                 lineup = json.loads(lineup_raw)
         except Exception:
             lineup = {}
+        try:
+            arbitragem_raw = row["arbitration_json"]
+            if arbitragem_raw:
+                arbitragem = json.loads(arbitragem_raw)
+        except Exception:
+            arbitragem = {}
 
         jogos.append(
             {
@@ -814,11 +848,15 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                 "cartoes_vermelhos_vasco": cards.get("cartoes_vermelhos_vasco", []),
                 "observacao": row["observation"] or "",
                 "capitao": row["captain_name"] or "",
+                "publico_pagante": int(row["paid_attendance"]) if row["paid_attendance"] is not None else None,
+                "publico_presente": int(row["total_attendance"]) if row["total_attendance"] is not None else None,
+                "renda": float(row["match_revenue"]) if row["match_revenue"] is not None else None,
                 "tecnico": row["tecnico"] or "",
                 "db_match_id": mid,
                 "db_tecnico_id": int(row["coach_id"]) if row["coach_id"] is not None else None,
                 "posicao_tabela": row["table_position"],
                 "escalacao_partida": lineup if isinstance(lineup, dict) else {},
+                "arbitragem": arbitragem if isinstance(arbitragem, dict) else {},
             }
         )
     return jogos
