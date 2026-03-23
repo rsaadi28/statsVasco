@@ -8033,24 +8033,41 @@ class App:
             widget.destroy()
 
         jogos = carregar_dados_jogos()
-        stats = defaultdict(_criar_stats_arbitro)
-
-        for jogo in jogos:
-            arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
-            arbitro = arbitragem.get("arbitro", "")
-            if not arbitro:
-                continue
-            _acumular_stats_arbitro(stats[arbitro], jogo)
-
-        if not stats:
-            ttk.Label(self.frame_arbitros, text="Nenhum árbitro registrado ainda.").pack(anchor="w")
-            return
-
         container = ttk.Frame(self.frame_arbitros)
         container.pack(fill="both", expand=True)
         ttk.Label(
             container,
             text="Lista de árbitros principais que já apitaram jogos do Vasco.",
+            foreground=self.colors["tree_head_fg"],
+        ).pack(anchor="w", pady=(0, 8))
+
+        filtros = ttk.Frame(container)
+        filtros.pack(fill="x", pady=(0, 8))
+        ttk.Label(filtros, text="Local:").pack(side="left")
+        self._arbitros_local_var = tk.StringVar(value="todos")
+        ttk.Radiobutton(filtros, text="Todos", variable=self._arbitros_local_var, value="todos").pack(side="left", padx=(8, 6))
+        ttk.Radiobutton(filtros, text="Casa", variable=self._arbitros_local_var, value="casa").pack(side="left", padx=6)
+        ttk.Radiobutton(filtros, text="Fora", variable=self._arbitros_local_var, value="fora").pack(side="left", padx=6)
+        ttk.Label(filtros, text="Ano:").pack(side="left", padx=(14, 0))
+        anos_disponiveis = sorted({
+            str(j.get("data", "")).strip()[-4:]
+            for j in jogos
+            if str(j.get("data", "")).strip()[-4:].isdigit()
+        })
+        self._arbitros_ano_var = tk.StringVar(value="Todos")
+        combo_ano = ttk.Combobox(
+            filtros,
+            textvariable=self._arbitros_ano_var,
+            values=["Todos"] + anos_disponiveis,
+            state="readonly",
+            width=10,
+        )
+        combo_ano.pack(side="left", padx=(8, 0))
+
+        self._arbitros_total_var = tk.StringVar(value="Total de árbitros listados: 0")
+        ttk.Label(
+            container,
+            textvariable=self._arbitros_total_var,
             foreground=self.colors["tree_head_fg"],
         ).pack(anchor="w", pady=(0, 8))
 
@@ -8068,7 +8085,7 @@ class App:
             "gols_contra",
             "saldo",
         )
-        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=min(18, max(6, len(stats))))
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=12)
         headings = {
             "arbitro": "Árbitro",
             "jogos": "Jogos",
@@ -8107,6 +8124,32 @@ class App:
 
         self._tv_arbitros = tv
         self._arbitros_headings = headings
+        self._arbitros_jogos = list(jogos)
+        self._arbitros_sort_col = "jogos"
+        self._arbitros_sort_reverse = True
+        self._arbitros_rows = []
+        self._arbitros_local_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
+        self._arbitros_ano_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
+        self._aplicar_filtros_arbitros()
+
+    def _aplicar_filtros_arbitros(self):
+        jogos = list(getattr(self, "_arbitros_jogos", []))
+        local_sel = str(getattr(self, "_arbitros_local_var", tk.StringVar(value="todos")).get() or "todos").strip().casefold()
+        ano_sel = str(getattr(self, "_arbitros_ano_var", tk.StringVar(value="Todos")).get() or "Todos").strip()
+
+        if local_sel in {"casa", "fora"}:
+            jogos = [j for j in jogos if str(j.get("local", "")).strip().casefold() == local_sel]
+        if ano_sel and ano_sel != "Todos":
+            jogos = [j for j in jogos if str(j.get("data", "")).strip().endswith(ano_sel)]
+
+        stats = defaultdict(_criar_stats_arbitro)
+        for jogo in jogos:
+            arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+            arbitro = arbitragem.get("arbitro", "")
+            if not arbitro:
+                continue
+            _acumular_stats_arbitro(stats[arbitro], jogo)
+
         self._arbitros_rows = []
         for arbitro, info in stats.items():
             self._arbitros_rows.append({
@@ -8123,9 +8166,9 @@ class App:
                 "gols_contra": info["gols_contra"],
                 "saldo": info["gols_pro"] - info["gols_contra"],
             })
-
-        self._arbitros_sort_col = "jogos"
-        self._arbitros_sort_reverse = True
+        if hasattr(self, "_arbitros_total_var"):
+            total = len(self._arbitros_rows)
+            self._arbitros_total_var.set(f"Total de árbitros listados: {total}")
         self._render_arbitros_ordenado()
 
     def _chave_ordenacao_arbitros(self, row, coluna):
