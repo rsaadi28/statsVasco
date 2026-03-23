@@ -862,6 +862,29 @@ def _formatar_evento_cartao(evento):
     return str(evento.get("nome", "")).strip() or "Jogador"
 
 
+JOGADORES_HIST_RANKING_OPCOES = [
+    "Nenhum",
+    "Passagens pelo Vasco",
+    "Jogos com participação",
+    "Jogos como titular",
+    "Jogos como reserva",
+    "Jogos como não relacionado",
+    "Jogos como lesionado",
+    "Jogos como suspenso",
+    "Gols pelo Vasco",
+    "Jogos como capitão",
+    "Partidas em que marcou",
+    "Gols como titular",
+    "Gols saindo do banco",
+    "Média de gols por jogo",
+    "Cartões amarelos",
+    "Cartões vermelhos",
+    "Amarelos acumulados atuais",
+    "Suspensão pendente",
+    "Média de minutos entre gols",
+]
+
+
 def _resumo_partida_tecnico(jogo: dict) -> str:
     adversario = str(jogo.get("adversario", "Adversário não informado")).strip() or "Adversário não informado"
     placar = jogo.get("placar", {"vasco": 0, "adversario": 0})
@@ -3317,9 +3340,20 @@ class App:
             width=18,
         )
         self.combo_jogadores_hist_filtro.pack(side="left", padx=(6, 6))
+        ttk.Label(filtros, text="Os mais:").pack(side="left", padx=(8, 0))
+        self.jogadores_hist_ranking_var = tk.StringVar(value="Nenhum")
+        self.combo_jogadores_hist_ranking = ttk.Combobox(
+            filtros,
+            textvariable=self.jogadores_hist_ranking_var,
+            values=JOGADORES_HIST_RANKING_OPCOES,
+            state="readonly",
+            width=24,
+        )
+        self.combo_jogadores_hist_ranking.pack(side="left", padx=(6, 6))
         ttk.Button(filtros, text="Limpar", command=self._limpar_busca_jogadores_historico).pack(side="left")
         self.jogadores_hist_busca_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
         self.jogadores_hist_filtro_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
+        self.jogadores_hist_ranking_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
 
         cols = ("posicao", "jogador", "status", "capitao")
         self.tv_jogadores_historico = ttk.Treeview(esquerda, columns=cols, show="headings", height=16)
@@ -3378,6 +3412,9 @@ class App:
         filtro = "Todos"
         if hasattr(self, "jogadores_hist_filtro_var"):
             filtro = self.jogadores_hist_filtro_var.get().strip() or "Todos"
+        ranking = "Nenhum"
+        if hasattr(self, "jogadores_hist_ranking_var"):
+            ranking = self.jogadores_hist_ranking_var.get().strip() or "Nenhum"
 
         atuais = {
             str(j.get("nome", "")).strip().casefold(): _normalizar_condicao_elenco(j.get("condicao"))
@@ -3385,6 +3422,7 @@ class App:
             if isinstance(j, dict) and str(j.get("nome", "")).strip()
         }
         capitaes = self._jogadores_que_foram_capitaes()
+        jogos = carregar_dados_jogos() if ranking != "Nenhum" else []
         self.tv_jogadores_historico.delete(*self.tv_jogadores_historico.get_children())
         jogadores_filtrados = []
         novo_sel = None
@@ -3397,6 +3435,10 @@ class App:
             status = cond if cond else "Ex-jogador"
             foi_capitao = nome.casefold() in capitaes
             icone_capitao = "🎗" if foi_capitao else ""
+            ranking_valor = 0
+            if ranking != "Nenhum":
+                stats = self._coletar_estatisticas_jogador_periodo(nome, jogos)
+                ranking_valor = self._obter_valor_ranking_jogador(jogador, stats, ranking)
             if termo:
                 haystack = f"{posicao} {nome} {status} {'sim' if foi_capitao else 'nao'}".casefold()
                 if termo not in haystack:
@@ -3411,12 +3453,19 @@ class App:
                 "status": status,
                 "capitao": icone_capitao,
                 "foi_capitao": foi_capitao,
+                "ranking_valor": ranking_valor,
             })
 
         def _sort_key(item):
-            col = getattr(self, "_jogadores_hist_sort_col", "posicao")
             ordem_posicao = {pos: idx for idx, pos in enumerate(POSICOES_ELENCO)}
             ordem_status = {status_txt: idx for idx, status_txt in enumerate(CONDICOES_ELENCO + ["Ex-jogador"])}
+            if ranking != "Nenhum":
+                return (
+                    -(float(item.get("ranking_valor", 0) or 0)),
+                    str(item.get("jogador", "")).casefold(),
+                    ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
+                )
+            col = getattr(self, "_jogadores_hist_sort_col", "posicao")
             if col == "posicao":
                 return (
                     ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
@@ -3466,6 +3515,31 @@ class App:
             self.jogadores_hist_busca_var.set("")
         if hasattr(self, "jogadores_hist_filtro_var"):
             self.jogadores_hist_filtro_var.set("Todos")
+        if hasattr(self, "jogadores_hist_ranking_var"):
+            self.jogadores_hist_ranking_var.set("Nenhum")
+
+    def _obter_valor_ranking_jogador(self, jogador, stats, ranking):
+        mapa = {
+            "Passagens pelo Vasco": len(jogador.get("passagens", [])) if isinstance(jogador.get("passagens", []), list) else 0,
+            "Jogos com participação": int(stats.get("jogos_com_participacao", 0) or 0),
+            "Jogos como titular": int(stats.get("jogos_titular", 0) or 0),
+            "Jogos como reserva": int(stats.get("jogos_reserva", 0) or 0),
+            "Jogos como não relacionado": int(stats.get("jogos_nao_rel", 0) or 0),
+            "Jogos como lesionado": int(stats.get("jogos_lesionado", 0) or 0),
+            "Jogos como suspenso": int(stats.get("jogos_suspenso", 0) or 0),
+            "Gols pelo Vasco": int(stats.get("gols", 0) or 0),
+            "Jogos como capitão": int(stats.get("jogos_como_capitao", 0) or 0),
+            "Partidas em que marcou": int(stats.get("partidas_com_gol", 0) or 0),
+            "Gols como titular": int(stats.get("gols_titular", 0) or 0),
+            "Gols saindo do banco": int(stats.get("gols_banco", 0) or 0),
+            "Média de gols por jogo": float(stats.get("media_gols", 0.0) or 0.0),
+            "Cartões amarelos": int(stats.get("cartoes_amarelos", 0) or 0),
+            "Cartões vermelhos": int(stats.get("cartoes_vermelhos", 0) or 0),
+            "Amarelos acumulados atuais": int(stats.get("amarelos_acumulados", 0) or 0),
+            "Suspensão pendente": int(stats.get("suspensoes_pendentes", 0) or 0),
+            "Média de minutos entre gols": float(stats.get("media_minutos_entre_gols", 0.0) or 0.0),
+        }
+        return mapa.get(ranking, 0)
 
     def _toggle_ordenacao_jogadores_historico(self, coluna):
         if coluna not in {"posicao", "jogador", "status", "capitao"}:
@@ -4142,7 +4216,6 @@ class App:
         self.capitao_partida_var = tk.StringVar()
         self.gol_vasco_minuto_var = tk.StringVar()
         self.gol_contra_minuto_var = tk.StringVar()
-        self.estadio_var.trace_add("write", self._sincronizar_local_por_estadio)
         self.local_var.trace_add("write", self._ao_mudar_local_registro)
         self.adversario_var.trace_add("write", self._ao_mudar_adversario_registro)
 
@@ -5139,7 +5212,6 @@ class App:
         self.entry_cartao_amarelo.delete(0, tk.END)
         self.entry_cartao_vermelho.delete(0, tk.END)
         self.obs_text.delete("1.0", "end")
-        self._sincronizar_local_por_estadio()
         self._atualizar_elenco_disponivel_partida()
         self._inicializar_escalacao_partida()
         self._atualizar_opcoes_capitao_partida(preservar_valor=False)
@@ -5572,17 +5644,6 @@ class App:
         if not hora or not minuto:
             return ""
         return f"{hora}:{minuto}"
-
-    def _sincronizar_local_por_estadio(self, *_args):
-        if not hasattr(self, "estadio_var") or not hasattr(self, "local_var"):
-            return
-        estadio = self.estadio_var.get().strip()
-        if not estadio:
-            return
-        if estadio.casefold() == "são januário".casefold():
-            self.local_var.set("casa")
-        else:
-            self.local_var.set("fora")
 
     def _preencher_estadio_por_adversario(self, adversario: str, local: str):
         if not hasattr(self, "estadio_var"):
