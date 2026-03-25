@@ -247,6 +247,8 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             date_iso TEXT,
             match_text TEXT NOT NULL,
             is_home INTEGER,
+            stadium TEXT NOT NULL DEFAULT '',
+            match_time TEXT NOT NULL DEFAULT '',
             competition_id INTEGER,
             opponent_team_id INTEGER,
             FOREIGN KEY (competition_id) REFERENCES competitions (id),
@@ -287,6 +289,12 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE matches ADD COLUMN match_revenue REAL")
     if "arbitration_json" not in match_cols:
         conn.execute("ALTER TABLE matches ADD COLUMN arbitration_json TEXT NOT NULL DEFAULT '{}'")
+
+    future_cols = {row["name"] for row in conn.execute("PRAGMA table_info(future_matches)").fetchall()}
+    if "stadium" not in future_cols:
+        conn.execute("ALTER TABLE future_matches ADD COLUMN stadium TEXT NOT NULL DEFAULT ''")
+    if "match_time" not in future_cols:
+        conn.execute("ALTER TABLE future_matches ADD COLUMN match_time TEXT NOT NULL DEFAULT ''")
 
     goal_cols = {row["name"] for row in conn.execute("PRAGMA table_info(match_goals)").fetchall()}
     if "goal_minutes_json" not in goal_cols:
@@ -571,7 +579,7 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             competicao = str(jogo.get("competicao", "")).strip()
             tecnico = str(jogo.get("tecnico", "")).strip()
             estadio = str(jogo.get("estadio", "")).strip()
-            local = str(jogo.get("local", "")).strip() or "casa"
+            local = str(jogo.get("local", "")).strip()
             placar = jogo.get("placar") if isinstance(jogo.get("placar"), dict) else {}
             try:
                 vasco_goals = int(placar.get("vasco", 0))
@@ -876,6 +884,8 @@ def save_future_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             is_home_raw = jogo.get("em_casa")
             is_home = None if is_home_raw is None else (1 if bool(is_home_raw) else 0)
             competicao = str(jogo.get("campeonato", "")).strip()
+            estadio = str(jogo.get("local", jogo.get("estadio", "")) or "").strip()
+            horario = str(jogo.get("hora", jogo.get("horario", "")) or "").strip()
 
             adversario = ""
             if " x " in match_text:
@@ -893,14 +903,16 @@ def save_future_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             comp_id = _ensure_competition(conn, competicao)
             conn.execute(
                 """
-                INSERT INTO future_matches(date_text, date_iso, match_text, is_home, competition_id, opponent_team_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO future_matches(date_text, date_iso, match_text, is_home, stadium, match_time, competition_id, opponent_team_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     date_text,
                     _parse_data_iso(date_text),
                     match_text,
                     is_home,
+                    estadio,
+                    horario,
                     comp_id,
                     op_team_id,
                 ),
@@ -912,7 +924,7 @@ def load_future_matches(db_path: str) -> list[dict[str, Any]]:
         _create_schema(conn)
         rows = conn.execute(
             """
-            SELECT f.date_text, f.match_text, f.is_home, c.name AS campeonato
+            SELECT f.date_text, f.match_text, f.is_home, f.stadium, f.match_time, c.name AS campeonato
             FROM future_matches f
             LEFT JOIN competitions c ON c.id = f.competition_id
             ORDER BY f.id
@@ -924,6 +936,8 @@ def load_future_matches(db_path: str) -> list[dict[str, Any]]:
             "jogo": row["match_text"] or "",
             "data": row["date_text"] or "",
             "em_casa": None if row["is_home"] is None else bool(row["is_home"]),
+            "local": row["stadium"] or "",
+            "hora": row["match_time"] or "",
             "campeonato": row["campeonato"] or "",
         }
         for row in rows

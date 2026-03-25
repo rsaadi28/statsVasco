@@ -1176,6 +1176,8 @@ def _normalizar_futuro_item(item):
         item.get("emCasa", item.get("em_casa", item.get("emcasa")))
     )
     campeonato = (item.get("campeonato") or item.get("competicao") or "").strip()
+    hora = (item.get("hora") or item.get("horario") or item.get("match_time") or "").strip()
+    local = (item.get("local") or item.get("estadio") or item.get("stadium") or "").strip()
     adversario = (item.get("adversario") or "").strip()
     if not adversario and jogo:
         extraido = _extrair_adversario_de_jogo(jogo)
@@ -1195,8 +1197,25 @@ def _normalizar_futuro_item(item):
         "jogo": jogo,
         "data": data,
         "em_casa": em_casa,
+        "hora": hora,
+        "local": local,
         "campeonato": campeonato,
     }
+
+
+def _escalacao_partida_vazia(escalacao):
+    if not isinstance(escalacao, dict):
+        return True
+    titulares_por_posicao = escalacao.get("titulares_por_posicao")
+    if isinstance(titulares_por_posicao, dict):
+        for nomes in titulares_por_posicao.values():
+            if isinstance(nomes, list) and any(str(nome).strip() for nome in nomes):
+                return False
+    for chave, _label in CATEGORIAS_ESCALACAO_EXTRAS:
+        nomes = escalacao.get(chave)
+        if isinstance(nomes, list) and any(str(nome).strip() for nome in nomes):
+            return False
+    return True
 
 
 # --------------------- Tooltip simples ---------------------
@@ -1426,8 +1445,10 @@ class App:
 
         self.fut_manual_adversario_var = tk.StringVar()
         self.fut_manual_data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
-        self.fut_manual_em_casa_var = tk.BooleanVar(value=True)
+        self.fut_manual_mando_var = tk.StringVar(value="casa")
         self.fut_manual_campeonato_var = tk.StringVar()
+        self.fut_manual_hora_var = tk.StringVar()
+        self.fut_manual_local_var = tk.StringVar()
 
         ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
         adversarios_disputados = sorted({
@@ -1470,12 +1491,23 @@ class App:
         ttk.Button(data_fut_wrap, text="Calendário", command=lambda: self._abrir_calendario_popup(self.fut_manual_data_var)).pack(
             side="left", padx=(8, 0)
         )
-        ttk.Checkbutton(manual_frame, text="Vasco em casa (em_casa = true)", variable=self.fut_manual_em_casa_var).grid(
-            row=2, column=2, columnspan=2, sticky="w", pady=3, padx=(10, 0)
+        mando_wrap = ttk.Frame(manual_frame)
+        mando_wrap.grid(row=2, column=2, columnspan=2, sticky="w", pady=3, padx=(10, 0))
+        ttk.Label(mando_wrap, text="Mando:").pack(side="left")
+        ttk.Radiobutton(mando_wrap, text="Casa", variable=self.fut_manual_mando_var, value="casa").pack(side="left", padx=(8, 6))
+        ttk.Radiobutton(mando_wrap, text="Fora", variable=self.fut_manual_mando_var, value="fora").pack(side="left")
+
+        ttk.Label(manual_frame, text="Hora:").grid(row=3, column=0, sticky="w", pady=3)
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_hora_var).grid(
+            row=3, column=1, sticky="ew", pady=3, padx=(6, 10)
+        )
+        ttk.Label(manual_frame, text="Local:").grid(row=3, column=2, sticky="w", pady=3)
+        ttk.Entry(manual_frame, textvariable=self.fut_manual_local_var).grid(
+            row=3, column=3, sticky="ew", pady=3, padx=(6, 0)
         )
 
         ttk.Button(manual_frame, text="Adicionar Jogo", command=self._adicionar_jogo_futuro_manual).grid(
-            row=3, column=0, columnspan=4, sticky="e", pady=(6, 0)
+            row=4, column=0, columnspan=4, sticky="e", pady=(6, 0)
         )
 
         ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
@@ -1485,16 +1517,20 @@ class App:
         list_wrap.rowconfigure(0, weight=1)
         list_wrap.columnconfigure(0, weight=1)
 
-        cols = ("data", "jogo", "local", "campeonato")
+        cols = ("data", "hora", "jogo", "mando", "local", "campeonato")
         self.tv_futuros = ttk.Treeview(list_wrap, columns=cols, show="headings", height=10)
         self.tv_futuros.heading("data", text="Data")
+        self.tv_futuros.heading("hora", text="Hora")
         self.tv_futuros.heading("jogo", text="Jogo")
-        self.tv_futuros.heading("local", text="Em casa?")
+        self.tv_futuros.heading("mando", text="Em casa?")
+        self.tv_futuros.heading("local", text="Local")
         self.tv_futuros.heading("campeonato", text="Campeonato")
         self.tv_futuros.column("data", width=100, anchor="center")
+        self.tv_futuros.column("hora", width=80, anchor="center")
         self.tv_futuros.column("jogo", width=320, anchor="w")
-        self.tv_futuros.column("local", width=90, anchor="center")
-        self.tv_futuros.column("campeonato", width=240, anchor="w")
+        self.tv_futuros.column("mando", width=90, anchor="center")
+        self.tv_futuros.column("local", width=220, anchor="w")
+        self.tv_futuros.column("campeonato", width=220, anchor="w")
         self.tv_futuros.tag_configure("odd", background=self.colors["row_alt_bg"])
         self.tv_futuros.tag_configure("past", foreground="#7a7a7a")
         self.tv_futuros.grid(row=0, column=0, sticky="nsew")
@@ -1592,8 +1628,10 @@ class App:
         def chave_futuro(item):
             return (
                 str(item.get("data", "")).strip(),
+                str(item.get("hora", "")).strip(),
                 str(item.get("jogo", "")).strip(),
                 item.get("em_casa"),
+                str(item.get("local", "")).strip(),
                 str(item.get("campeonato", "")).strip(),
             )
 
@@ -2019,12 +2057,16 @@ class App:
             {
                 "jogo": "Vasco x Time adversario",
                 "data": "18/02/2026",
+                "hora": "21:30",
+                "local": "São Januário",
                 "em_casa": True,
                 "campeonato": "Campeonato Carioca"
             },
             {
                 "jogo": "Time adversario x Vasco",
                 "data": "22/02/2026",
+                "hora": "",
+                "local": "",
                 "em_casa": False,
                 "campeonato": "Brasileirão Série A"
             }
@@ -2039,7 +2081,9 @@ class App:
         self.fut_manual_adversario_var.set("")
         self.fut_manual_campeonato_var.set("")
         self.fut_manual_data_var.set(datetime.now().strftime("%d/%m/%Y"))
-        self.fut_manual_em_casa_var.set(True)
+        self.fut_manual_mando_var.set("casa")
+        self.fut_manual_hora_var.set("")
+        self.fut_manual_local_var.set("")
 
     def _abrir_menu_contexto_json_futuros(self, event):
         menu = tk.Menu(self.root, tearoff=0)
@@ -2064,7 +2108,9 @@ class App:
         adversario = self.fut_manual_adversario_var.get().strip()
         data_txt = self.fut_manual_data_var.get().strip()
         campeonato = self.fut_manual_campeonato_var.get().strip()
-        em_casa = bool(self.fut_manual_em_casa_var.get())
+        em_casa = self.fut_manual_mando_var.get() != "fora"
+        hora = self.fut_manual_hora_var.get().strip()
+        local = self.fut_manual_local_var.get().strip()
 
         if not adversario or not data_txt:
             messagebox.showerror("Erro", "Preencha pelo menos os campos Adversário e Data.")
@@ -2075,6 +2121,8 @@ class App:
             "jogo": jogo,
             "data": data_txt,
             "em_casa": em_casa,
+            "hora": hora,
+            "local": local,
             "campeonato": campeonato,
         }
         normalizado = _normalizar_futuro_item(item)
@@ -2091,6 +2139,8 @@ class App:
         self._render_lista_futuros()
         self.fut_manual_adversario_var.set("")
         self.fut_manual_campeonato_var.set("")
+        self.fut_manual_hora_var.set("")
+        self.fut_manual_local_var.set("")
         messagebox.showinfo("Sucesso", "Jogo futuro adicionado.")
 
     def _render_lista_futuros(self):
@@ -2125,7 +2175,14 @@ class App:
             self.tv_futuros.insert(
                 "",
                 "end",
-                values=(jogo.get("data"), jogo.get("jogo"), local, jogo.get("campeonato") or "-"),
+                values=(
+                    jogo.get("data"),
+                    jogo.get("hora") or "-",
+                    jogo.get("jogo"),
+                    local,
+                    jogo.get("local") or "-",
+                    jogo.get("campeonato") or "-",
+                ),
                 tags=tuple(tags)
             )
         self._atualizar_retro_futuro_selecionado()
@@ -2333,6 +2390,41 @@ class App:
             return "Não"
         return "-"
 
+    def _dados_futuro_selecionado(self):
+        sel = self.tv_futuros.selection()
+        if not sel:
+            return None
+        values = self.tv_futuros.item(sel[0], "values")
+        if len(values) < 6:
+            return None
+        data_txt, hora_txt, jogo_txt, mando_txt, local_txt, campeonato_txt = values
+        return {
+            "data": str(data_txt),
+            "hora": "" if str(hora_txt) == "-" else str(hora_txt),
+            "jogo": str(jogo_txt),
+            "mando": str(mando_txt),
+            "local": "" if str(local_txt) == "-" else str(local_txt),
+            "campeonato": "" if str(campeonato_txt) == "-" else str(campeonato_txt),
+        }
+
+    def _localizar_indice_futuro(self, alvo: dict):
+        futuros = carregar_jogos_futuros()
+        for idx, item in enumerate(futuros):
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado:
+                continue
+            mesmo_jogo = (
+                str(normalizado.get("data", "")) == str(alvo.get("data", ""))
+                and str(normalizado.get("hora", "")) == str(alvo.get("hora", ""))
+                and str(normalizado.get("jogo", "")) == str(alvo.get("jogo", ""))
+                and self._local_futuro_txt(normalizado.get("em_casa")) == str(alvo.get("mando", ""))
+                and str(normalizado.get("local", "")) == str(alvo.get("local", ""))
+                and str(normalizado.get("campeonato", "")) == str(alvo.get("campeonato", ""))
+            )
+            if mesmo_jogo:
+                return futuros, idx, normalizado
+        return futuros, None, None
+
     def _abrir_menu_contexto_futuros(self, event):
         iid = self.tv_futuros.identify_row(event.y)
         if not iid:
@@ -2341,47 +2433,186 @@ class App:
         self.tv_futuros.focus(iid)
 
         menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Editar jogo futuro", command=self._editar_jogo_futuro_selecionado)
         menu.add_command(label="Excluir jogo futuro", command=self._excluir_jogo_futuro_selecionado)
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
 
+    def _editar_jogo_futuro_selecionado(self):
+        selecionado = self._dados_futuro_selecionado()
+        if not selecionado:
+            return
+        futuros, idx, atual = self._localizar_indice_futuro(selecionado)
+        if idx is None or atual is None:
+            messagebox.showwarning("Não encontrado", "Não foi possível localizar o jogo futuro para edição.")
+            return
+
+        popup = tk.Toplevel(self.root)
+        popup.title("Editar jogo futuro")
+        popup.transient(self.root)
+        popup.grab_set()
+        popup.resizable(False, False)
+
+        frame = ttk.Frame(popup, padding=12)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(3, weight=1)
+
+        data_var = tk.StringVar(value=atual.get("data", ""))
+        hora_atual = str(atual.get("hora", "") or "").strip()
+        hora_h_var = tk.StringVar(value=hora_atual[:2] if len(hora_atual) >= 2 else "")
+        hora_m_var = tk.StringVar(value=hora_atual[3:5] if len(hora_atual) >= 5 and ":" in hora_atual else "")
+        adversario_var = tk.StringVar(value=_extrair_adversario_de_jogo(atual.get("jogo", "")).replace("Vasco", "").strip())
+        campeonato_var = tk.StringVar(value=atual.get("campeonato", ""))
+        mando_var = tk.StringVar(value="casa" if atual.get("em_casa") is not False else "fora")
+        local_var = tk.StringVar(value=atual.get("local", ""))
+
+        def _valores_estadio_modal(adversario: str) -> list[str]:
+            base = list(self.listas.get("estadios", []))
+            relacionados = carregar_estadios_adversario(adversario or "")
+            ordenados = []
+            vistos = set()
+            for nome in relacionados + base:
+                nome_limpo = str(nome or "").strip()
+                if not nome_limpo:
+                    continue
+                chave = nome_limpo.casefold()
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+                ordenados.append(nome_limpo)
+            return ordenados
+
+        def _formatar_horario_var(var: tk.StringVar, proximo_widget=None):
+            atual_txt = var.get()
+            formatado = re.sub(r"\D", "", atual_txt)[:2]
+            if atual_txt != formatado:
+                var.set(formatado)
+                return
+            if len(formatado) == 2 and proximo_widget is not None:
+                proximo_widget.focus_set()
+
+        ttk.Label(frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=4)
+        adversario_entry = ttk.Entry(frame, textvariable=adversario_var)
+        adversario_entry.grid(row=0, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
+
+        ttk.Label(frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=4)
+        ttk.Entry(frame, textvariable=campeonato_var).grid(row=1, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
+
+        ttk.Label(frame, text="Data:").grid(row=2, column=0, sticky="w", pady=4)
+        data_wrap = ttk.Frame(frame)
+        data_wrap.grid(row=2, column=1, sticky="w", pady=4, padx=(6, 0))
+        ttk.Entry(data_wrap, width=14, textvariable=data_var).pack(side="left")
+        ttk.Button(data_wrap, text="Calendário", command=lambda: self._abrir_calendario_popup(data_var)).pack(side="left", padx=(8, 0))
+
+        ttk.Label(frame, text="Hora:").grid(row=2, column=2, sticky="w", pady=4, padx=(10, 0))
+        hora_wrap = ttk.Frame(frame)
+        hora_wrap.grid(row=2, column=3, sticky="w", pady=4, padx=(6, 0))
+        hora_h_entry = ttk.Entry(hora_wrap, width=3, textvariable=hora_h_var, justify="center")
+        hora_h_entry.pack(side="left")
+        ttk.Label(hora_wrap, text=":").pack(side="left", padx=2)
+        hora_m_entry = ttk.Entry(hora_wrap, width=3, textvariable=hora_m_var, justify="center")
+        hora_m_entry.pack(side="left")
+        hora_h_var.trace_add("write", lambda *_: _formatar_horario_var(hora_h_var, hora_m_entry))
+        hora_m_var.trace_add("write", lambda *_: _formatar_horario_var(hora_m_var))
+
+        mando_wrap = ttk.Frame(frame)
+        mando_wrap.grid(row=3, column=0, columnspan=4, sticky="w", pady=4)
+        ttk.Label(mando_wrap, text="Mando:").pack(side="left")
+        ttk.Radiobutton(mando_wrap, text="Casa", variable=mando_var, value="casa").pack(side="left", padx=(8, 6))
+        ttk.Radiobutton(mando_wrap, text="Fora", variable=mando_var, value="fora").pack(side="left")
+
+        ttk.Label(frame, text="Local:").grid(row=4, column=0, sticky="w", pady=4)
+        local_entry = ttk.Combobox(frame, textvariable=local_var, values=_valores_estadio_modal(adversario_var.get().strip()))
+        local_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
+
+        def _atualizar_estadios_modal(*_args):
+            valores = _valores_estadio_modal(adversario_var.get().strip())
+            local_entry["values"] = valores
+
+        adversario_var.trace_add("write", _atualizar_estadios_modal)
+
+        botoes = ttk.Frame(frame)
+        botoes.grid(row=5, column=0, columnspan=4, sticky="e", pady=(10, 0))
+
+        def salvar():
+            adversario = adversario_var.get().strip()
+            data_txt = data_var.get().strip()
+            hora = ""
+            if hora_h_var.get().strip() or hora_m_var.get().strip():
+                hora = f"{hora_h_var.get().strip()}:{hora_m_var.get().strip()}"
+            item = {
+                "adversario": adversario,
+                "data": data_txt,
+                "em_casa": mando_var.get() != "fora",
+                "campeonato": campeonato_var.get().strip(),
+                "hora": hora,
+                "local": local_var.get().strip(),
+            }
+            normalizado = _normalizar_futuro_item(item)
+            if not normalizado:
+                messagebox.showerror("Erro", "Preencha pelo menos os campos Adversário e Data.", parent=popup)
+                return
+            if not _parse_data_ptbr_safe(normalizado["data"]):
+                messagebox.showerror("Erro", "Data inválida. Use o formato dd/mm/aaaa.", parent=popup)
+                return
+            if hora and not re.match(r"^\d{2}:\d{2}$", hora):
+                messagebox.showerror("Erro", "Informe a hora no formato HH:MM.", parent=popup)
+                return
+            if hora:
+                horas, minutos = [int(parte) for parte in hora.split(":", 1)]
+                if horas > 23 or minutos > 59:
+                    messagebox.showerror("Erro", "Informe um horário válido entre 00:00 e 23:59.", parent=popup)
+                    return
+            futuros[idx] = normalizado
+            salvar_lista_futuros(futuros)
+            self._render_lista_futuros()
+            popup.destroy()
+
+        ttk.Button(botoes, text="Cancelar", command=popup.destroy).pack(side="right")
+        ttk.Button(botoes, text="Salvar", command=salvar).pack(side="right", padx=(0, 8))
+        popup.protocol("WM_DELETE_WINDOW", popup.destroy)
+        popup.update_idletasks()
+        try:
+            root_x = self.root.winfo_rootx()
+            root_y = self.root.winfo_rooty()
+            root_w = self.root.winfo_width()
+            root_h = self.root.winfo_height()
+            win_w = popup.winfo_width()
+            win_h = popup.winfo_height()
+            pos_x = root_x + (root_w - win_w) // 2
+            pos_y = root_y + (root_h - win_h) // 2
+            popup.geometry(f"+{pos_x}+{pos_y}")
+        except Exception:
+            pass
+        popup.lift(self.root)
+        popup.focus_force()
+        adversario_entry.focus_set()
+
     def _excluir_jogo_futuro_selecionado(self):
-        sel = self.tv_futuros.selection()
-        if not sel:
+        selecionado = self._dados_futuro_selecionado()
+        if not selecionado:
             return
-        values = self.tv_futuros.item(sel[0], "values")
-        if len(values) < 4:
-            return
-        data_txt, jogo_txt, local_txt, campeonato_txt = values
+        data_txt = selecionado["data"]
+        jogo_txt = selecionado["jogo"]
         desc = f"{data_txt} | {jogo_txt}"
         if not messagebox.askyesno("Excluir jogo futuro", f"Deseja excluir este jogo futuro?\n\n{desc}"):
             return
 
-        futuros = carregar_jogos_futuros()
+        futuros, idx, _ = self._localizar_indice_futuro(selecionado)
+        if idx is None:
+            messagebox.showwarning("Não encontrado", "Não foi possível localizar o jogo futuro para exclusão.")
+            return
+
         novos = []
         removido = False
-        for item in futuros:
-            normalizado = _normalizar_futuro_item(item)
-            if not normalizado or removido:
-                novos.append(item)
-                continue
-
-            mesmo_jogo = (
-                str(normalizado.get("data", "")) == str(data_txt)
-                and str(normalizado.get("jogo", "")) == str(jogo_txt)
-                and self._local_futuro_txt(normalizado.get("em_casa")) == str(local_txt)
-                and str(normalizado.get("campeonato") or "-") == str(campeonato_txt)
-            )
-            if mesmo_jogo:
+        for pos, item in enumerate(futuros):
+            if pos == idx and not removido:
                 removido = True
                 continue
             novos.append(item)
-
-        if not removido:
-            messagebox.showwarning("Não encontrado", "Não foi possível localizar o jogo futuro para exclusão.")
-            return
 
         salvar_lista_futuros(novos)
         self._render_lista_futuros()
@@ -2391,9 +2622,9 @@ class App:
         if not sel:
             return
         values = self.tv_futuros.item(sel[0], "values")
-        if len(values) < 4:
+        if len(values) < 6:
             return
-        data_txt, jogo_txt, local_txt, campeonato_txt = values
+        data_txt, hora_txt, jogo_txt, local_txt, local_nome_txt, campeonato_txt = values
         adversario = _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
 
         if data_txt:
@@ -2413,7 +2644,16 @@ class App:
             self.local_var.set("casa")
         elif local_norm in ("nao", "não", "n", "fora"):
             self.local_var.set("fora")
-        self._preencher_estadio_por_adversario(adversario, self.local_var.get())
+        if hasattr(self, "horario_hora_var") and hasattr(self, "horario_minuto_var"):
+            hora_normalizada = "" if str(hora_txt).strip() == "-" else str(hora_txt).strip()
+            self.horario_hora_var.set(hora_normalizada[:2] if len(hora_normalizada) >= 2 else "")
+            self.horario_minuto_var.set(hora_normalizada[3:5] if len(hora_normalizada) >= 5 and ":" in hora_normalizada else "")
+        if hasattr(self, "estadio_var"):
+            local_nome_normalizado = "" if str(local_nome_txt).strip() == "-" else str(local_nome_txt).strip()
+            if local_nome_normalizado:
+                self.estadio_var.set(local_nome_normalizado)
+            else:
+                self._preencher_estadio_por_adversario(adversario, self.local_var.get())
 
         self.notebook.select(self.frame_registro)
 
@@ -3006,16 +3246,14 @@ class App:
             return
         atual = self.capitao_partida_var.get().strip()
         opcoes = self._opcoes_capitao_partida()
-        self.capitao_partida_entry["values"] = opcoes
+        self.capitao_partida_entry["values"] = [""] + opcoes
         if preservar_valor and atual and any(atual.casefold() == nome.casefold() for nome in opcoes):
             self.capitao_partida_var.set(atual)
             return
-        capitao_atual = self._nome_capitao_elenco_atual()
-        if capitao_atual and any(capitao_atual.casefold() == nome.casefold() for nome in opcoes):
-            self.capitao_partida_var.set(capitao_atual)
-        elif opcoes:
-            self.capitao_partida_var.set(opcoes[0])
-        else:
+        if not preservar_valor:
+            self.capitao_partida_var.set("")
+            return
+        if atual:
             self.capitao_partida_var.set("")
 
     def _ordenar_opcoes_gol_vasco(self):
@@ -5275,7 +5513,7 @@ class App:
         publico_presente = _normalizar_inteiro_positivo(self.publico_presente_var.get() if hasattr(self, "publico_presente_var") else "")
         renda = _normalizar_renda_brl(self.renda_var.get() if hasattr(self, "renda_var") else "")
         observacao = self.obs_text.get("1.0", "end").strip()
-        tecnico = self.tecnico_var.get().strip() or self.listas.get("tecnico_atual", "Fernando Diniz")
+        tecnico = self.tecnico_var.get().strip() if hasattr(self, "tecnico_var") else ""
         posicao_tabela = None
         usa_posicao = self._competicao_usa_posicao(competicao)
         if usa_posicao and hasattr(self, "posicao_var"):
@@ -5290,12 +5528,16 @@ class App:
             self.posicao_var.set("")
 
         escalacao_partida = self._coletar_escalacao_partida()
-        escalacao_ok, escalacao_msg = self._validar_escalacao_partida(escalacao_partida)
+        if _escalacao_partida_vazia(escalacao_partida):
+            escalacao_partida = {}
+            escalacao_ok, escalacao_msg = True, ""
+        else:
+            escalacao_ok, escalacao_msg = self._validar_escalacao_partida(escalacao_partida)
 
-        if not (data and adversario and placar_vasco and placar_adv and competicao and tecnico and estadio and horario and capitao):
-            messagebox.showerror("Erro", "Preencha todos os campos obrigatórios.")
+        if not (data and adversario and placar_vasco and placar_adv):
+            messagebox.showerror("Erro", "Preencha apenas os campos obrigatórios: data, adversário e placar.")
             return
-        if not re.match(r"^\d{2}:\d{2}$", horario):
+        if horario and not re.match(r"^\d{2}:\d{2}$", horario):
             messagebox.showerror("Erro", "Informe o horário no formato HH:MM.")
             return
         if hasattr(self, "publico_pagante_var") and self.publico_pagante_var.get().strip() and publico_pagante is None:
@@ -5310,10 +5552,11 @@ class App:
         if hasattr(self, "renda_var") and self.renda_var.get().strip() and renda is None:
             messagebox.showerror("Erro", "Informe uma renda válida.")
             return
-        horas, minutos = [int(parte) for parte in horario.split(":", 1)]
-        if horas > 23 or minutos > 59:
-            messagebox.showerror("Erro", "Informe um horário válido entre 00:00 e 23:59.")
-            return
+        if horario:
+            horas, minutos = [int(parte) for parte in horario.split(":", 1)]
+            if horas > 23 or minutos > 59:
+                messagebox.showerror("Erro", "Informe um horário válido entre 00:00 e 23:59.")
+                return
         if not escalacao_ok:
             messagebox.showerror("Escalação inválida", escalacao_msg)
             return
@@ -5366,21 +5609,22 @@ class App:
             self.listas["clubes_adversarios"] = sorted(self.listas["clubes_adversarios"], key=lambda s: s.casefold())
             self.adversario_entry['values'] = self.listas["clubes_adversarios"]
 
-        if competicao not in self.listas.get("competicoes", []):
+        if competicao and competicao not in self.listas.get("competicoes", []):
             self.listas.setdefault("competicoes", []).append(competicao)
             self.listas["competicoes"] = sorted(self.listas["competicoes"], key=lambda s: s.casefold())
             self.competicao_entry['values'] = self.listas["competicoes"]
-        if estadio not in self.listas.get("estadios", []):
+        if estadio and estadio not in self.listas.get("estadios", []):
             self.listas.setdefault("estadios", []).append(estadio)
             self.listas["estadios"] = sorted(self.listas["estadios"], key=lambda s: s.casefold())
             if hasattr(self, "estadio_entry"):
                 self.estadio_entry['values'] = self.listas["estadios"]
 
         lista_tecnicos = self.listas.setdefault("tecnicos", [])
-        if tecnico not in lista_tecnicos:
+        if tecnico and tecnico not in lista_tecnicos:
             lista_tecnicos.append(tecnico)
             self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
-        self.tecnico_var.set(tecnico)
+        if hasattr(self, "tecnico_var"):
+            self.tecnico_var.set(tecnico)
         self._atualizar_combo_tecnicos()
 
         arbitro = arbitragem.get("arbitro", "")

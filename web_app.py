@@ -260,18 +260,75 @@ def _parse_data_br_strita(valor: str) -> bool:
         return False
 
 
+def _escalacao_partida_vazia(escalacao: dict | None) -> bool:
+    if not isinstance(escalacao, dict):
+        return True
+    tit = escalacao.get("titulares_por_posicao")
+    if isinstance(tit, dict):
+        for nomes in tit.values():
+            if isinstance(nomes, list) and any(str(nome).strip() for nome in nomes):
+                return False
+    for chave, _ in CATEGORIAS_ESCALACAO_EXTRAS:
+        nomes = escalacao.get(chave)
+        if isinstance(nomes, list) and any(str(nome).strip() for nome in nomes):
+            return False
+    return True
+
+
+def _parse_optional_int(valor, campo: str):
+    txt = str(valor or "").strip()
+    if not txt:
+        return None, None
+    try:
+        return int(txt), None
+    except ValueError:
+        return None, f"Informe apenas números inteiros para {campo}."
+
+
+def _parse_optional_float(valor, campo: str):
+    txt = str(valor or "").strip()
+    if not txt:
+        return None, None
+    txt = txt.replace(" ", "")
+    if "," in txt and "." in txt:
+        txt = txt.replace(".", "").replace(",", ".")
+    elif "," in txt:
+        txt = txt.replace(",", ".")
+    try:
+        return float(txt), None
+    except ValueError:
+        return None, f"Informe um número válido para {campo}."
+
+
 def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None):
     if not isinstance(payload, dict):
         return False, "Payload inválido.", None
 
+    jogos = carregar_jogos()
+    jogo_base = {}
+    if edit_idx is not None:
+        if not (0 <= edit_idx < len(jogos)):
+            return False, "Não foi possível localizar o jogo para edição.", None
+        jogo_base = jogos[edit_idx] if isinstance(jogos[edit_idx], dict) else {}
+
     data = str(payload.get("data", "")).strip()
     adversario = str(payload.get("adversario", "")).strip()
     competicao = str(payload.get("competicao", "")).strip()
-    local = str(payload.get("local", "casa")).strip() or "casa"
+    local = str(payload.get("local", "")).strip()
+    estadio = str(payload.get("estadio", "")).strip()
+    horario = str(payload.get("horario", "")).strip()
+    capitao = str(payload.get("capitao", "")).strip()
     observacao = str(payload.get("observacao", "")).strip()
     tecnico = str(payload.get("tecnico", "")).strip()
-    if not tecnico:
-        tecnico = str(carregar_listas().get("tecnico_atual", "") or "Fernando Diniz")
+    publico_pagante, err = _parse_optional_int(payload.get("publico_pagante", ""), "o público pagante")
+    if err:
+        return False, err, None
+    publico_presente, err = _parse_optional_int(payload.get("publico_presente", ""), "o público presente")
+    if err:
+        return False, err, None
+    renda, err = _parse_optional_float(payload.get("renda", ""), "a renda")
+    if err:
+        return False, err, None
 
     placar = payload.get("placar") or {}
     try:
@@ -282,11 +339,11 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
     if placar_vasco < 0 or placar_adv < 0:
         return False, "Placar inválido. Não use números negativos.", None
 
-    if not (data and adversario and competicao and tecnico):
-        return False, "Preencha todos os campos obrigatórios.", None
+    if not (data and adversario):
+        return False, "Preencha os campos obrigatórios: data, adversário e placar.", None
     if not _parse_data_br_strita(data):
         return False, "Data inválida. Use o formato dd/mm/aaaa.", None
-    if local not in ("casa", "fora"):
+    if local and local not in ("casa", "fora"):
         return False, "Local inválido (use 'casa' ou 'fora').", None
 
     posicao_tabela = None
@@ -302,29 +359,33 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
 
     nomes_vasco = _split_nomes_livres(payload.get("gols_vasco_lista", ""))
     nomes_contra = _split_nomes_livres(payload.get("gols_contra_lista", ""))
-    if len(nomes_vasco) != placar_vasco:
+    if len(nomes_vasco) > placar_vasco:
         return (
             False,
-            f"Informe exatamente {placar_vasco} nome(s) para os gols do Vasco (um por gol).",
+            f"Você informou mais autores ({len(nomes_vasco)}) do que gols do Vasco no placar ({placar_vasco}).",
             None,
         )
-    if len(nomes_contra) != placar_adv:
+    if len(nomes_contra) > placar_adv:
         return (
             False,
-            f"Informe exatamente {placar_adv} nome(s) para os gols do adversário (um por gol).",
+            f"Você informou mais autores ({len(nomes_contra)}) do que gols do adversário no placar ({placar_adv}).",
             None,
         )
 
     escalacao_payload = payload.get("escalacao_partida") or {}
-    elenco = carregar_elenco_atual()
-    ok_esc, msg_esc, escalacao_partida = validar_escalacao_partida(escalacao_payload, elenco)
-    if not ok_esc:
-        return False, msg_esc, None
+    if _escalacao_partida_vazia(escalacao_payload):
+        escalacao_partida = {}
+    else:
+        elenco = carregar_elenco_atual()
+        ok_esc, msg_esc, escalacao_partida = validar_escalacao_partida(escalacao_payload, elenco)
+        if not ok_esc:
+            return False, msg_esc, None
 
     titulares_cf = set()
     reservas_cf = set()
+    titulares_por_posicao = escalacao_partida.get("titulares_por_posicao", {})
     for pos in POSICOES_ELENCO:
-        for nome in escalacao_partida["titulares_por_posicao"].get(pos, []):
+        for nome in titulares_por_posicao.get(pos, []):
             n = str(nome).strip()
             if n:
                 titulares_cf.add(n.casefold())
@@ -350,10 +411,10 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
     if adversario not in listas.get("clubes_adversarios", []):
         listas.setdefault("clubes_adversarios", []).append(adversario)
         listas["clubes_adversarios"] = sorted(listas["clubes_adversarios"], key=str.casefold)
-    if competicao not in listas.get("competicoes", []):
+    if competicao and competicao not in listas.get("competicoes", []):
         listas.setdefault("competicoes", []).append(competicao)
         listas["competicoes"] = sorted(listas["competicoes"], key=str.casefold)
-    if tecnico not in listas.get("tecnicos", []):
+    if tecnico and tecnico not in listas.get("tecnicos", []):
         listas.setdefault("tecnicos", []).append(tecnico)
         listas["tecnicos"] = sorted(listas["tecnicos"], key=str.casefold)
 
@@ -369,26 +430,30 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
     salvar_listas(listas)
 
     jogo = {
+        **jogo_base,
         "data": data,
         "adversario": adversario,
         "competicao": competicao,
         "local": local,
+        "estadio": estadio,
+        "horario": horario,
         "placar": {"vasco": placar_vasco, "adversario": placar_adv},
         "gols_vasco": gols_vasco,
         "gols_adversario": gols_contra,
         "observacao": observacao,
         "tecnico": tecnico,
+        "capitao": capitao,
+        "publico_pagante": publico_pagante,
+        "publico_presente": publico_presente,
+        "renda": renda,
         "posicao_tabela": posicao_tabela,
         "escalacao_partida": escalacao_partida,
     }
 
-    jogos = carregar_jogos()
     if edit_idx is None:
         jogos.append(jogo)
         msg_ok = "Partida registrada com sucesso!"
     else:
-        if not (0 <= edit_idx < len(jogos)):
-            return False, "Não foi possível localizar o jogo para edição.", None
         jogos[edit_idx] = jogo
         msg_ok = "Partida atualizada com sucesso!"
     salvar_lista_jogos(jogos)
@@ -504,7 +569,13 @@ def detalhe_jogo_por_indice(idx: int):
         "adversario": jogo.get("adversario", ""),
         "competicao": jogo.get("competicao", ""),
         "local": jogo.get("local", ""),
+        "estadio": jogo.get("estadio", ""),
+        "horario": jogo.get("horario", ""),
         "tecnico": jogo.get("tecnico", ""),
+        "capitao": jogo.get("capitao", ""),
+        "publico_pagante": jogo.get("publico_pagante"),
+        "publico_presente": jogo.get("publico_presente"),
+        "renda": jogo.get("renda"),
         "observacao": jogo.get("observacao", ""),
         "posicao_tabela": jogo.get("posicao_tabela"),
         "placar": {
@@ -675,90 +746,419 @@ INDEX_HTML = """<!doctype html>
   <title>StatsVasco Web (MVP)</title>
   <style>
     :root {
-      --bg: #eef3f7;
-      --card: #ffffff;
-      --ink: #0f172a;
-      --muted: #5b6473;
-      --line: #d8e0e8;
-      --accent: #0b5ed7;
-      --accent-2: #0a3f8f;
-      --ok: #0f8a3f;
-      --warn: #b67700;
-      --bad: #c32f27;
+      --bg: #f3efe6;
+      --bg-soft: #e6ddcb;
+      --card: rgba(255, 252, 246, 0.94);
+      --card-strong: #fffdf8;
+      --ink: #111111;
+      --muted: #655b4e;
+      --line: rgba(17, 17, 17, 0.14);
+      --line-strong: rgba(17, 17, 17, 0.34);
+      --accent: #111111;
+      --accent-soft: #2a2a2a;
+      --gold: #b89b63;
+      --gold-soft: #d9c7a0;
+      --ok: #0f6b39;
+      --warn: #9b6b13;
+      --bad: #8f1f1f;
+      --shadow: 0 18px 50px rgba(17, 17, 17, 0.1);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at 15% -10%, #cfe3ff 0 25%, transparent 26%),
-        radial-gradient(circle at 90% 0%, #d6f3ec 0 18%, transparent 19%),
+        linear-gradient(135deg, rgba(17, 17, 17, 0.06) 0 14%, transparent 14% 100%),
+        radial-gradient(circle at top right, rgba(184, 155, 99, 0.22), transparent 30%),
+        radial-gradient(circle at left center, rgba(17, 17, 17, 0.08), transparent 28%),
         var(--bg);
+      min-height: 100vh;
     }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 0 86%, rgba(17,17,17,0.035) 86% 100%),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(17,17,17,0.02) 0 14px,
+          transparent 14px 48px
+        );
+      opacity: .8;
+    }
+    .site-shell { position: relative; z-index: 1; }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    .topbar {
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.06), transparent 45%),
+        linear-gradient(135deg, #090909, #1c1c1c);
+      color: #f8f3e8;
+      box-shadow: inset 0 -1px 0 rgba(184, 155, 99, 0.35);
+    }
+    .topbar-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-block { display: flex; align-items: center; gap: 14px; }
+    .brand-mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      position: relative;
+      background:
+        linear-gradient(135deg, #efe4cb, #b89b63);
+      box-shadow: inset 0 0 0 1px rgba(17,17,17,.18);
+      overflow: hidden;
+    }
+    .brand-mark::before {
+      content: "";
+      position: absolute;
+      inset: -6px 20px;
+      background: #111;
+      transform: rotate(45deg);
+    }
+    .brand-mark::after {
+      content: "+";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #efe4cb;
+      font-size: 1.45rem;
+      font-weight: 700;
+    }
+    .brand-copy small,
+    .masthead-notes {
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: .72rem;
+      color: rgba(248, 243, 232, 0.72);
+    }
+    .brand-copy strong {
+      display: block;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 1.45rem;
+      letter-spacing: .02em;
+      font-weight: 700;
+    }
+    .masthead-notes {
+      text-align: right;
+      max-width: 320px;
+      line-height: 1.5;
+    }
     .hero {
-      background: linear-gradient(135deg, #0b5ed7, #0a3f8f);
-      color: white;
-      border-radius: 18px;
-      padding: 18px 20px;
-      box-shadow: 0 10px 28px rgba(11, 94, 215, .18);
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      padding: 28px;
+      background:
+        linear-gradient(140deg, rgba(255,255,255,0.08), transparent 42%),
+        linear-gradient(125deg, rgba(184,155,99,.2), transparent 58%),
+        linear-gradient(135deg, #0f0f0f 0%, #202020 65%, #121212 100%);
+      color: #f7f1e5;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.08);
     }
-    .hero h1 { margin: 0; font-size: 1.35rem; }
-    .hero p { margin: 6px 0 0; opacity: .9; }
+    .hero::before {
+      content: "";
+      position: absolute;
+      right: -10%;
+      top: -24%;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(184,155,99,.26), transparent 62%);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px 40px auto;
+      width: 280px;
+      height: 280px;
+      border: 1px solid rgba(255,255,255,.08);
+      transform: rotate(45deg);
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(260px, .75fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 12px;
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: .78rem;
+      color: #d8c7a1;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: currentColor;
+    }
+    .hero h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: clamp(2.35rem, 5vw, 4.75rem);
+      line-height: .95;
+      letter-spacing: -.03em;
+    }
+    .hero p { margin: 0; }
+    .hero-text {
+      max-width: 62ch;
+      margin-top: 16px;
+      color: rgba(247, 241, 229, 0.82);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .hero-meta {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .hero-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: #f7f1e5;
+      font-size: .83rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+    .hero-side {
+      position: relative;
+      min-height: 280px;
+      border-radius: 24px;
+      padding: 22px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+        rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      backdrop-filter: blur(4px);
+    }
+    .hero-side::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      background:
+        linear-gradient(135deg, transparent 0 47%, rgba(184,155,99,.95) 47% 53%, transparent 53% 100%);
+      opacity: .5;
+      border-radius: 18px;
+    }
+    .hero-side::after {
+      content: "";
+      position: absolute;
+      right: 28px;
+      top: 24px;
+      width: 86px;
+      height: 86px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.06);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+    .hero-side-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 260px;
+      margin-top: auto;
+    }
+    .hero-side-copy strong {
+      display: block;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    .hero-side-copy p {
+      color: rgba(247, 241, 229, 0.78);
+      line-height: 1.65;
+      font-size: .95rem;
+    }
+    .section-band {
+      margin-top: 18px;
+      background: rgba(255, 251, 244, 0.76);
+      border: 1px solid rgba(17, 17, 17, 0.08);
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: 0 12px 28px rgba(17,17,17,.05);
+      backdrop-filter: blur(6px);
+    }
+    .section-band-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-kicker {
+      margin: 0;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: .72rem;
+    }
+    .section-band-title {
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 1.3rem;
+      margin: 4px 0 0;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
-      margin-top: 14px;
     }
     .card {
+      position: relative;
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 4px 16px rgba(16,24,40,.04);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(17,17,17,.05);
+      overflow: hidden;
     }
-    .metric .label { color: var(--muted); font-size: .8rem; }
-    .metric .value { font-size: 1.35rem; font-weight: 700; margin-top: 4px; }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gold), transparent 80%);
+    }
+    .metric {
+      min-height: 136px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.3), transparent 56%),
+        var(--card);
+    }
+    .metric .label {
+      color: var(--muted);
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+    }
+    .metric .value {
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      font-weight: 800;
+      line-height: 1.02;
+      margin-top: 10px;
+      letter-spacing: -.03em;
+    }
     .row {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
+      gap: 14px;
+      margin-top: 14px;
     }
     .toolbar {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       align-items: center;
     }
-    input, select, button {
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 10px;
-      padding: 9px 11px;
+    input, select, button, textarea {
+      font: inherit;
+    }
+    input, select, textarea {
+      border: 1px solid rgba(17, 17, 17, 0.14);
+      background: rgba(255,255,255,.8);
+      border-radius: 14px;
+      padding: 11px 13px;
       font-size: .95rem;
+      color: var(--ink);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    input::placeholder,
+    textarea::placeholder {
+      color: #8a7e70;
+    }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(184, 155, 99, 0.95);
+      box-shadow: 0 0 0 4px rgba(184, 155, 99, 0.16);
     }
     button {
       cursor: pointer;
       background: var(--accent);
-      color: white;
-      border-color: var(--accent);
+      color: #f7f1e5;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-size: .9rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
     }
     button.secondary {
-      background: white;
+      background: rgba(255,255,255,.65);
       color: var(--ink);
-      border-color: var(--line);
+      border-color: rgba(17, 17, 17, 0.12);
+    }
+    button.secondary:hover {
+      background: rgba(255,255,255,.92);
+      border-color: rgba(17,17,17,.2);
     }
     table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); font-size: .92rem; }
-    th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: white; }
-    .table-wrap { max-height: 520px; overflow: auto; }
+    th, td {
+      text-align: left;
+      padding: 12px 8px;
+      border-bottom: 1px solid rgba(17,17,17,.08);
+      font-size: .92rem;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      position: sticky;
+      top: 0;
+      background: rgba(255, 252, 246, 0.96);
+      backdrop-filter: blur(4px);
+    }
+    .table-wrap {
+      max-height: 520px;
+      overflow: auto;
+      border: 1px solid rgba(17,17,17,.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,.55);
+    }
     .pill {
       display: inline-flex; align-items: center; justify-content: center;
-      min-width: 24px; height: 24px; border-radius: 999px; font-weight: 700; font-size: .8rem;
+      min-width: 28px; height: 28px; border-radius: 999px; font-weight: 700; font-size: .8rem;
       color: white;
     }
     .V { background: var(--ok); }
@@ -768,12 +1168,41 @@ INDEX_HTML = """<!doctype html>
     ul.clean { list-style: none; padding: 0; margin: 0; }
     ul.clean li {
       display: flex; justify-content: space-between; gap: 8px;
-      padding: 8px 0; border-bottom: 1px solid var(--line);
+      padding: 10px 0; border-bottom: 1px solid rgba(17,17,17,.08);
       font-size: .92rem;
     }
-    .section-title { margin: 0 0 10px; font-size: 1rem; }
-    .tabs { display: flex; gap: 8px; margin: 12px 0 8px; flex-wrap: wrap; }
-    .tab-btn.active { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+    .section-title {
+      margin: 0 0 12px;
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 1.18rem;
+      letter-spacing: -.02em;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin: 18px 0 10px;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: rgba(17,17,17,.92);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+    }
+    .tab-btn {
+      background: transparent;
+      color: rgba(247, 241, 229, 0.74);
+      border-color: transparent;
+      padding-inline: 18px;
+    }
+    .tab-btn.secondary { background: transparent; color: rgba(247, 241, 229, 0.74); border-color: transparent; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #f1e3c4, #c8ab72);
+      color: #111;
+      border-color: rgba(255,255,255,.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+    }
     .hidden { display: none; }
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(15, 23, 42, .45);
@@ -784,27 +1213,41 @@ INDEX_HTML = """<!doctype html>
       width: min(980px, 100%);
       max-height: min(90vh, 900px);
       overflow: auto;
-      background: #fff;
+      background: var(--card-strong);
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: 28px;
       box-shadow: 0 24px 60px rgba(15, 23, 42, .25);
-      padding: 16px;
+      padding: 20px;
     }
     .modal-card.lg { width: min(1100px, 100%); }
     .modal-head {
       display: flex; justify-content: space-between; align-items: center; gap: 10px;
-      position: sticky; top: 0; background: #fff; padding-bottom: 10px; z-index: 1;
+      position: sticky; top: 0; background: var(--card-strong); padding-bottom: 10px; z-index: 1;
     }
     .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 10px; }
     .kv div:nth-child(odd) { color: var(--muted); }
     .score-box {
       display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
-      background: linear-gradient(180deg, #f8fbff, #eef5ff);
-      border: 1px solid #dbe7ff; border-radius: 14px; padding: 14px; margin: 10px 0 14px;
+      background:
+        linear-gradient(135deg, rgba(17,17,17,.98), rgba(41,41,41,.98)),
+        linear-gradient(90deg, rgba(184,155,99,.16), transparent 70%);
+      color: #f7f1e5;
+      border: 1px solid rgba(17,17,17,.9);
+      border-radius: 22px;
+      padding: 18px;
+      margin: 10px 0 14px;
     }
     .score-num { font-size: 2rem; font-weight: 800; text-align: center; }
     .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .chip { display:inline-block; border:1px solid var(--line); padding:4px 8px; border-radius:999px; margin:2px 4px 2px 0; font-size:.85rem; }
+    .chip {
+      display:inline-block;
+      border:1px solid rgba(17,17,17,.12);
+      padding:6px 10px;
+      border-radius:999px;
+      margin:2px 4px 2px 0;
+      font-size:.85rem;
+      background: rgba(255,255,255,.76);
+    }
     .pitch-wrap {
       display: grid;
       grid-template-columns: 1fr 260px;
@@ -817,7 +1260,7 @@ INDEX_HTML = """<!doctype html>
       border-radius: 14px;
       background:
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-        #0f6a35;
+        #173d25;
       border: 2px solid #d8f0de;
       overflow: hidden;
     }
@@ -914,7 +1357,7 @@ INDEX_HTML = """<!doctype html>
       box-shadow: 0 0 0 1px rgba(0,0,0,.18);
     }
     .reserve-list {
-      background: #fbfcfe;
+      background: rgba(255,255,255,.76);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 10px;
@@ -927,9 +1370,9 @@ INDEX_HTML = """<!doctype html>
     }
     .goal-builder {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
-      background: #fcfdff;
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(255,255,255,.56);
     }
     .goal-builder .goal-controls {
       display: grid;
@@ -942,26 +1385,26 @@ INDEX_HTML = """<!doctype html>
     }
     .goal-list {
       min-height: 46px;
-      border: 1px dashed #cfd8e3;
-      border-radius: 10px;
+      border: 1px dashed rgba(17,17,17,.18);
+      border-radius: 14px;
       padding: 8px;
-      background: #fff;
+      background: rgba(255,255,255,.84);
     }
     .goal-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      border: 1px solid #bdd0ea;
+      border: 1px solid rgba(17,17,17,.12);
       border-radius: 999px;
-      padding: 4px 8px;
+      padding: 6px 10px;
       margin: 3px 4px 3px 0;
-      background: #eef5ff;
+      background: rgba(184, 155, 99, 0.14);
       font-size: .88rem;
     }
     .goal-chip button {
       border: 0;
       background: transparent;
-      color: #365b8f;
+      color: #5a4220;
       padding: 0;
       line-height: 1;
       cursor: pointer;
@@ -991,12 +1434,25 @@ INDEX_HTML = """<!doctype html>
     .edit-grid textarea {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 14px;
       padding: 10px;
       min-height: 88px;
-      font: inherit;
+    }
+    #tab-jogos,
+    #tab-futuros,
+    #tab-retrospecto,
+    #tab-listas,
+    #tab-registro {
+      animation: fadeUp .28s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     @media (max-width: 900px) {
+      .topbar-inner { align-items: flex-start; flex-direction: column; }
+      .masthead-notes { text-align: left; max-width: none; }
+      .hero-grid { grid-template-columns: 1fr; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .row { grid-template-columns: 1fr; }
       .mini-grid { grid-template-columns: 1fr; }
@@ -1006,19 +1462,65 @@ INDEX_HTML = """<!doctype html>
       .edit-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 560px) {
+      .wrap { padding: 16px; }
+      .topbar-inner { padding: 14px 16px; }
+      .hero { padding: 22px 18px; }
       .grid { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 1.1rem; }
+      .hero h1 { font-size: 2.5rem; }
+      .tabs {
+        position: static;
+        border-radius: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div class="brand-copy">
+            <small>Club de Regatas Vasco da Gama</small>
+            <strong>StatsVasco Web</strong>
+          </div>
+        </div>
+        <div class="masthead-notes">Base histórica, jogos, retrospectos e registro inspirados na atualização da identidade visual cruzmaltina.</div>
+      </div>
+    </header>
+
+    <div class="wrap">
     <section class="hero">
-      <h1>StatsVasco Web (MVP)</h1>
-      <p>Dados consolidados e atualizados</p>
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Um só Vasco</p>
+          <h1>StatsVasco Web</h1>
+          <p class="hero-text">Dados consolidados do clube em uma interface editorial, sóbria e direta, com contraste forte, diagonais marcantes e acabamento inspirado no site institucional do Vasco.</p>
+          <div class="hero-meta">
+            <span>Jogos</span>
+            <span>Retrospecto</span>
+            <span>Elenco</span>
+            <span>Registro</span>
+          </div>
+        </div>
+        <aside class="hero-side">
+          <div class="hero-side-copy">
+            <strong>Memória, contexto e jogo.</strong>
+            <p>Uma leitura mais clara do histórico vascaíno, com visual alinhado ao escudo, à faixa diagonal e à sobriedade preto, branco e dourado.</p>
+          </div>
+        </aside>
+      </div>
     </section>
 
-    <section class="grid" id="metrics"></section>
+    <section class="section-band">
+      <div class="section-band-header">
+        <div>
+          <p class="section-kicker">Panorama</p>
+          <div class="section-band-title">Resumo do acervo</div>
+        </div>
+      </div>
+      <section class="grid" id="metrics"></section>
+    </section>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="jogos">Jogos</button>
@@ -1183,6 +1685,7 @@ INDEX_HTML = """<!doctype html>
             <input id="reg-tecnico" placeholder="Técnico" list="dl-tecnicos" style="min-width:240px; flex:1">
             <input id="reg-adversario" placeholder="Adversário" list="dl-clubes" style="min-width:220px; flex:1">
             <select id="reg-local">
+              <option value="">Sem informação</option>
               <option value="casa">Casa</option>
               <option value="fora">Fora</option>
             </select>
@@ -1256,6 +1759,7 @@ INDEX_HTML = """<!doctype html>
       <datalist id="dl-competicoes"></datalist>
     </section>
   </div>
+  </div>
 
   <div id="jogo-modal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="jogo-modal-title">
@@ -1278,9 +1782,15 @@ INDEX_HTML = """<!doctype html>
         <div class="field"><label>Data</label><input id="edit-data" placeholder="dd/mm/aaaa"></div>
         <div class="field"><label>Técnico</label><input id="edit-tecnico" list="dl-tecnicos"></div>
         <div class="field"><label>Adversário</label><input id="edit-adversario" list="dl-clubes"></div>
-        <div class="field"><label>Local</label><select id="edit-local"><option value="casa">Casa</option><option value="fora">Fora</option></select></div>
+        <div class="field"><label>Local</label><select id="edit-local"><option value="">Sem informação</option><option value="casa">Casa</option><option value="fora">Fora</option></select></div>
         <div class="field"><label>Competição</label><input id="edit-competicao" list="dl-competicoes"></div>
+        <div class="field"><label>Horário</label><input id="edit-horario" placeholder="Ex.: 21:30"></div>
+        <div class="field"><label>Estádio</label><input id="edit-estadio" placeholder="Local da partida"></div>
+        <div class="field"><label>Capitão</label><input id="edit-capitao" placeholder="Capitão do jogo"></div>
         <div class="field"><label>Posição na tabela (Brasileirão)</label><input id="edit-posicao_tabela"></div>
+        <div class="field"><label>Público pagante</label><input id="edit-publico-pagante" type="number" min="0"></div>
+        <div class="field"><label>Público presente</label><input id="edit-publico-presente" type="number" min="0"></div>
+        <div class="field"><label>Renda</label><input id="edit-renda" placeholder="Ex.: 1250000,50"></div>
         <div class="field"><label>Gols Vasco</label><input id="edit-placar-vasco" type="number" min="0"></div>
         <div class="field"><label>Gols Adversário</label><input id="edit-placar-adv" type="number" min="0"></div>
         <div class="field"><label>Gols do Vasco (1 nome por linha)</label><textarea id="edit-gols-vasco"></textarea></div>
@@ -2233,9 +2743,15 @@ INDEX_HTML = """<!doctype html>
         $("#edit-data").value = j.data || "";
         $("#edit-tecnico").value = j.tecnico || "";
         $("#edit-adversario").value = j.adversario || "";
-        $("#edit-local").value = j.local || "casa";
+        $("#edit-local").value = j.local || "";
         $("#edit-competicao").value = j.competicao || "";
+        $("#edit-horario").value = j.horario || "";
+        $("#edit-estadio").value = j.estadio || "";
+        $("#edit-capitao").value = j.capitao || "";
         $("#edit-posicao_tabela").value = j.posicao_tabela == null ? "" : String(j.posicao_tabela);
+        $("#edit-publico-pagante").value = j.publico_pagante == null ? "" : String(j.publico_pagante);
+        $("#edit-publico-presente").value = j.publico_presente == null ? "" : String(j.publico_presente);
+        $("#edit-renda").value = j.renda == null ? "" : String(j.renda);
         $("#edit-placar-vasco").value = j.placar?.vasco ?? "";
         $("#edit-placar-adv").value = j.placar?.adversario ?? "";
         $("#edit-gols-vasco").value = linesFromGoalObjects(j.gols_vasco);
@@ -2259,7 +2775,13 @@ INDEX_HTML = """<!doctype html>
         adversario: $("#edit-adversario").value.trim(),
         local: $("#edit-local").value,
         competicao: $("#edit-competicao").value.trim(),
+        horario: $("#edit-horario").value.trim(),
+        estadio: $("#edit-estadio").value.trim(),
+        capitao: $("#edit-capitao").value.trim(),
         posicao_tabela: $("#edit-posicao_tabela").value.trim(),
+        publico_pagante: $("#edit-publico-pagante").value.trim(),
+        publico_presente: $("#edit-publico-presente").value.trim(),
+        renda: $("#edit-renda").value.trim(),
         placar: { vasco: $("#edit-placar-vasco").value, adversario: $("#edit-placar-adv").value },
         gols_vasco_lista: $("#edit-gols-vasco").value,
         gols_contra_lista: $("#edit-gols-contra").value,
