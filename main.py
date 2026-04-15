@@ -183,12 +183,13 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Emprestado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Servindo a seleção", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
     ("suspensos", "Suspensos"),
+    ("servindo_selecao", "Servindo a seleção"),
 )
 ELENCO_POSICAO_PLACEHOLDER = "Selecione..."
 ELENCO_CONDICAO_PLACEHOLDER = "Selecione..."
@@ -551,6 +552,7 @@ def _normalizar_jogador_historico(item):
             "data_entrada": "",
             "data_saida": "",
             "passagens": [],
+            "jogos_pelo_vasco": None,
         }
     if not isinstance(item, dict):
         return None
@@ -593,6 +595,13 @@ def _normalizar_jogador_historico(item):
         passagens,
         key=lambda p: _parse_data_ptbr_safe(p.get("data_entrada", "")) or datetime.max,
     )
+    jogos_pelo_vasco = item.get("jogos_pelo_vasco")
+    try:
+        jogos_pelo_vasco = int(jogos_pelo_vasco)
+        if jogos_pelo_vasco < 0:
+            jogos_pelo_vasco = None
+    except (TypeError, ValueError):
+        jogos_pelo_vasco = None
     return {
         "nome": nome,
         "posicao": _normalizar_posicao_elenco(item.get("posicao")),
@@ -600,6 +609,7 @@ def _normalizar_jogador_historico(item):
         "data_entrada": data_entrada,
         "data_saida": data_saida,
         "passagens": passagens,
+        "jogos_pelo_vasco": jogos_pelo_vasco,
     }
 
 
@@ -670,6 +680,28 @@ def _chave_nome_jogador(nome):
         if not unicodedata.combining(ch)
     )
     return nome_sem_acentos.casefold()
+
+
+def _jogadores_que_participaram_do_jogo(jogo):
+    esc = jogo.get("escalacao_partida", jogo.get("escalacao"))
+    if not isinstance(esc, dict):
+        return set()
+    participantes = set()
+    tit_por_pos = esc.get("titulares_por_posicao", {})
+    if isinstance(tit_por_pos, dict):
+        for pos in POSICOES_ELENCO:
+            for nome in tit_por_pos.get(pos, []):
+                chave = _chave_nome_jogador(nome)
+                if chave:
+                    participantes.add(chave)
+    reservas_que_entraram = esc.get("reservas_que_entraram")
+    if not isinstance(reservas_que_entraram, list):
+        reservas_que_entraram = esc.get("reservas", [])
+    for nome in reservas_que_entraram:
+        chave = _chave_nome_jogador(nome)
+        if chave:
+            participantes.add(chave)
+    return participantes
 
 
 def _parse_data_ptbr(s: str) -> datetime:
@@ -907,6 +939,88 @@ def _normalizar_minuto_partida(valor):
     return minuto if 0 <= minuto <= 120 else None
 
 
+PERIODOS_SUBSTITUICAO = (
+    ("1T", "1º tempo"),
+    ("2T", "2º tempo"),
+    ("1P", "1º tempo da prorrogação"),
+    ("2P", "2º tempo da prorrogação"),
+)
+
+
+def _limite_minuto_por_periodo(periodo: str) -> int:
+    return 15 if str(periodo or "").strip() in {"1P", "2P"} else 45
+
+
+def _minuto_absoluto_substituicao(minuto: int | None, periodo: str) -> int | None:
+    if minuto is None:
+        return None
+    periodo_norm = str(periodo or "").strip()
+    offsets = {
+        "1T": 0,
+        "2T": 45,
+        "1P": 90,
+        "2P": 105,
+    }
+    if periodo_norm not in offsets:
+        return None
+    limite = _limite_minuto_por_periodo(periodo_norm)
+    if minuto < 0 or minuto > limite:
+        return None
+    return offsets[periodo_norm] + minuto
+
+
+def _formatar_minuto_periodo(minuto: int | None, periodo: str) -> str:
+    minuto_ok = _normalizar_minuto_partida(minuto)
+    if minuto_ok is None:
+        return "—"
+    periodo_norm = str(periodo or "").strip()
+    return f"{minuto_ok}' {periodo_norm}" if periodo_norm else f"{minuto_ok}'"
+
+
+def _minuto_absoluto_evento(minuto: int | None, periodo: str) -> int | None:
+    minuto_ok = _normalizar_minuto_partida(minuto)
+    periodo_norm = str(periodo or "").strip()
+    if periodo_norm:
+        return _minuto_absoluto_substituicao(minuto_ok, periodo_norm)
+    return minuto_ok
+
+
+def _normalizar_substituicao_partida(item):
+    if not isinstance(item, dict):
+        return None
+    jogador_entrou = str(item.get("jogador_entrou", "")).strip()
+    jogador_saiu = str(item.get("jogador_saiu", "")).strip()
+    periodo = str(item.get("periodo", "")).strip()
+    minuto = _normalizar_minuto_partida(item.get("minuto"))
+    minuto_absoluto = _minuto_absoluto_substituicao(minuto, periodo)
+    if not jogador_entrou or not jogador_saiu or minuto_absoluto is None:
+        return None
+    return {
+        "jogador_entrou": jogador_entrou,
+        "jogador_saiu": jogador_saiu,
+        "minuto": minuto,
+        "periodo": periodo,
+        "minuto_absoluto": minuto_absoluto,
+    }
+
+
+def _duracao_partida_jogo(jogo, esc=None):
+    esc = esc if isinstance(esc, dict) else jogo.get("escalacao_partida", jogo.get("escalacao"))
+    if isinstance(esc, dict):
+        for sub in esc.get("substituicoes", []):
+            sub_norm = _normalizar_substituicao_partida(sub)
+            if sub_norm and sub_norm["minuto_absoluto"] > 90:
+                return 120
+    for chave in ("gols_vasco", "gols_adversario"):
+        for item in jogo.get(chave, []) if isinstance(jogo.get(chave, []), list) else []:
+            if not isinstance(item, dict):
+                continue
+            minutos = _normalizar_lista_minutos(item.get("minutos", []))
+            if any(minuto > 90 for minuto in minutos):
+                return 120
+    return 90
+
+
 def _normalizar_lista_minutos(minutos):
     if not isinstance(minutos, list):
         return []
@@ -933,21 +1047,27 @@ def _expandir_eventos_gol(dados):
                 qtd = 1
             qtd = max(1, qtd)
             minutos = _normalizar_lista_minutos(item.get("minutos", []))
+            periodos = [str(periodo).strip() for periodo in item.get("periodos", []) if str(periodo).strip()]
             if not minutos:
                 minuto_unico = _normalizar_minuto_partida(item.get("minuto"))
                 if minuto_unico is not None:
                     minutos = [minuto_unico]
+            if not periodos:
+                periodo_unico = str(item.get("periodo", "")).strip()
+                if periodo_unico:
+                    periodos = [periodo_unico]
             for idx in range(qtd):
                 eventos.append({
                     "nome": nome,
                     "clube": clube,
                     "minuto": minutos[idx] if idx < len(minutos) else None,
+                    "periodo": periodos[idx] if idx < len(periodos) else "",
                     "saiu_do_banco": saiu_do_banco,
                 })
         else:
             nome = str(item or "").strip()
             if nome:
-                eventos.append({"nome": nome, "clube": "", "minuto": None, "saiu_do_banco": False})
+                eventos.append({"nome": nome, "clube": "", "minuto": None, "periodo": "", "saiu_do_banco": False})
     return [evento for evento in eventos if str(evento.get("nome", "")).strip()]
 
 
@@ -966,6 +1086,7 @@ def _agrupar_eventos_gol(eventos):
                 "nome": nome,
                 "gols": 0,
                 "minutos": [],
+                "periodos": [],
                 "saiu_do_banco": saiu_do_banco,
             }
             if clube:
@@ -973,15 +1094,27 @@ def _agrupar_eventos_gol(eventos):
             ordem.append(chave)
         agrupado[chave]["gols"] += 1
         minuto = _normalizar_minuto_partida(evento.get("minuto"))
+        periodo = str(evento.get("periodo", "")).strip()
         if minuto is not None:
             agrupado[chave]["minutos"].append(minuto)
+            agrupado[chave]["periodos"].append(periodo)
 
     saida = []
     for chave in ordem:
         item = agrupado[chave]
-        item["minutos"] = sorted(item["minutos"])
+        momentos = sorted(
+            zip(item["minutos"], item["periodos"]),
+            key=lambda par: (
+                _minuto_absoluto_substituicao(par[0], par[1]) if par[1] else par[0],
+                par[0],
+                par[1],
+            ),
+        )
+        item["minutos"] = [minuto for minuto, _periodo in momentos]
+        item["periodos"] = [periodo for _minuto, periodo in momentos]
         if not item["minutos"]:
             item.pop("minutos", None)
+            item.pop("periodos", None)
         saida.append(item)
     return saida
 
@@ -1026,8 +1159,11 @@ def _agrupar_eventos_cartao(eventos):
 def _formatar_evento_gol(evento):
     nome = str(evento.get("nome", "")).strip() or "Jogador"
     minuto = _normalizar_minuto_partida(evento.get("minuto"))
+    periodo = str(evento.get("periodo", "")).strip()
     prefixo = "🪑 " if bool(evento.get("saiu_do_banco", False)) else ""
-    return f"{prefixo}{nome} - {minuto}'" if minuto is not None else f"{prefixo}{nome}"
+    if minuto is not None:
+        return f"{prefixo}{nome} - {_formatar_minuto_periodo(minuto, periodo)}"
+    return f"{prefixo}{nome}"
 
 
 def _formatar_evento_cartao(evento):
@@ -1038,16 +1174,20 @@ JOGADORES_HIST_RANKING_OPCOES = [
     "Nenhum",
     "Passagens pelo Vasco",
     "Jogos com participação",
+    "Minutos jogados",
     "Jogos como titular",
     "Jogos como reserva",
+    "Foi para o jogo e não entrou",
     "Jogos como não relacionado",
     "Jogos como lesionado",
     "Jogos como suspenso",
+    "Jogos servindo a seleção",
     "Gols pelo Vasco",
     "Jogos como capitão",
     "Partidas em que marcou",
     "Gols como titular",
     "Gols saindo do banco",
+    "Média de minutos jogados",
     "Média de gols por jogo",
     "Cartões amarelos",
     "Cartões vermelhos",
@@ -1142,8 +1282,8 @@ def _gerar_passagens_tecnico(jogos, tecnico_nome: str):
 def _extrair_adversario_de_jogo(jogo_txt: str) -> str:
     if not jogo_txt:
         return ""
-    jogo_clean = jogo_txt.replace("×", "x")
-    partes = re.split(r"\s*(?:x|vs\.?)\s*", jogo_clean, maxsplit=1, flags=re.IGNORECASE)
+    jogo_clean = re.sub(r"\s*×\s*", " x ", jogo_txt)
+    partes = re.split(r"\s+(?:x|vs\.?)\s+", jogo_clean, maxsplit=1, flags=re.IGNORECASE)
     if len(partes) == 2:
         p1, p2 = partes[0].strip(), partes[1].strip()
         if "vasco" in p1.casefold():
@@ -1216,6 +1356,52 @@ def _escalacao_partida_vazia(escalacao):
         if isinstance(nomes, list) and any(str(nome).strip() for nome in nomes):
             return False
     return True
+
+
+def _nomes_reservas_que_entraram_escalacao(escalacao):
+    if not isinstance(escalacao, dict):
+        return []
+    reservas = [
+        str(nome).strip()
+        for nome in escalacao.get("reservas", [])
+        if str(nome).strip()
+    ]
+    reservas_cf = {nome.casefold() for nome in reservas}
+    substituicoes = escalacao.get("substituicoes")
+    if isinstance(substituicoes, list) and substituicoes:
+        vistos = set()
+        filtrados = []
+        for item in substituicoes:
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            chave = sub["jogador_entrou"].casefold()
+            if chave in vistos or chave not in reservas_cf:
+                continue
+            vistos.add(chave)
+            filtrados.append(sub["jogador_entrou"])
+        return filtrados
+    if "reservas_que_entraram" not in escalacao:
+        return list(reservas)
+    bruto = escalacao.get("reservas_que_entraram")
+    if not isinstance(bruto, list):
+        return []
+    filtrados = []
+    vistos = set()
+    for nome in bruto:
+        nome_limpo = str(nome).strip()
+        chave = nome_limpo.casefold()
+        if not nome_limpo or chave in vistos or chave not in reservas_cf:
+            continue
+        vistos.add(chave)
+        filtrados.append(nome_limpo)
+    return filtrados
+
+
+def _chave_nome_consulta(nome: str) -> str:
+    txt = ''.join(c for c in unicodedata.normalize('NFD', str(nome or '').strip()) if unicodedata.category(c) != 'Mn')
+    txt = re.sub(r'\s+', ' ', txt)
+    return txt.casefold()
 
 
 # --------------------- Tooltip simples ---------------------
@@ -1447,7 +1633,8 @@ class App:
         self.fut_manual_data_var = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
         self.fut_manual_mando_var = tk.StringVar(value="casa")
         self.fut_manual_campeonato_var = tk.StringVar()
-        self.fut_manual_hora_var = tk.StringVar()
+        self.fut_manual_hora_h_var = tk.StringVar()
+        self.fut_manual_hora_m_var = tk.StringVar()
         self.fut_manual_local_var = tk.StringVar()
 
         ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
@@ -1497,20 +1684,74 @@ class App:
         ttk.Radiobutton(mando_wrap, text="Casa", variable=self.fut_manual_mando_var, value="casa").pack(side="left", padx=(8, 6))
         ttk.Radiobutton(mando_wrap, text="Fora", variable=self.fut_manual_mando_var, value="fora").pack(side="left")
 
+        def _valores_estadio_futuro_manual(adversario: str) -> list[str]:
+            base = list(self.listas.get("estadios", []))
+            relacionados = carregar_estadios_adversario(adversario or "")
+            return self._ordenar_opcoes_estadios(base, relacionados)
+
+        def _formatar_horario_futuro_manual(var: tk.StringVar, proximo_widget=None):
+            atual_txt = var.get()
+            formatado = re.sub(r"\D", "", atual_txt)[:2]
+            if atual_txt != formatado:
+                var.set(formatado)
+                return
+            if len(formatado) == 2 and proximo_widget is not None:
+                proximo_widget.focus_set()
+
+        def _aplicar_estadio_futuro_manual(*_args):
+            adversario = self._resolver_nome_clube_canonico(self.fut_manual_adversario_var.get().strip())
+            if hasattr(self, "fut_manual_local_entry"):
+                self.fut_manual_local_entry.configure(values=_valores_estadio_futuro_manual(adversario))
+            sugerido = self._sugerir_estadio_por_adversario(adversario, self.fut_manual_mando_var.get())
+            self.fut_manual_local_var.set(sugerido or "")
+
         ttk.Label(manual_frame, text="Hora:").grid(row=3, column=0, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_hora_var).grid(
-            row=3, column=1, sticky="ew", pady=3, padx=(6, 10)
-        )
+        hora_wrap = ttk.Frame(manual_frame)
+        hora_wrap.grid(row=3, column=1, sticky="w", pady=3, padx=(6, 10))
+        fut_hora_h_entry = ttk.Entry(hora_wrap, width=3, textvariable=self.fut_manual_hora_h_var, justify="center")
+        fut_hora_h_entry.pack(side="left")
+        ttk.Label(hora_wrap, text=":").pack(side="left", padx=2)
+        fut_hora_m_entry = ttk.Entry(hora_wrap, width=3, textvariable=self.fut_manual_hora_m_var, justify="center")
+        fut_hora_m_entry.pack(side="left")
+        self.fut_manual_hora_h_var.trace_add("write", lambda *_: _formatar_horario_futuro_manual(self.fut_manual_hora_h_var, fut_hora_m_entry))
+        self.fut_manual_hora_m_var.trace_add("write", lambda *_: _formatar_horario_futuro_manual(self.fut_manual_hora_m_var))
         ttk.Label(manual_frame, text="Local:").grid(row=3, column=2, sticky="w", pady=3)
-        ttk.Entry(manual_frame, textvariable=self.fut_manual_local_var).grid(
+        self.fut_manual_local_entry = ttk.Combobox(
+            manual_frame,
+            textvariable=self.fut_manual_local_var,
+            values=_valores_estadio_futuro_manual(self.fut_manual_adversario_var.get().strip()),
+        )
+        self.fut_manual_local_entry.grid(
             row=3, column=3, sticky="ew", pady=3, padx=(6, 0)
         )
+        self.fut_manual_adversario_var.trace_add("write", _aplicar_estadio_futuro_manual)
+        self.fut_manual_mando_var.trace_add("write", _aplicar_estadio_futuro_manual)
+        _aplicar_estadio_futuro_manual()
 
         ttk.Button(manual_frame, text="Adicionar Jogo", command=self._adicionar_jogo_futuro_manual).grid(
             row=4, column=0, columnspan=4, sticky="e", pady=(6, 0)
         )
 
-        ttk.Label(frame, text="Jogos futuros cadastrados:").grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        filtros_futuros = ttk.Frame(frame)
+        filtros_futuros.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        filtros_futuros.columnconfigure(3, weight=1)
+        ttk.Label(filtros_futuros, text="Jogos futuros cadastrados:").grid(row=0, column=0, sticky="w")
+        ttk.Label(filtros_futuros, text="Competição:").grid(row=0, column=1, sticky="e", padx=(12, 0))
+        self.filtro_futuros_competicao_var = tk.StringVar(value="Todas")
+        self.filtro_futuros_competicao_combo = ttk.Combobox(
+            filtros_futuros,
+            textvariable=self.filtro_futuros_competicao_var,
+            values=["Todas"],
+            state="readonly",
+            width=26,
+        )
+        self.filtro_futuros_competicao_combo.grid(row=0, column=2, sticky="w", padx=(6, 6))
+        ttk.Button(
+            filtros_futuros,
+            text="Limpar",
+            command=lambda: self.filtro_futuros_competicao_var.set("Todas"),
+        ).grid(row=0, column=4, sticky="e")
+        self.filtro_futuros_competicao_var.trace_add("write", lambda *_: self._render_lista_futuros())
 
         list_wrap = ttk.Frame(frame)
         list_wrap.grid(row=4, column=0, columnspan=2, sticky="nsew")
@@ -2082,7 +2323,8 @@ class App:
         self.fut_manual_campeonato_var.set("")
         self.fut_manual_data_var.set(datetime.now().strftime("%d/%m/%Y"))
         self.fut_manual_mando_var.set("casa")
-        self.fut_manual_hora_var.set("")
+        self.fut_manual_hora_h_var.set("")
+        self.fut_manual_hora_m_var.set("")
         self.fut_manual_local_var.set("")
 
     def _abrir_menu_contexto_json_futuros(self, event):
@@ -2105,11 +2347,13 @@ class App:
         self.futuros_json_text.insert("insert", texto)
 
     def _adicionar_jogo_futuro_manual(self):
-        adversario = self.fut_manual_adversario_var.get().strip()
+        adversario = self._resolver_nome_clube_canonico(self.fut_manual_adversario_var.get().strip())
         data_txt = self.fut_manual_data_var.get().strip()
         campeonato = self.fut_manual_campeonato_var.get().strip()
         em_casa = self.fut_manual_mando_var.get() != "fora"
-        hora = self.fut_manual_hora_var.get().strip()
+        hora = ""
+        if self.fut_manual_hora_h_var.get().strip() or self.fut_manual_hora_m_var.get().strip():
+            hora = f"{self.fut_manual_hora_h_var.get().strip()}:{self.fut_manual_hora_m_var.get().strip()}"
         local = self.fut_manual_local_var.get().strip()
 
         if not adversario or not data_txt:
@@ -2132,14 +2376,26 @@ class App:
         if not _parse_data_ptbr_safe(normalizado["data"]):
             messagebox.showerror("Erro", "Data inválida. Use o formato dd/mm/aaaa.")
             return
+        if hora and not re.match(r"^\d{2}:\d{2}$", hora):
+            messagebox.showerror("Erro", "Informe a hora no formato HH:MM.")
+            return
+        if hora:
+            horas, minutos = [int(parte) for parte in hora.split(":", 1)]
+            if horas > 23 or minutos > 59:
+                messagebox.showerror("Erro", "Informe um horário válido entre 00:00 e 23:59.")
+                return
 
         jogos = carregar_jogos_futuros()
         jogos.append(normalizado)
         salvar_lista_futuros(jogos)
+        adversario = self._registrar_clube_adversario(adversario)
+        self.fut_manual_adversario_var.set(adversario)
+        salvar_listas(self.listas)
         self._render_lista_futuros()
         self.fut_manual_adversario_var.set("")
         self.fut_manual_campeonato_var.set("")
-        self.fut_manual_hora_var.set("")
+        self.fut_manual_hora_h_var.set("")
+        self.fut_manual_hora_m_var.set("")
         self.fut_manual_local_var.set("")
         messagebox.showinfo("Sucesso", "Jogo futuro adicionado.")
 
@@ -2148,6 +2404,22 @@ class App:
             self.tv_futuros.delete(iid)
 
         jogos = carregar_jogos_futuros()
+        competicoes = sorted({
+            str(item.get("campeonato", "")).strip()
+            for item in jogos
+            if str(item.get("campeonato", "")).strip()
+        }, key=lambda s: s.casefold())
+        if hasattr(self, "filtro_futuros_competicao_combo"):
+            atual = self.filtro_futuros_competicao_var.get().strip() or "Todas"
+            opcoes = ["Todas"] + competicoes
+            self.filtro_futuros_competicao_combo.configure(values=opcoes)
+            if atual not in opcoes:
+                atual = "Todas"
+                self.filtro_futuros_competicao_var.set(atual)
+        competicao_sel = ""
+        if hasattr(self, "filtro_futuros_competicao_var"):
+            competicao_sel = self.filtro_futuros_competicao_var.get().strip()
+
         jogos_validos = []
         for item in jogos:
             normalizado = _normalizar_futuro_item(item)
@@ -2156,6 +2428,9 @@ class App:
             data_obj = _parse_data_ptbr_safe(normalizado["data"])
             if not data_obj:
                 continue
+            if competicao_sel and competicao_sel != "Todas":
+                if str(normalizado.get("campeonato", "")).strip().casefold() != competicao_sel.casefold():
+                    continue
             jogos_validos.append((data_obj, normalizado))
 
         today = datetime.now().date()
@@ -2304,13 +2579,15 @@ class App:
             return
 
         values = self.tv_futuros.item(sel[0], "values")
-        if len(values) < 2:
+        if len(values) < 3:
             self._retro_partidas_atual = []
             self.retro_resumo_var.set("Não foi possível identificar o adversário.")
             return
 
-        jogo_txt = str(values[1]).strip()
-        adversario = _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
+        jogo_txt = str(values[2]).strip()
+        adversario = self._resolver_nome_clube_canonico(
+            _extrair_adversario_de_jogo(jogo_txt).replace("Vasco", "").strip()
+        )
         if not adversario:
             self._retro_partidas_atual = []
             self.retro_resumo_var.set("Não foi possível identificar o adversário.")
@@ -2389,6 +2666,56 @@ class App:
         if em_casa is False:
             return "Não"
         return "-"
+
+    def _opcoes_clubes_adversarios(self):
+        base = list(self.listas.get("clubes_adversarios", []))
+        extras = []
+        for jogo in carregar_dados_jogos():
+            nome = str(jogo.get("adversario", "")).strip()
+            if nome:
+                extras.append(nome)
+        for futuro in carregar_jogos_futuros():
+            nome = _extrair_adversario_de_jogo(str(futuro.get("jogo", "")).strip()).replace("Vasco", "").strip()
+            if nome:
+                extras.append(nome)
+        vistos = set()
+        ordenados = []
+        for nome in sorted(base + extras, key=lambda s: s.casefold()):
+            chave = _chave_nome_consulta(nome)
+            if not chave or chave in vistos:
+                continue
+            vistos.add(chave)
+            ordenados.append(nome)
+        return ordenados
+
+    def _atualizar_combos_clubes_adversarios(self):
+        opcoes = self._opcoes_clubes_adversarios()
+        if hasattr(self, "adversario_entry"):
+            self.adversario_entry["values"] = opcoes
+        if hasattr(self, "fut_manual_adversario_entry"):
+            self.fut_manual_adversario_entry["values"] = opcoes
+        return opcoes
+
+    def _resolver_nome_clube_canonico(self, nome: str) -> str:
+        nome_limpo = str(nome or "").strip()
+        if not nome_limpo:
+            return ""
+        alvo = _chave_nome_consulta(nome_limpo)
+        for candidato in self._opcoes_clubes_adversarios():
+            if _chave_nome_consulta(candidato) == alvo:
+                return candidato
+        return nome_limpo
+
+    def _registrar_clube_adversario(self, nome: str) -> str:
+        canonico = self._resolver_nome_clube_canonico(nome)
+        if not canonico:
+            return ""
+        lista = self.listas.setdefault("clubes_adversarios", [])
+        if not any(_chave_nome_consulta(item) == _chave_nome_consulta(canonico) for item in lista):
+            lista.append(canonico)
+            self.listas["clubes_adversarios"] = sorted(lista, key=lambda s: s.casefold())
+        self._atualizar_combos_clubes_adversarios()
+        return canonico
 
     def _dados_futuro_selecionado(self):
         sel = self.tv_futuros.selection()
@@ -2472,18 +2799,7 @@ class App:
         def _valores_estadio_modal(adversario: str) -> list[str]:
             base = list(self.listas.get("estadios", []))
             relacionados = carregar_estadios_adversario(adversario or "")
-            ordenados = []
-            vistos = set()
-            for nome in relacionados + base:
-                nome_limpo = str(nome or "").strip()
-                if not nome_limpo:
-                    continue
-                chave = nome_limpo.casefold()
-                if chave in vistos:
-                    continue
-                vistos.add(chave)
-                ordenados.append(nome_limpo)
-            return ordenados
+            return self._ordenar_opcoes_estadios(base, relacionados)
 
         def _formatar_horario_var(var: tk.StringVar, proximo_widget=None):
             atual_txt = var.get()
@@ -2494,12 +2810,37 @@ class App:
             if len(formatado) == 2 and proximo_widget is not None:
                 proximo_widget.focus_set()
 
+        def _aplicar_estadio_modal(*_args):
+            adversario = self._resolver_nome_clube_canonico(adversario_var.get().strip())
+            valores = _valores_estadio_modal(adversario)
+            local_entry["values"] = valores
+            sugerido = self._sugerir_estadio_por_adversario(adversario, mando_var.get())
+            local_var.set(sugerido or "")
+
         ttk.Label(frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=4)
-        adversario_entry = ttk.Entry(frame, textvariable=adversario_var)
+        opcoes_adversario = sorted({
+            *self.listas.get("clubes_adversarios", []),
+            *[
+                str(j.get("adversario", "")).strip()
+                for j in carregar_dados_jogos()
+                if str(j.get("adversario", "")).strip()
+            ],
+        }, key=lambda s: s.casefold())
+        adversario_entry = ttk.Combobox(frame, textvariable=adversario_var, values=opcoes_adversario)
         adversario_entry.grid(row=0, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
 
         ttk.Label(frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=4)
-        ttk.Entry(frame, textvariable=campeonato_var).grid(row=1, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
+        opcoes_campeonato = sorted({
+            *self.listas.get("competicoes", []),
+            *[
+                str(j.get("competicao", "")).strip()
+                for j in carregar_dados_jogos()
+                if str(j.get("competicao", "")).strip()
+            ],
+        }, key=lambda s: s.casefold())
+        ttk.Combobox(frame, textvariable=campeonato_var, values=opcoes_campeonato).grid(
+            row=1, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0)
+        )
 
         ttk.Label(frame, text="Data:").grid(row=2, column=0, sticky="w", pady=4)
         data_wrap = ttk.Frame(frame)
@@ -2528,17 +2869,15 @@ class App:
         local_entry = ttk.Combobox(frame, textvariable=local_var, values=_valores_estadio_modal(adversario_var.get().strip()))
         local_entry.grid(row=4, column=1, columnspan=3, sticky="ew", pady=4, padx=(6, 0))
 
-        def _atualizar_estadios_modal(*_args):
-            valores = _valores_estadio_modal(adversario_var.get().strip())
-            local_entry["values"] = valores
-
-        adversario_var.trace_add("write", _atualizar_estadios_modal)
+        adversario_var.trace_add("write", _aplicar_estadio_modal)
+        mando_var.trace_add("write", _aplicar_estadio_modal)
+        _aplicar_estadio_modal()
 
         botoes = ttk.Frame(frame)
         botoes.grid(row=5, column=0, columnspan=4, sticky="e", pady=(10, 0))
 
         def salvar():
-            adversario = adversario_var.get().strip()
+            adversario = self._resolver_nome_clube_canonico(adversario_var.get().strip())
             data_txt = data_var.get().strip()
             hora = ""
             if hora_h_var.get().strip() or hora_m_var.get().strip():
@@ -2568,6 +2907,9 @@ class App:
                     return
             futuros[idx] = normalizado
             salvar_lista_futuros(futuros)
+            adversario = self._registrar_clube_adversario(adversario)
+            adversario_var.set(adversario)
+            salvar_listas(self.listas)
             self._render_lista_futuros()
             popup.destroy()
 
@@ -2763,6 +3105,7 @@ class App:
         self.tv_elenco_atual.tag_configure("status_nao_relacionados", background="#ffe3c2", foreground="#4f2a09")
         self.tv_elenco_atual.tag_configure("status_lesionados", background="#ffd6d6", foreground="#5a1414")
         self.tv_elenco_atual.tag_configure("status_suspensos", background="#ffe9bf", foreground="#5c3b00")
+        self.tv_elenco_atual.tag_configure("status_servindo_selecao", background="#d9ecff", foreground="#0f3d63")
         self.tv_elenco_atual.tag_configure("status_emprestados", background="#e8ebf4", foreground="#1f2f57")
         self.tv_elenco_atual.tag_configure("status_sem_lista", background="#e6e7eb", foreground="#2f3136")
         self.tv_elenco_atual.grid(row=0, column=0, sticky="nsew")
@@ -2816,7 +3159,15 @@ class App:
             self.tv_elenco_atual.delete(iid)
         jogadores = list(self.elenco_atual.get("jogadores", []))
         jogadores = self._ordenar_jogadores_elenco_para_exibicao(jogadores)
-        cont = {"Titular": 0, "Reserva": 0, "Não Relacionado": 0, "Lesionado": 0, "Suspenso": 0, "Emprestado": 0}
+        cont = {
+            "Titular": 0,
+            "Reserva": 0,
+            "Não Relacionado": 0,
+            "Lesionado": 0,
+            "Suspenso": 0,
+            "Servindo a seleção": 0,
+            "Emprestado": 0,
+        }
         for jogador in jogadores:
             condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
             cont[condicao] = cont.get(condicao, 0) + 1
@@ -2830,6 +3181,8 @@ class App:
                 tag = "status_lesionados"
             elif condicao == "Suspenso":
                 tag = "status_suspensos"
+            elif condicao == "Servindo a seleção":
+                tag = "status_servindo_selecao"
             elif condicao == "Emprestado":
                 tag = "status_emprestados"
             else:
@@ -2849,7 +3202,7 @@ class App:
             self.elenco_resumo_var.set(
                 f"Titulares: {cont['Titular']} | Reservas: {cont['Reserva']} | "
                 f"Não Relacionados: {cont['Não Relacionado']} | Lesionados: {cont['Lesionado']} | "
-                f"Suspensos: {cont['Suspenso']} | "
+                f"Suspensos: {cont['Suspenso']} | Seleção: {cont['Servindo a seleção']} | "
                 f"Emprestados: {cont['Emprestado']}"
             )
         self._render_campinho_elenco()
@@ -3074,6 +3427,7 @@ class App:
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
         menu.add_command(label="Enviar para Suspenso", command=lambda: self._enviar_jogador_elenco_para(("extras", "suspensos")))
+        menu.add_command(label="Enviar para Servindo a seleção", command=lambda: self._enviar_jogador_elenco_para(("extras", "servindo_selecao")))
         menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         try:
             menu.tk_popup(event.x_root, event.y_root)
@@ -3393,6 +3747,8 @@ class App:
                 ("reservas", "Reserva"),
                 ("nao_relacionados", "Não Relacionado"),
                 ("lesionados", "Lesionado"),
+                ("suspensos", "Suspenso"),
+                ("servindo_selecao", "Servindo a seleção"),
             ):
                 if any(_chave_nome_jogador(nm) == alvo for nm in esc.get(chave, [])):
                     return condicao
@@ -3446,6 +3802,7 @@ class App:
             ("nao_relacionados", "Não Relacionado"),
             ("lesionados", "Lesionado"),
             ("suspensos", "Suspenso"),
+            ("servindo_selecao", "Servindo a seleção"),
         ):
             nomes = escalacao_partida.get(chave, [])
             if not isinstance(nomes, list):
@@ -3708,6 +4065,66 @@ class App:
         self.jogadores_historico = {"jogadores": _ordenar_jogadores_historico(list(mapa.values()))}
         salvar_jogadores_historico(self.jogadores_historico)
 
+    def _ajustar_jogos_pelo_vasco_jogadores_historico(self, participantes_antes=None, participantes_depois=None):
+        antes = set(participantes_antes or set())
+        depois = set(participantes_depois or set())
+        if not antes and not depois:
+            return
+        mapa = {}
+        for item in self.jogadores_historico.get("jogadores", []):
+            jogador = _normalizar_jogador_historico(item)
+            if not jogador:
+                continue
+            mapa[_chave_nome_jogador(jogador.get("nome", ""))] = jogador
+        alterou = False
+        for chave in antes | depois:
+            jogador = mapa.get(chave)
+            if not jogador:
+                continue
+            valor_atual = self._obter_jogos_pelo_vasco_salvos(jogador)
+            if valor_atual is None:
+                valor_atual = 0
+            novo_valor = valor_atual
+            if chave in antes and chave not in depois:
+                novo_valor = max(0, valor_atual - 1)
+            elif chave in depois and chave not in antes:
+                novo_valor = valor_atual + 1
+            if novo_valor != self._obter_jogos_pelo_vasco_salvos(jogador):
+                jogador["jogos_pelo_vasco"] = novo_valor
+                mapa[chave] = jogador
+                alterou = True
+        if not alterou:
+            return
+        self.jogadores_historico = {"jogadores": _ordenar_jogadores_historico(list(mapa.values()))}
+        salvar_jogadores_historico(self.jogadores_historico)
+
+    def _sincronizar_jogos_pelo_vasco_jogadores_historico(self, jogos=None):
+        if jogos is None:
+            jogos = carregar_dados_jogos()
+        if not isinstance(jogos, list):
+            jogos = []
+        jogadores = self.jogadores_historico.get("jogadores", [])
+        if not isinstance(jogadores, list) or not jogadores:
+            return
+        contagem = Counter()
+        for jogo in jogos:
+            contagem.update(_jogadores_que_participaram_do_jogo(jogo))
+        alterou = False
+        atualizados = []
+        for item in jogadores:
+            jogador = _normalizar_jogador_historico(item)
+            if not jogador:
+                continue
+            chave = _chave_nome_jogador(jogador.get("nome", ""))
+            if self._obter_jogos_pelo_vasco_salvos(jogador) is None and contagem.get(chave, 0) > 0:
+                jogador["jogos_pelo_vasco"] = int(contagem[chave])
+                alterou = True
+            atualizados.append(jogador)
+        if not alterou:
+            return
+        self.jogadores_historico = {"jogadores": _ordenar_jogadores_historico(atualizados)}
+        salvar_jogadores_historico(self.jogadores_historico)
+
     def _sincronizar_jogadores_historico(self):
         candidatos = []
         for jogador in self.elenco_atual.get("jogadores", []):
@@ -3719,6 +4136,7 @@ class App:
             candidatos.append({"nome": nome, "posicao": jogador.get("posicao", "Meio-Campista")})
         self._adicionar_jogadores_historico(candidatos)
         self._atualizar_datas_estreia_jogadores_historico()
+        self._sincronizar_jogos_pelo_vasco_jogadores_historico()
         if hasattr(self, "_render_aba_jogadores_historico"):
             self._render_aba_jogadores_historico()
 
@@ -3768,17 +4186,19 @@ class App:
         self.jogadores_hist_filtro_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
         self.jogadores_hist_ranking_var.trace_add("write", lambda *_: self._render_aba_jogadores_historico())
 
-        cols = ("posicao", "jogador", "status", "capitao")
+        cols = ("posicao", "jogador", "status", "minutos", "capitao")
         self.tv_jogadores_historico = ttk.Treeview(esquerda, columns=cols, show="headings", height=16)
         self._jogadores_hist_sort_col = "posicao"
         self._jogadores_hist_sort_reverse = False
         self.tv_jogadores_historico.heading("posicao", text="Posição", command=lambda: self._toggle_ordenacao_jogadores_historico("posicao"))
         self.tv_jogadores_historico.heading("jogador", text="Jogador", command=lambda: self._toggle_ordenacao_jogadores_historico("jogador"))
         self.tv_jogadores_historico.heading("status", text="Status", command=lambda: self._toggle_ordenacao_jogadores_historico("status"))
+        self.tv_jogadores_historico.heading("minutos", text="Minutos", command=lambda: self._toggle_ordenacao_jogadores_historico("minutos"))
         self.tv_jogadores_historico.heading("capitao", text="Capitão", command=lambda: self._toggle_ordenacao_jogadores_historico("capitao"))
         self.tv_jogadores_historico.column("posicao", width=150, anchor="w")
         self.tv_jogadores_historico.column("jogador", width=280, anchor="w")
         self.tv_jogadores_historico.column("status", width=130, anchor="center")
+        self.tv_jogadores_historico.column("minutos", width=100, anchor="e")
         self.tv_jogadores_historico.column("capitao", width=90, anchor="center")
         self.tv_jogadores_historico.tag_configure("odd", background=self.colors["row_alt_bg"])
         self.tv_jogadores_historico.grid(row=1, column=0, sticky="nsew")
@@ -3835,7 +4255,7 @@ class App:
             if isinstance(j, dict) and str(j.get("nome", "")).strip()
         }
         capitaes = self._jogadores_que_foram_capitaes()
-        jogos = carregar_dados_jogos() if ranking != "Nenhum" else []
+        jogos = carregar_dados_jogos()
         self.tv_jogadores_historico.delete(*self.tv_jogadores_historico.get_children())
         jogadores_filtrados = []
         novo_sel = None
@@ -3849,8 +4269,12 @@ class App:
             foi_capitao = nome.casefold() in capitaes
             icone_capitao = "🎗" if foi_capitao else ""
             ranking_valor = 0
+            stats = self._coletar_estatisticas_jogador_periodo(nome, jogos)
+            minutos_jogados = stats.get("minutos_jogados")
+            minutos_exibicao = str(int(minutos_jogados or 0))
+            if stats.get("minutos_jogados_desconhecido"):
+                minutos_exibicao = "Desconhecido"
             if ranking != "Nenhum":
-                stats = self._coletar_estatisticas_jogador_periodo(nome, jogos)
                 ranking_valor = self._obter_valor_ranking_jogador(jogador, stats, ranking)
             if termo:
                 haystack = f"{posicao} {nome} {status} {'sim' if foi_capitao else 'nao'}".casefold()
@@ -3864,6 +4288,8 @@ class App:
                 "posicao": posicao,
                 "jogador": nome,
                 "status": status,
+                "minutos": minutos_exibicao,
+                "minutos_valor": None if stats.get("minutos_jogados_desconhecido") else int(minutos_jogados or 0),
                 "capitao": icone_capitao,
                 "foi_capitao": foi_capitao,
                 "ranking_valor": ranking_valor,
@@ -3879,6 +4305,13 @@ class App:
                     ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
                 )
             col = getattr(self, "_jogadores_hist_sort_col", "posicao")
+            if col == "minutos":
+                minutos_valor = item.get("minutos_valor")
+                return (
+                    1 if minutos_valor is None else 0,
+                    -(minutos_valor or 0),
+                    str(item.get("jogador", "")).casefold(),
+                )
             if col == "posicao":
                 return (
                     ordem_posicao.get(item.get("posicao", ""), len(POSICOES_ELENCO)),
@@ -3913,7 +4346,7 @@ class App:
             iid = self.tv_jogadores_historico.insert(
                 "",
                 "end",
-                values=(item["posicao"], item["jogador"], item["status"], item["capitao"]),
+                values=(item["posicao"], item["jogador"], item["status"], item["minutos"], item["capitao"]),
                 tags=("odd",) if i % 2 else (),
             )
             if selecionado_cf and item["jogador"].casefold() == selecionado_cf:
@@ -3935,16 +4368,20 @@ class App:
         mapa = {
             "Passagens pelo Vasco": len(jogador.get("passagens", [])) if isinstance(jogador.get("passagens", []), list) else 0,
             "Jogos com participação": int(stats.get("jogos_com_participacao", 0) or 0),
+            "Minutos jogados": int(stats.get("minutos_jogados", 0) or 0),
             "Jogos como titular": int(stats.get("jogos_titular", 0) or 0),
             "Jogos como reserva": int(stats.get("jogos_reserva", 0) or 0),
+            "Foi para o jogo e não entrou": int(stats.get("jogos_reserva_sem_entrar", 0) or 0),
             "Jogos como não relacionado": int(stats.get("jogos_nao_rel", 0) or 0),
             "Jogos como lesionado": int(stats.get("jogos_lesionado", 0) or 0),
             "Jogos como suspenso": int(stats.get("jogos_suspenso", 0) or 0),
+            "Jogos servindo a seleção": int(stats.get("jogos_servindo_selecao", 0) or 0),
             "Gols pelo Vasco": int(stats.get("gols", 0) or 0),
             "Jogos como capitão": int(stats.get("jogos_como_capitao", 0) or 0),
             "Partidas em que marcou": int(stats.get("partidas_com_gol", 0) or 0),
             "Gols como titular": int(stats.get("gols_titular", 0) or 0),
             "Gols saindo do banco": int(stats.get("gols_banco", 0) or 0),
+            "Média de minutos jogados": float(stats.get("media_minutos_jogados", 0.0) or 0.0),
             "Média de gols por jogo": float(stats.get("media_gols", 0.0) or 0.0),
             "Cartões amarelos": int(stats.get("cartoes_amarelos", 0) or 0),
             "Cartões vermelhos": int(stats.get("cartoes_vermelhos", 0) or 0),
@@ -3955,7 +4392,7 @@ class App:
         return mapa.get(ranking, 0)
 
     def _toggle_ordenacao_jogadores_historico(self, coluna):
-        if coluna not in {"posicao", "jogador", "status", "capitao"}:
+        if coluna not in {"posicao", "jogador", "status", "minutos", "capitao"}:
             return
         if getattr(self, "_jogadores_hist_sort_col", None) == coluna:
             self._jogadores_hist_sort_reverse = not getattr(self, "_jogadores_hist_sort_reverse", False)
@@ -3988,10 +4425,12 @@ class App:
         data_entrada = ""
         data_saida = ""
         passagens = []
+        jogador_historico = None
         for item in self.jogadores_historico.get("jogadores", []):
             if not isinstance(item, dict):
                 continue
             if _chave_nome_jogador(item.get("nome", "")) == alvo:
+                jogador_historico = item
                 data_registro = str(item.get("data_registro", "")).strip()
                 data_entrada = str(item.get("data_entrada", "")).strip()
                 data_saida = str(item.get("data_saida", "")).strip()
@@ -4044,13 +4483,31 @@ class App:
             })
         detalhes["geral"].extend(
             self._formatar_detalhes_estatisticas_jogador(
-                self._coletar_estatisticas_jogador_periodo(nome, jogos)
+                self._coletar_estatisticas_jogador_periodo(nome, jogos, jogador_historico=jogador_historico)
             )
         )
         return detalhes
 
-    def _coletar_estatisticas_jogador_periodo(self, nome, jogos, data_entrada="", data_saida=""):
+    def _obter_jogador_historico_por_nome(self, nome):
         alvo = _chave_nome_jogador(nome)
+        for item in self.jogadores_historico.get("jogadores", []):
+            if isinstance(item, dict) and _chave_nome_jogador(item.get("nome", "")) == alvo:
+                return item
+        return None
+
+    def _obter_jogos_pelo_vasco_salvos(self, jogador_historico):
+        if not isinstance(jogador_historico, dict):
+            return None
+        try:
+            valor = int(jogador_historico.get("jogos_pelo_vasco"))
+        except (TypeError, ValueError):
+            return None
+        return valor if valor >= 0 else None
+
+    def _coletar_estatisticas_jogador_periodo(self, nome, jogos, data_entrada="", data_saida="", jogador_historico=None):
+        alvo = _chave_nome_jogador(nome)
+        if jogador_historico is None:
+            jogador_historico = self._obter_jogador_historico_por_nome(nome)
         data_entrada_dt = _parse_data_ptbr_safe(data_entrada) if data_entrada else None
         data_saida_dt = _parse_data_ptbr_safe(data_saida) if data_saida else None
         jogos_filtrados = []
@@ -4067,9 +4524,12 @@ class App:
         jogos_com_participacao = 0
         jogos_titular = 0
         jogos_reserva = 0
+        jogos_reserva_sem_entrar = 0
+        minutos_jogados = 0
         jogos_nao_rel = 0
         jogos_lesionado = 0
         jogos_suspenso = 0
+        jogos_servindo_selecao = 0
         gols = 0
         partidas_com_gol = 0
         gols_banco = 0
@@ -4092,9 +4552,19 @@ class App:
             em_nao_rel = False
             em_lesionados = False
             em_suspensos = False
+            em_servindo_selecao = False
 
             if isinstance(esc, dict):
                 jogos_com_escalacao += 1
+                duracao_partida = _duracao_partida_jogo(jogo, esc)
+                substituicoes = [
+                    sub
+                    for sub in (
+                        _normalizar_substituicao_partida(item)
+                        for item in esc.get("substituicoes", [])
+                    )
+                    if sub
+                ]
                 tit_por_pos = esc.get("titulares_por_posicao", {})
                 if isinstance(tit_por_pos, dict):
                     for pos in POSICOES_ELENCO:
@@ -4109,10 +4579,12 @@ class App:
                         if _chave_nome_jogador(nm) == alvo:
                             em_titulares = True
                             break
-                em_reservas = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("reservas", []))
+                reservas_que_entraram = _nomes_reservas_que_entraram_escalacao(esc)
+                em_reservas = any(_chave_nome_jogador(nm) == alvo for nm in reservas_que_entraram)
                 em_nao_rel = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("nao_relacionados", []))
                 em_lesionados = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("lesionados", []))
                 em_suspensos = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("suspensos", []))
+                em_servindo_selecao = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("servindo_selecao", []))
                 if em_suspensos and suspensoes_pendentes > 0:
                     suspensoes_pendentes -= 1
 
@@ -4129,8 +4601,14 @@ class App:
                         continue
                     gol_no_jogo += qtd
                     minutos = _normalizar_lista_minutos(g.get("minutos", []))
-                    for idx in range(min(qtd, len(minutos))):
-                        marcacoes_gol.append(indice_jogo * 90 + minutos[idx])
+                    periodos = [str(periodo).strip() for periodo in g.get("periodos", [])] if isinstance(g.get("periodos", []), list) else []
+                    for idx in range(qtd):
+                        minuto_abs = _minuto_absoluto_evento(
+                            minutos[idx] if idx < len(minutos) else None,
+                            periodos[idx] if idx < len(periodos) else "",
+                        )
+                        if minuto_abs is not None:
+                            marcacoes_gol.append(indice_jogo * 90 + minuto_abs)
                     saiu_do_banco = bool(g.get("saiu_do_banco", False))
                     if not saiu_do_banco and em_reservas and not em_titulares:
                         saiu_do_banco = True
@@ -4172,16 +4650,32 @@ class App:
             if isinstance(esc, dict):
                 if em_titulares:
                     jogos_titular += 1
+                    minutos_jogo = duracao_partida
+                    for sub in substituicoes:
+                        if _chave_nome_jogador(sub.get("jogador_saiu", "")) == alvo:
+                            minutos_jogo = min(duracao_partida, int(sub.get("minuto_absoluto", duracao_partida) or duracao_partida))
+                            break
+                    minutos_jogados += max(0, minutos_jogo)
                     participou = True
                 elif em_reservas:
                     jogos_reserva += 1
+                    minutos_jogo = 0
+                    for sub in substituicoes:
+                        if _chave_nome_jogador(sub.get("jogador_entrou", "")) == alvo:
+                            minutos_jogo = max(0, duracao_partida - int(sub.get("minuto_absoluto", duracao_partida) or duracao_partida))
+                            break
+                    minutos_jogados += max(0, minutos_jogo)
                     participou = True
+                elif any(_chave_nome_jogador(nm) == alvo for nm in esc.get("reservas", [])):
+                    jogos_reserva_sem_entrar += 1
                 elif em_nao_rel:
                     jogos_nao_rel += 1
                 elif em_lesionados:
                     jogos_lesionado += 1
                 elif em_suspensos:
                     jogos_suspenso += 1
+                elif em_servindo_selecao:
+                    jogos_servindo_selecao += 1
 
             if participou:
                 jogos_com_participacao += 1
@@ -4199,6 +4693,20 @@ class App:
                     derrotas += 1
 
         media_gols = round(gols / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
+        media_minutos_jogados = round(minutos_jogados / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
+        jogos_com_participacao_desconhecido = False
+        minutos_jogados_desconhecido = False
+        if not data_entrada and not data_saida:
+            jogos_salvos = self._obter_jogos_pelo_vasco_salvos(jogador_historico)
+            if jogos_salvos is not None:
+                jogos_com_participacao = jogos_salvos
+                media_gols = round(gols / jogos_salvos, 2) if jogos_salvos else 0.0
+                media_minutos_jogados = round(minutos_jogados / jogos_salvos, 2) if jogos_salvos else 0.0
+            elif jogos_com_participacao == 0:
+                jogos_com_participacao_desconhecido = True
+                minutos_jogados_desconhecido = True
+                media_gols = None
+                media_minutos_jogados = None
         media_minutos_entre_gols = None
         if len(marcacoes_gol) >= 2:
             diferencas = [
@@ -4209,16 +4717,22 @@ class App:
                 media_minutos_entre_gols = round(sum(diferencas) / len(diferencas), 2)
         return {
             "jogos_com_participacao": jogos_com_participacao,
+            "jogos_com_participacao_desconhecido": jogos_com_participacao_desconhecido,
+            "minutos_jogados": minutos_jogados,
+            "minutos_jogados_desconhecido": minutos_jogados_desconhecido,
             "jogos_titular": jogos_titular,
             "jogos_reserva": jogos_reserva,
+            "jogos_reserva_sem_entrar": jogos_reserva_sem_entrar,
             "jogos_nao_rel": jogos_nao_rel,
             "jogos_lesionado": jogos_lesionado,
             "jogos_suspenso": jogos_suspenso,
+            "jogos_servindo_selecao": jogos_servindo_selecao,
             "gols": gols,
             "jogos_como_capitao": jogos_como_capitao,
             "partidas_com_gol": partidas_com_gol,
             "gols_titular": gols_titular,
             "gols_banco": gols_banco,
+            "media_minutos_jogados": media_minutos_jogados,
             "media_gols": media_gols,
             "cartoes_amarelos": cartoes_amarelos,
             "cartoes_vermelhos": cartoes_vermelhos,
@@ -4229,19 +4743,39 @@ class App:
         }
 
     def _formatar_detalhes_estatisticas_jogador(self, stats):
+        jogos_participacao = (
+            "Número desconhecido"
+            if stats.get("jogos_com_participacao_desconhecido")
+            else stats.get("jogos_com_participacao", 0)
+        )
+        media_gols = stats.get("media_gols", 0.0)
+        minutos_jogados = (
+            "Número desconhecido"
+            if stats.get("minutos_jogados_desconhecido")
+            else stats.get("minutos_jogados", 0)
+        )
+        media_minutos_jogados = stats.get("media_minutos_jogados", 0.0)
+        if stats.get("jogos_com_participacao_desconhecido") and media_gols is None:
+            media_gols = "Número desconhecido"
+        if stats.get("minutos_jogados_desconhecido") and media_minutos_jogados is None:
+            media_minutos_jogados = "Número desconhecido"
         return [
-            ("Jogos com participação", stats.get("jogos_com_participacao", 0)),
+            ("Jogos com participação", jogos_participacao),
+            ("Minutos jogados", minutos_jogados),
+            ("Média de minutos jogados", media_minutos_jogados),
             ("Jogos como titular", stats.get("jogos_titular", 0)),
             ("Jogos como reserva", stats.get("jogos_reserva", 0)),
+            ("Foi para o jogo e não entrou", stats.get("jogos_reserva_sem_entrar", 0)),
             ("Jogos como não relacionado", stats.get("jogos_nao_rel", 0)),
             ("Jogos como lesionado", stats.get("jogos_lesionado", 0)),
             ("Jogos como suspenso", stats.get("jogos_suspenso", 0)),
+            ("Jogos servindo a seleção", stats.get("jogos_servindo_selecao", 0)),
             ("Gols pelo Vasco", stats.get("gols", 0)),
             ("Jogos como capitão", stats.get("jogos_como_capitao", 0)),
             ("Partidas em que marcou", stats.get("partidas_com_gol", 0)),
             ("Gols como titular", stats.get("gols_titular", 0)),
             ("Gols saindo do banco", stats.get("gols_banco", 0)),
-            ("Média de gols por jogo", stats.get("media_gols", 0.0)),
+            ("Média de gols por jogo", media_gols),
             ("Cartões amarelos", stats.get("cartoes_amarelos", 0)),
             ("Cartões vermelhos", stats.get("cartoes_vermelhos", 0)),
             ("Amarelos acumulados atuais", stats.get("amarelos_acumulados", 0)),
@@ -4258,16 +4792,21 @@ class App:
     def _somar_estatisticas_passagens(self, stats_passagens):
         totais = {
             "jogos_com_participacao": 0,
+            "minutos_jogados": 0,
+            "minutos_jogados_desconhecido": False,
             "jogos_titular": 0,
             "jogos_reserva": 0,
+            "jogos_reserva_sem_entrar": 0,
             "jogos_nao_rel": 0,
             "jogos_lesionado": 0,
             "jogos_suspenso": 0,
+            "jogos_servindo_selecao": 0,
             "gols": 0,
             "jogos_como_capitao": 0,
             "partidas_com_gol": 0,
             "gols_titular": 0,
             "gols_banco": 0,
+            "media_minutos_jogados": 0.0,
             "media_gols": 0.0,
             "cartoes_amarelos": 0,
             "cartoes_vermelhos": 0,
@@ -4282,11 +4821,14 @@ class App:
                 continue
             for chave in (
                 "jogos_com_participacao",
+                "minutos_jogados",
                 "jogos_titular",
                 "jogos_reserva",
+                "jogos_reserva_sem_entrar",
                 "jogos_nao_rel",
                 "jogos_lesionado",
                 "jogos_suspenso",
+                "jogos_servindo_selecao",
                 "gols",
                 "jogos_como_capitao",
                 "partidas_com_gol",
@@ -4296,6 +4838,9 @@ class App:
                 "cartoes_vermelhos",
             ):
                 totais[chave] += int(item.get(chave, 0) or 0)
+            totais["minutos_jogados_desconhecido"] = bool(
+                totais["minutos_jogados_desconhecido"] or item.get("minutos_jogados_desconhecido")
+            )
             totais["amarelos_acumulados"] = int(item.get("amarelos_acumulados", 0) or 0)
             totais["suspensoes_pendentes"] = int(item.get("suspensoes_pendentes", 0) or 0)
             ved = str(item.get("participacao_ved", "0/0/0"))
@@ -4308,6 +4853,8 @@ class App:
             derrotas += der
         jogos_com_participacao = int(totais.get("jogos_com_participacao", 0) or 0)
         gols = int(totais.get("gols", 0) or 0)
+        minutos_jogados = int(totais.get("minutos_jogados", 0) or 0)
+        totais["media_minutos_jogados"] = round(minutos_jogados / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
         totais["media_gols"] = round(gols / jogos_com_participacao, 2) if jogos_com_participacao else 0.0
         totais["participacao_ved"] = f"{vitorias}/{empates}/{derrotas}"
         return totais
@@ -4361,7 +4908,7 @@ class App:
             for pos in POSICOES_ELENCO:
                 if any(_chave_nome_jogador(nm) == alvo for nm in tit_por_pos.get(pos, [])):
                     return True
-        for chave in ("titulares", "reservas", "nao_relacionados", "lesionados", "suspensos"):
+        for chave in ("titulares", "reservas", "nao_relacionados", "lesionados", "suspensos", "servindo_selecao"):
             if any(_chave_nome_jogador(nm) == alvo for nm in esc.get(chave, [])):
                 return True
         return False
@@ -4471,6 +5018,7 @@ class App:
         menu.add_command(label="Enviar para Não Relacionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "nao_relacionados")))
         menu.add_command(label="Enviar para Lesionado", command=lambda: self._enviar_jogador_elenco_para(("extras", "lesionados")))
         menu.add_command(label="Enviar para Suspenso", command=lambda: self._enviar_jogador_elenco_para(("extras", "suspensos")))
+        menu.add_command(label="Enviar para Servindo a seleção", command=lambda: self._enviar_jogador_elenco_para(("extras", "servindo_selecao")))
         menu.add_command(label="Enviar para Emprestado", command=lambda: self._enviar_jogador_elenco_para(("extras", "emprestados")))
         menu.add_separator()
         menu.add_command(
@@ -4551,6 +5099,8 @@ class App:
                 nova_condicao = "Lesionado"
             elif chave == "suspensos":
                 nova_condicao = "Suspenso"
+            elif chave == "servindo_selecao":
+                nova_condicao = "Servindo a seleção"
             elif chave == "emprestados":
                 nova_condicao = "Emprestado"
 
@@ -4634,8 +5184,6 @@ class App:
         self.publico_pagante_var = tk.StringVar()
         self.publico_presente_var = tk.StringVar()
         self.renda_var = tk.StringVar()
-        self.gol_vasco_minuto_var = tk.StringVar()
-        self.gol_contra_minuto_var = tk.StringVar()
         self.local_var.trace_add("write", self._ao_mudar_local_registro)
         self.adversario_var.trace_add("write", self._ao_mudar_adversario_registro)
 
@@ -4799,16 +5347,6 @@ class App:
         self.entry_gol_vasco.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "vasco"))
         self.entry_gol_vasco.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_vasco)
-        ttk.Label(input_vasco, text="Min:").grid(row=0, column=1, padx=(8, 4))
-        self.entry_gol_vasco_minuto = ttk.Entry(
-            input_vasco,
-            width=5,
-            textvariable=self.gol_vasco_minuto_var,
-            justify="center",
-        )
-        self.entry_gol_vasco_minuto.grid(row=0, column=2, sticky="e")
-        self.entry_gol_vasco_minuto.bind("<Return>", self.adicionar_gol_vasco)
-        self._forcar_cursor_visivel(self.entry_gol_vasco_minuto)
         self.lista_gols_vasco = tk.Listbox(
             col_vasco,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
@@ -4835,16 +5373,6 @@ class App:
         self.entry_gol_contra.bind("<Button-3>", lambda e: self.mostrar_menu_contexto(e, "contra"))
         self.entry_gol_contra.grid(row=0, column=0, sticky="ew")
         self._forcar_cursor_visivel(self.entry_gol_contra)
-        ttk.Label(input_contra, text="Min:").grid(row=0, column=1, padx=(8, 4))
-        self.entry_gol_contra_minuto = ttk.Entry(
-            input_contra,
-            width=5,
-            textvariable=self.gol_contra_minuto_var,
-            justify="center",
-        )
-        self.entry_gol_contra_minuto.grid(row=0, column=2, sticky="e")
-        self.entry_gol_contra_minuto.bind("<Return>", self.adicionar_gol_contra)
-        self._forcar_cursor_visivel(self.entry_gol_contra_minuto)
         self.lista_gols_contra = tk.Listbox(
             col_contra,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
@@ -4928,6 +5456,8 @@ class App:
         )
         self.canvas_campinho_preview.grid(row=0, column=0, sticky="nsew")
         self.canvas_campinho_preview.bind("<Configure>", lambda _e: self._render_preview_escalacao())
+        self.canvas_campinho_preview.bind("<Button-3>", self._abrir_menu_contexto_titulares_preview)
+        self.canvas_campinho_preview.bind("<Control-Button-1>", self._abrir_menu_contexto_titulares_preview)
 
         reservas_wrap = ttk.Labelframe(preview_wrap, text="Reservas", padding=6)
         reservas_wrap.grid(row=0, column=1, sticky="ns", padx=(10, 0))
@@ -4940,6 +5470,8 @@ class App:
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
         self.lista_reservas_preview.grid(row=0, column=0, sticky="ns")
+        self.lista_reservas_preview.bind("<Button-3>", self._abrir_menu_contexto_reservas_preview)
+        self.lista_reservas_preview.bind("<Control-Button-1>", self._abrir_menu_contexto_reservas_preview)
 
         # Observações
         obs_card = ttk.Labelframe(frame, text="Observações da Partida", padding=10)
@@ -5047,10 +5579,29 @@ class App:
 
         if hasattr(self, "lista_reservas_preview"):
             self.lista_reservas_preview.delete(0, tk.END)
+            substituicoes_por_reserva = {}
+            for item in esc.get("substituicoes", []):
+                sub = _normalizar_substituicao_partida(item)
+                if not sub:
+                    continue
+                substituicoes_por_reserva[sub["jogador_entrou"].casefold()] = sub
+            reservas_que_entraram_cf = {
+                str(nome).strip().casefold()
+                for nome in _nomes_reservas_que_entraram_escalacao(esc)
+                if str(nome).strip()
+            }
             for nome in esc.get("reservas", []):
                 nome_limpo = str(nome).strip()
                 if nome_limpo:
-                    self.lista_reservas_preview.insert(tk.END, nome_limpo)
+                    sub = substituicoes_por_reserva.get(nome_limpo.casefold())
+                    if sub:
+                        sufixo = (
+                            f" [entrou {_formatar_minuto_periodo(sub.get('minuto'), sub.get('periodo'))}"
+                            f" no lugar de {sub.get('jogador_saiu', '')}]"
+                        )
+                    else:
+                        sufixo = " [entrou]" if nome_limpo.casefold() in reservas_que_entraram_cf else ""
+                    self.lista_reservas_preview.insert(tk.END, f"{nome_limpo}{sufixo}")
 
     def _preview_drag_start(self, event):
         hit = None
@@ -5113,6 +5664,444 @@ class App:
 
         self._carregar_escalacao_partida(esc)
 
+    def _indice_reserva_preview_por_evento(self, event):
+        lista = getattr(self, "lista_reservas_preview", None)
+        esc = getattr(self, "escalacao_partida", None)
+        if lista is None or not isinstance(esc, dict):
+            return None
+        total = len(esc.get("reservas", []))
+        if total <= 0:
+            return None
+        try:
+            idx = int(lista.nearest(event.y))
+        except Exception:
+            return None
+        if not (0 <= idx < total):
+            return None
+        bbox = lista.bbox(idx)
+        if bbox:
+            _x, y, _w, h = bbox
+            if not (y <= event.y <= y + h):
+                return None
+        return idx
+
+    def _titular_preview_por_evento(self, event):
+        for item in getattr(self, "_preview_hit_players", []):
+            dx = event.x - item["x"]
+            dy = event.y - item["y"]
+            if (dx * dx + dy * dy) <= (item["r"] + 8) ** 2:
+                return item
+        return None
+
+    def _calcular_resumo_minutos_substituicao(self, minuto, periodo):
+        minuto_abs = _minuto_absoluto_substituicao(minuto, periodo)
+        if minuto_abs is None:
+            return ("—", "—")
+        duracao = 120 if minuto_abs > 90 else 90
+        titular = max(0, min(duracao, minuto_abs))
+        reserva = max(0, duracao - titular)
+        return (str(titular), str(reserva))
+
+    def _alternar_entrada_reserva_partida(self, idx_reserva):
+        esc = self._coletar_escalacao_partida()
+        reservas = list(esc.get("reservas", []))
+        if not (0 <= idx_reserva < len(reservas)):
+            return
+        nome = str(reservas[idx_reserva]).strip()
+        if not nome:
+            return
+        entraram = [
+            str(item).strip()
+            for item in esc.get("reservas_que_entraram", [])
+            if str(item).strip()
+        ]
+        nome_cf = nome.casefold()
+        if any(item.casefold() == nome_cf for item in entraram):
+            entraram = [item for item in entraram if item.casefold() != nome_cf]
+        else:
+            entraram.append(nome)
+        esc["reservas_que_entraram"] = entraram
+        self._carregar_escalacao_partida(esc)
+
+    def _titulares_partida_ordenados(self, esc):
+        titulares = []
+        tit_por_pos = esc.get("titulares_por_posicao", {}) if isinstance(esc, dict) else {}
+        for pos in POSICOES_ELENCO:
+            for nome in tit_por_pos.get(pos, []) if isinstance(tit_por_pos, dict) else []:
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    titulares.append(nome_limpo)
+        return titulares
+
+    def _registrar_substituicao_reserva_partida(self, idx_reserva, substituicao):
+        esc = self._coletar_escalacao_partida()
+        reservas = list(esc.get("reservas", []))
+        if not (0 <= idx_reserva < len(reservas)):
+            return
+        reserva_nome = str(reservas[idx_reserva]).strip()
+        sub = _normalizar_substituicao_partida({
+            **(substituicao or {}),
+            "jogador_entrou": reserva_nome,
+        })
+        if not sub:
+            return
+        substituicoes = []
+        for item in esc.get("substituicoes", []):
+            sub_existente = _normalizar_substituicao_partida(item)
+            if not sub_existente:
+                continue
+            if sub_existente["jogador_entrou"].casefold() == reserva_nome.casefold():
+                continue
+            substituicoes.append(sub_existente)
+        substituicoes.append(sub)
+        esc["substituicoes"] = substituicoes
+        esc["reservas_que_entraram"] = [item["jogador_entrou"] for item in substituicoes]
+        self._carregar_escalacao_partida(esc)
+
+    def _registrar_substituicao_titular_partida(self, nome_titular, substituicao):
+        esc = self._coletar_escalacao_partida()
+        titular_nome = str(nome_titular or "").strip()
+        if not titular_nome:
+            return
+        sub = _normalizar_substituicao_partida({
+            **(substituicao or {}),
+            "jogador_saiu": titular_nome,
+        })
+        if not sub:
+            return
+        substituicoes = []
+        for item in esc.get("substituicoes", []):
+            sub_existente = _normalizar_substituicao_partida(item)
+            if not sub_existente:
+                continue
+            if sub_existente["jogador_saiu"].casefold() == titular_nome.casefold():
+                continue
+            substituicoes.append(sub_existente)
+        substituicoes.append(sub)
+        esc["substituicoes"] = substituicoes
+        esc["reservas_que_entraram"] = [item["jogador_entrou"] for item in substituicoes]
+        self._carregar_escalacao_partida(esc)
+
+    def _remover_substituicao_titular_partida(self, nome_titular):
+        esc = self._coletar_escalacao_partida()
+        titular_nome = str(nome_titular or "").strip()
+        if not titular_nome:
+            return
+        substituicoes = []
+        alterou = False
+        for item in esc.get("substituicoes", []):
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            if sub["jogador_saiu"].casefold() == titular_nome.casefold():
+                alterou = True
+                continue
+            substituicoes.append(sub)
+        if not alterou:
+            return
+        esc["substituicoes"] = substituicoes
+        esc["reservas_que_entraram"] = [item["jogador_entrou"] for item in substituicoes]
+        self._carregar_escalacao_partida(esc)
+
+    def _remover_substituicao_reserva_partida(self, idx_reserva):
+        esc = self._coletar_escalacao_partida()
+        reservas = list(esc.get("reservas", []))
+        if not (0 <= idx_reserva < len(reservas)):
+            return
+        reserva_nome = str(reservas[idx_reserva]).strip()
+        substituicoes = []
+        alterou = False
+        for item in esc.get("substituicoes", []):
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            if sub["jogador_entrou"].casefold() == reserva_nome.casefold():
+                alterou = True
+                continue
+            substituicoes.append(sub)
+        if not alterou:
+            return
+        esc["substituicoes"] = substituicoes
+        esc["reservas_que_entraram"] = [item["jogador_entrou"] for item in substituicoes]
+        self._carregar_escalacao_partida(esc)
+
+    def _abrir_modal_substituicao(self, *, titulo, linha_principal, label_selecao, opcoes, valor_inicial, minuto_inicial="", periodo_inicial="", ao_salvar):
+        if not opcoes:
+            messagebox.showwarning("Substituição", "Não há jogadores disponíveis para essa substituição.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title(titulo)
+        top.transient(self.root)
+        top.grab_set()
+        top.lift()
+        top.focus_force()
+        top.resizable(False, False)
+        top.configure(bg=self.colors["bg"])
+        top.minsize(620, 0)
+        try:
+            top.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+
+        card = tk.Frame(
+            top,
+            bg=self.colors["bg"],
+            highlightthickness=1,
+            highlightbackground=self.colors["bg2"],
+            bd=0,
+            padx=16,
+            pady=14,
+        )
+        card.pack(fill="both", expand=True)
+        card.columnconfigure(0, weight=0)
+        card.columnconfigure(1, weight=1)
+
+        selecao_var = tk.StringVar(value=valor_inicial if valor_inicial else opcoes[0])
+        minuto_var = tk.StringVar(value=str(minuto_inicial) if minuto_inicial not in ("", None) else "")
+        periodo_map = {label: codigo for codigo, label in PERIODOS_SUBSTITUICAO}
+        periodo_map_inv = {codigo: label for codigo, label in PERIODOS_SUBSTITUICAO}
+        periodo_var = tk.StringVar(value=periodo_map_inv.get(periodo_inicial, "") if periodo_inicial else "")
+        resumo_var = tk.StringVar(value="Titular: — min | Reserva: — min")
+
+        tk.Label(
+            card,
+            text="Registrar substituição",
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 13, "bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        tk.Label(
+            card,
+            text=linha_principal,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 11),
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
+
+        tk.Label(card, text=label_selecao, bg=self.colors["bg"], fg=self.colors["tree_head_fg"]).grid(row=2, column=0, sticky="w", pady=4, padx=(0, 10))
+        combo_selecao = ttk.Combobox(card, textvariable=selecao_var, values=opcoes, state="readonly", width=30)
+        combo_selecao.grid(row=2, column=1, sticky="ew", pady=4)
+
+        linha_tempo = tk.Frame(card, bg=self.colors["bg"])
+        linha_tempo.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 4))
+        linha_tempo.columnconfigure(0, weight=0)
+        linha_tempo.columnconfigure(1, weight=0)
+        linha_tempo.columnconfigure(2, weight=0)
+        linha_tempo.columnconfigure(3, weight=1)
+        tk.Label(linha_tempo, text="Minuto", bg=self.colors["bg"], fg=self.colors["tree_head_fg"]).grid(row=0, column=0, sticky="w", padx=(0, 10))
+        vcmd = (self.root.register(self._validar_input_inteiro), "%P")
+        entry_minuto = ttk.Entry(
+            linha_tempo,
+            textvariable=minuto_var,
+            width=8,
+            justify="center",
+            validate="key",
+            validatecommand=vcmd,
+        )
+        entry_minuto.grid(row=0, column=1, sticky="w")
+        tk.Label(linha_tempo, text="Período", bg=self.colors["bg"], fg=self.colors["tree_head_fg"]).grid(row=0, column=2, sticky="w", padx=(18, 10))
+        combo_periodo = ttk.Combobox(
+            linha_tempo,
+            textvariable=periodo_var,
+            values=[label for _codigo, label in PERIODOS_SUBSTITUICAO],
+            state="readonly",
+            width=28,
+        )
+        combo_periodo.grid(row=0, column=3, sticky="w")
+
+        tk.Label(
+            card,
+            textvariable=resumo_var,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 10, "bold"),
+        ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(4, 12))
+
+        def atualizar_resumo(*_args):
+            periodo = periodo_map.get(periodo_var.get().strip(), "")
+            minuto = _normalizar_minuto_partida(minuto_var.get())
+            titular, reserva = self._calcular_resumo_minutos_substituicao(minuto, periodo)
+            resumo_var.set(f"Titular: {titular} min | Reserva: {reserva} min")
+
+        minuto_var.trace_add("write", atualizar_resumo)
+        periodo_var.trace_add("write", atualizar_resumo)
+        atualizar_resumo()
+
+        botoes = tk.Frame(card, bg=self.colors["bg"])
+        botoes.grid(row=5, column=0, columnspan=2, sticky="e")
+
+        def salvar():
+            nome_escolhido = selecao_var.get().strip()
+            periodo = periodo_map.get(periodo_var.get().strip(), "")
+            minuto = _normalizar_minuto_partida(minuto_var.get())
+            if not nome_escolhido:
+                messagebox.showerror("Substituição", "Selecione o jogador da substituição.", parent=top)
+                return
+            if periodo not in {codigo for codigo, _ in PERIODOS_SUBSTITUICAO}:
+                messagebox.showerror("Substituição", "Selecione o período da substituição.", parent=top)
+                return
+            if minuto is None:
+                messagebox.showerror("Substituição", "Informe um minuto válido.", parent=top)
+                return
+            if minuto > _limite_minuto_por_periodo(periodo):
+                messagebox.showerror(
+                    "Substituição",
+                    f"O {periodo} permite no máximo {_limite_minuto_por_periodo(periodo)} minuto(s).",
+                    parent=top,
+                )
+                return
+            ao_salvar(nome_escolhido, minuto, periodo)
+            top.destroy()
+
+        ttk.Button(botoes, text="Cancelar", command=top.destroy).pack(side="right")
+        ttk.Button(botoes, text="Salvar", command=salvar).pack(side="right", padx=(0, 8))
+        top.protocol("WM_DELETE_WINDOW", top.destroy)
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
+        entry_minuto.focus_set()
+        top.bind("<Return>", lambda _e: salvar())
+
+    def _abrir_modal_substituicao_reserva(self, idx_reserva):
+        esc = self._coletar_escalacao_partida()
+        reservas = list(esc.get("reservas", []))
+        if not (0 <= idx_reserva < len(reservas)):
+            return
+        reserva_nome = str(reservas[idx_reserva]).strip()
+        if not reserva_nome:
+            return
+        sub_atual = None
+        substituidos_cf = set()
+        for item in esc.get("substituicoes", []):
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            if sub["jogador_entrou"].casefold() == reserva_nome.casefold():
+                sub_atual = sub
+            else:
+                substituidos_cf.add(sub["jogador_saiu"].casefold())
+        titulares = [
+            nome for nome in self._titulares_partida_ordenados(esc)
+            if nome.casefold() not in substituidos_cf or (sub_atual and nome.casefold() == sub_atual["jogador_saiu"].casefold())
+        ]
+        self._abrir_modal_substituicao(
+            titulo=f"Substituição: {reserva_nome}",
+            linha_principal=f"Reserva que entrou: {reserva_nome}",
+            label_selecao="Saiu no lugar de",
+            opcoes=titulares,
+            valor_inicial=sub_atual["jogador_saiu"] if sub_atual else (titulares[0] if titulares else ""),
+            minuto_inicial=sub_atual["minuto"] if sub_atual else "",
+            periodo_inicial=sub_atual["periodo"] if sub_atual else "",
+            ao_salvar=lambda jogador_saiu, minuto, periodo: self._registrar_substituicao_reserva_partida(
+                idx_reserva,
+                {"jogador_saiu": jogador_saiu, "minuto": minuto, "periodo": periodo},
+            ),
+        )
+
+    def _abrir_modal_substituicao_titular(self, nome_titular):
+        esc = self._coletar_escalacao_partida()
+        titular_nome = str(nome_titular or "").strip()
+        if not titular_nome:
+            return
+        sub_atual = None
+        reservas_utilizadas_cf = set()
+        for item in esc.get("substituicoes", []):
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            if sub["jogador_saiu"].casefold() == titular_nome.casefold():
+                sub_atual = sub
+            else:
+                reservas_utilizadas_cf.add(sub["jogador_entrou"].casefold())
+        reservas = [
+            nome for nome in esc.get("reservas", [])
+            if str(nome).strip() and (str(nome).strip().casefold() not in reservas_utilizadas_cf or (sub_atual and str(nome).strip().casefold() == sub_atual["jogador_entrou"].casefold()))
+        ]
+        self._abrir_modal_substituicao(
+            titulo=f"Substituição: {titular_nome}",
+            linha_principal=f"Titular que saiu: {titular_nome}",
+            label_selecao="Entrou no lugar dele",
+            opcoes=reservas,
+            valor_inicial=sub_atual["jogador_entrou"] if sub_atual else (reservas[0] if reservas else ""),
+            minuto_inicial=sub_atual["minuto"] if sub_atual else "",
+            periodo_inicial=sub_atual["periodo"] if sub_atual else "",
+            ao_salvar=lambda jogador_entrou, minuto, periodo: self._registrar_substituicao_titular_partida(
+                titular_nome,
+                {"jogador_entrou": jogador_entrou, "minuto": minuto, "periodo": periodo},
+            ),
+        )
+
+    def _abrir_menu_contexto_reservas_preview(self, event):
+        idx = self._indice_reserva_preview_por_evento(event)
+        if idx is None:
+            return
+        lista = self.lista_reservas_preview
+        lista.selection_clear(0, tk.END)
+        lista.selection_set(idx)
+        lista.activate(idx)
+        esc = self._coletar_escalacao_partida()
+        reservas = list(esc.get("reservas", []))
+        nome = str(reservas[idx]).strip()
+        if not nome:
+            return
+        sub_atual = next(
+            (
+                _normalizar_substituicao_partida(item)
+                for item in esc.get("substituicoes", [])
+                if _normalizar_substituicao_partida(item)
+                and _normalizar_substituicao_partida(item)["jogador_entrou"].casefold() == nome.casefold()
+            ),
+            None,
+        )
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(
+            label="Editar entrada" if sub_atual else "Registrar entrada",
+            command=lambda idx_res=idx: self._abrir_modal_substituicao_reserva(idx_res),
+        )
+        if sub_atual:
+            menu.add_command(
+                label="Remover entrada",
+                command=lambda idx_res=idx: self._remover_substituicao_reserva_partida(idx_res),
+            )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _abrir_menu_contexto_titulares_preview(self, event):
+        hit = self._titular_preview_por_evento(event)
+        if not hit:
+            return
+        nome = str(hit.get("nome", "")).strip()
+        if not nome:
+            return
+        esc = self._coletar_escalacao_partida()
+        sub_atual = next(
+            (
+                sub
+                for sub in (
+                    _normalizar_substituicao_partida(item)
+                    for item in esc.get("substituicoes", [])
+                )
+                if sub and sub["jogador_saiu"].casefold() == nome.casefold()
+            ),
+            None,
+        )
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(
+            label="Editar substituição" if sub_atual else "Substituição",
+            command=lambda nome_tit=nome: self._abrir_modal_substituicao_titular(nome_tit),
+        )
+        if sub_atual:
+            menu.add_command(
+                label="Remover substituição",
+                command=lambda nome_tit=nome: self._remover_substituicao_titular_partida(nome_tit),
+            )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
     def _atualizar_elenco_disponivel_partida(self):
         self._elenco_info_por_nome_cf = {}
         jogadores = _ordenar_jogadores_elenco(list(self.elenco_atual.get("jogadores", [])))
@@ -5144,9 +6133,12 @@ class App:
         return {
             "titulares_por_posicao": {pos: [] for pos in POSICOES_ELENCO},
             "reservas": [],
+            "reservas_que_entraram": [],
+            "substituicoes": [],
             "nao_relacionados": [],
             "lesionados": [],
             "suspensos": [],
+            "servindo_selecao": [],
         }
 
     def _normalizar_escalacao_partida(self, escalacao):
@@ -5198,6 +6190,40 @@ class App:
                 filtrados.append(nome)
             # Preserva a ordem manual das listas da escalação.
             base[chave] = filtrados
+        reservas_que_entraram = []
+        reservas_cf = {str(nome).strip().casefold() for nome in base["reservas"] if str(nome).strip()}
+        bruto_entraram = escalacao.get("reservas_que_entraram")
+        if not isinstance(bruto_entraram, list):
+            bruto_entraram = list(base["reservas"])
+        vistos_entraram = set()
+        for nome in bruto_entraram:
+            nome_limpo = str(nome).strip()
+            chave = nome_limpo.casefold()
+            if not nome_limpo or chave in vistos_entraram or chave not in reservas_cf:
+                continue
+            vistos_entraram.add(chave)
+            reservas_que_entraram.append(nome_limpo)
+        base["reservas_que_entraram"] = reservas_que_entraram
+        substituicoes = []
+        substituidos_cf = set()
+        substitutos_cf = set()
+        for item in escalacao.get("substituicoes", []) if isinstance(escalacao.get("substituicoes", []), list) else []:
+            sub = _normalizar_substituicao_partida(item)
+            if not sub:
+                continue
+            saiu_cf = sub["jogador_saiu"].casefold()
+            entrou_cf = sub["jogador_entrou"].casefold()
+            if entrou_cf not in reservas_cf or saiu_cf in substituidos_cf or entrou_cf in substitutos_cf:
+                continue
+            substituidos_cf.add(saiu_cf)
+            substitutos_cf.add(entrou_cf)
+            substituicoes.append(sub)
+        base["substituicoes"] = sorted(
+            substituicoes,
+            key=lambda item: (item.get("minuto_absoluto", 999), item.get("jogador_entrou", "").casefold()),
+        )
+        if base["substituicoes"]:
+            base["reservas_que_entraram"] = [item["jogador_entrou"] for item in base["substituicoes"]]
         return base
 
     def _atualizar_resumo_escalacao(self):
@@ -5207,9 +6233,11 @@ class App:
         nao_rel = len(esc.get("nao_relacionados", []))
         lesionados = len(esc.get("lesionados", []))
         suspensos = len(esc.get("suspensos", []))
+        servindo_selecao = len(esc.get("servindo_selecao", []))
         self.escalacao_resumo_var.set(
             f"Titulares: {titulares}/11 | Reservas: {reservas} (mín. 4) | "
-            f"Não Relac.: {nao_rel} | Lesionados: {lesionados} | Suspensos: {suspensos}"
+            f"Não Relac.: {nao_rel} | Lesionados: {lesionados} | "
+            f"Suspensos: {suspensos} | Seleção: {servindo_selecao}"
         )
 
     def _inicializar_escalacao_partida(self):
@@ -5230,6 +6258,8 @@ class App:
                 base["lesionados"].append(nome)
             elif condicao == "Suspenso":
                 base["suspensos"].append(nome)
+            elif condicao == "Servindo a seleção":
+                base["servindo_selecao"].append(nome)
             # Emprestados ficam fora da escalação da partida.
         self._carregar_escalacao_partida(base)
 
@@ -5399,6 +6429,190 @@ class App:
         for evento in eventos:
             listbox.insert(tk.END, formatter(evento))
 
+    def _validar_input_inteiro(self, valor_proposto):
+        return valor_proposto.isdigit() or valor_proposto == ""
+
+    def _centralizar_modal_no_app(self, top):
+        try:
+            top.update_idletasks()
+            top.wait_visibility()
+        except Exception:
+            pass
+        top.update_idletasks()
+        ancora = self.root
+        try:
+            if hasattr(self, "notebook") and self.notebook.select():
+                ancora = self.nametowidget(self.notebook.select())
+        except Exception:
+            ancora = self.root
+        try:
+            root_x = ancora.winfo_rootx()
+            root_y = ancora.winfo_rooty()
+            root_w = ancora.winfo_width()
+            root_h = ancora.winfo_height()
+        except Exception:
+            root_x = self.root.winfo_rootx()
+            root_y = self.root.winfo_rooty()
+            root_w = self.root.winfo_width()
+            root_h = self.root.winfo_height()
+        top_w = max(top.winfo_width(), top.winfo_reqwidth())
+        top_h = max(top.winfo_height(), top.winfo_reqheight())
+        try:
+            scr_w = top.winfo_screenwidth()
+            scr_h = top.winfo_screenheight()
+        except Exception:
+            scr_w = root_x + root_w
+            scr_h = root_y + root_h
+        pos_x = root_x + (root_w - top_w) // 2
+        pos_y = root_y + (root_h - top_h) // 2
+        pos_x = max(0, min(pos_x, max(0, scr_w - top_w)))
+        pos_y = max(0, min(pos_y, max(0, scr_h - top_h)))
+        top.geometry(f"{top_w}x{top_h}+{pos_x}+{pos_y}")
+
+    def _abrir_modal_tempo_evento(self, titulo, descricao, minuto_inicial="", periodo_inicial=""):
+        resultado = {}
+        top = tk.Toplevel(self.root)
+        top.title(titulo)
+        top.transient(self.root)
+        top.grab_set()
+        top.lift()
+        top.focus_force()
+        top.resizable(False, False)
+        top.configure(bg=self.colors["bg"])
+        top.minsize(560, 210)
+        try:
+            top.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+
+        card = tk.Frame(
+            top,
+            bg=self.colors["bg"],
+            highlightthickness=1,
+            highlightbackground=self.colors["bg2"],
+            bd=0,
+            padx=18,
+            pady=16,
+        )
+        card.pack(fill="both", expand=True)
+        card.columnconfigure(0, weight=1)
+
+        periodo_map = {label: codigo for codigo, label in PERIODOS_SUBSTITUICAO}
+        periodo_map_inv = {codigo: label for codigo, label in PERIODOS_SUBSTITUICAO}
+        minuto_var = tk.StringVar(value=str(minuto_inicial or ""))
+        periodo_var = tk.StringVar(value=periodo_map_inv.get(periodo_inicial, ""))
+
+        tk.Label(
+            card,
+            text=titulo,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 13, "bold"),
+        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+        tk.Label(
+            card,
+            text=descricao,
+            bg=self.colors["bg"],
+            fg=self.colors["fg"],
+            font=("Segoe UI", 11),
+        ).grid(row=1, column=0, sticky="w", pady=(0, 12))
+
+        linha_tempo = tk.Frame(card, bg=self.colors["bg"])
+        linha_tempo.grid(row=2, column=0, sticky="ew")
+        linha_tempo.columnconfigure(0, weight=0)
+        linha_tempo.columnconfigure(1, weight=0)
+        linha_tempo.columnconfigure(2, weight=0)
+        linha_tempo.columnconfigure(3, weight=1)
+        vcmd = (self.root.register(self._validar_input_inteiro), "%P")
+        tk.Label(linha_tempo, text="Minuto", bg=self.colors["bg"], fg=self.colors["tree_head_fg"]).grid(row=0, column=0, sticky="w", padx=(0, 10))
+        entry_minuto = ttk.Entry(
+            linha_tempo,
+            textvariable=minuto_var,
+            width=8,
+            justify="center",
+            validate="key",
+            validatecommand=vcmd,
+        )
+        entry_minuto.grid(row=0, column=1, sticky="w")
+        tk.Label(linha_tempo, text="Período", bg=self.colors["bg"], fg=self.colors["tree_head_fg"]).grid(row=0, column=2, sticky="w", padx=(18, 10))
+        combo_periodo = ttk.Combobox(
+            linha_tempo,
+            textvariable=periodo_var,
+            values=[label for _codigo, label in PERIODOS_SUBSTITUICAO],
+            state="readonly",
+            width=28,
+        )
+        combo_periodo.grid(row=0, column=3, sticky="w")
+        tk.Label(
+            card,
+            text="Preencha o minuto e o período do gol.",
+            bg=self.colors["bg"],
+            fg=self.colors["tree_head_fg"],
+            font=("Segoe UI", 10),
+        ).grid(row=3, column=0, sticky="w", pady=(8, 14))
+
+        def confirmar():
+            minuto_txt = minuto_var.get().strip()
+            periodo_label = periodo_var.get().strip()
+            minuto = _normalizar_minuto_partida(minuto_txt)
+            periodo = periodo_map.get(periodo_label, "")
+            if not minuto_txt:
+                messagebox.showwarning(titulo, "Informe o minuto do lance.", parent=top)
+                entry_minuto.focus_set()
+                return
+            if minuto is None:
+                messagebox.showwarning(titulo, "Informe um minuto inteiro entre 0 e 120.", parent=top)
+                entry_minuto.focus_set()
+                return
+            if not periodo:
+                messagebox.showwarning(titulo, "Selecione o período do lance.", parent=top)
+                combo_periodo.focus_set()
+                return
+            if minuto > _limite_minuto_por_periodo(periodo):
+                limite = _limite_minuto_por_periodo(periodo)
+                messagebox.showwarning(titulo, f"Esse período aceita minutos de 0 até {limite}.", parent=top)
+                entry_minuto.focus_set()
+                return
+            resultado.update({"minuto": minuto, "periodo": periodo})
+            top.destroy()
+
+        botoes = tk.Frame(card, bg=self.colors["bg"])
+        botoes.grid(row=4, column=0, sticky="e")
+        ttk.Button(botoes, text="Salvar", command=confirmar).pack(side="left", padx=(0, 8))
+        ttk.Button(botoes, text="Cancelar", command=top.destroy).pack(side="left")
+
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
+        entry_minuto.focus_set()
+        top.bind("<Return>", lambda _e: confirmar())
+        top.wait_window()
+        return resultado or None
+
+    def _registrar_evento_gol(self, lado, jogador, clube=""):
+        nome = str(jogador or "").strip()
+        if not nome:
+            return
+        titulo = "Tempo do gol"
+        descricao = f"Jogador: {nome}"
+        tempo = self._abrir_modal_tempo_evento(titulo, descricao)
+        if not tempo:
+            return
+        evento = {
+            "nome": nome,
+            "minuto": tempo["minuto"],
+            "periodo": tempo["periodo"],
+        }
+        if clube:
+            evento["clube"] = clube
+        if lado == "vasco":
+            self.gols_vasco_eventos.append(evento)
+            self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
+            self.entry_gol_vasco.delete(0, tk.END)
+        else:
+            self.gols_contra_eventos.append(evento)
+            self._renderizar_lista_eventos(self.lista_gols_contra, self.gols_contra_eventos, _formatar_evento_gol)
+            self.entry_gol_contra.delete(0, tk.END)
+
     def adicionar_gol_vasco(self, event):
         jogador = self.entry_gol_vasco.get().strip()
         if not jogador:
@@ -5407,17 +6621,10 @@ class App:
         if len(getattr(self, "gols_vasco_eventos", [])) >= limite:
             messagebox.showwarning("Limite Atingido", f"O Vasco só fez {limite} gol(s).")
             return
-        minuto = _normalizar_minuto_partida(self.gol_vasco_minuto_var.get())
-        if self.gol_vasco_minuto_var.get().strip() and minuto is None:
-            messagebox.showwarning("Minuto inválido", "Informe um minuto inteiro entre 0 e 120.")
-            return
         if jogador not in self.listas["jogadores_vasco"]:
             self.listas["jogadores_vasco"].append(jogador)
             self._atualizar_opcoes_gol_vasco()
-        self.gols_vasco_eventos.append({"nome": jogador, "minuto": minuto})
-        self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
-        self.entry_gol_vasco.delete(0, tk.END)
-        self.gol_vasco_minuto_var.set("")
+        self._registrar_evento_gol("vasco", jogador)
 
     def adicionar_gol_contra(self, event):
         jogador = self.entry_gol_contra.get().strip()
@@ -5427,18 +6634,11 @@ class App:
         if len(getattr(self, "gols_contra_eventos", [])) >= limite:
             messagebox.showwarning("Limite Atingido", f"O adversário só fez {limite} gol(s).")
             return
-        minuto = _normalizar_minuto_partida(self.gol_contra_minuto_var.get())
-        if self.gol_contra_minuto_var.get().strip() and minuto is None:
-            messagebox.showwarning("Minuto inválido", "Informe um minuto inteiro entre 0 e 120.")
-            return
         if jogador not in self.listas["jogadores_contra"]:
             self.listas["jogadores_contra"].append(jogador)
             self.listas["jogadores_contra"] = sorted(self.listas["jogadores_contra"], key=lambda s: s.casefold())
             self.entry_gol_contra['values'] = self.listas["jogadores_contra"]
-        self.gols_contra_eventos.append({"nome": jogador, "minuto": minuto, "clube": self.adversario_var.get().strip()})
-        self._renderizar_lista_eventos(self.lista_gols_contra, self.gols_contra_eventos, _formatar_evento_gol)
-        self.entry_gol_contra.delete(0, tk.END)
-        self.gol_contra_minuto_var.set("")
+        self._registrar_evento_gol("adversario", jogador, self.adversario_var.get().strip())
 
     def _obter_limite_gols(self, time):
         try:
@@ -5492,8 +6692,15 @@ class App:
 
     # --------------------- Salvar ---------------------
     def salvar_partida(self):
+        jogo_anterior = None
+        participantes_antes = set()
+        if self.editing_index is not None:
+            jogos_existentes = carregar_dados_jogos()
+            if 0 <= self.editing_index < len(jogos_existentes):
+                jogo_anterior = jogos_existentes[self.editing_index]
+                participantes_antes = _jogadores_que_participaram_do_jogo(jogo_anterior)
         data = self.data_entry.get()
-        adversario = self.adversario_var.get().strip()
+        adversario = self._resolver_nome_clube_canonico(self.adversario_var.get().strip())
         competicao = self.competicao_var.get().strip()
         placar_vasco = self.placar_vasco.get().strip()
         placar_adv = self.placar_adversario.get().strip()
@@ -5576,6 +6783,33 @@ class App:
             if nome_limpo:
                 reservas_cf.add(nome_limpo.casefold())
 
+        substituicoes_norm = [
+            sub
+            for sub in (
+                _normalizar_substituicao_partida(item)
+                for item in escalacao_partida.get("substituicoes", [])
+            )
+            if sub
+        ]
+        escalacao_partida["substituicoes"] = substituicoes_norm
+        reservas_que_entraram_cf = {
+            sub["jogador_entrou"].casefold()
+            for sub in substituicoes_norm
+        }
+
+        for evento in getattr(self, "gols_vasco_eventos", []):
+            nome_evento = str(evento.get("nome", "")).strip()
+            nome_evento_cf = nome_evento.casefold()
+            if nome_evento and nome_evento_cf in reservas_cf and nome_evento_cf not in titulares_cf:
+                reservas_que_entraram_cf.add(nome_evento_cf)
+        if reservas_que_entraram_cf:
+            escalacao_partida["reservas_que_entraram"] = [
+                nome for nome in escalacao_partida.get("reservas", [])
+                if str(nome).strip() and str(nome).strip().casefold() in reservas_que_entraram_cf
+            ]
+        else:
+            escalacao_partida["reservas_que_entraram"] = []
+
         eventos_gols_vasco = []
         for evento in getattr(self, "gols_vasco_eventos", []):
             nome = str(evento.get("nome", "")).strip()
@@ -5585,6 +6819,7 @@ class App:
             eventos_gols_vasco.append({
                 "nome": nome,
                 "minuto": _normalizar_minuto_partida(evento.get("minuto")),
+                "periodo": str(evento.get("periodo", "")).strip(),
                 "saiu_do_banco": nome_cf in reservas_cf and nome_cf not in titulares_cf,
             })
         gols_vasco = _agrupar_eventos_gol(eventos_gols_vasco)
@@ -5597,6 +6832,7 @@ class App:
             eventos_gols_contra.append({
                 "nome": nome,
                 "minuto": _normalizar_minuto_partida(evento.get("minuto")),
+                "periodo": str(evento.get("periodo", "")).strip(),
                 "clube": adversario,
             })
         gols_contra = _agrupar_eventos_gol(eventos_gols_contra)
@@ -5604,10 +6840,9 @@ class App:
         cartoes_amarelos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_amarelos_eventos", []))
         cartoes_vermelhos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_vermelhos_eventos", []))
 
-        if adversario not in self.listas["clubes_adversarios"]:
-            self.listas["clubes_adversarios"].append(adversario)
-            self.listas["clubes_adversarios"] = sorted(self.listas["clubes_adversarios"], key=lambda s: s.casefold())
-            self.adversario_entry['values'] = self.listas["clubes_adversarios"]
+        adversario = self._registrar_clube_adversario(adversario)
+        if hasattr(self, "adversario_var"):
+            self.adversario_var.set(adversario)
 
         if competicao and competicao not in self.listas.get("competicoes", []):
             self.listas.setdefault("competicoes", []).append(competicao)
@@ -5688,12 +6923,14 @@ class App:
             "escalacao_partida": escalacao_partida,
             "arbitragem": arbitragem,
         }
+        participantes_depois = _jogadores_que_participaram_do_jogo(jogo)
 
         jogos = carregar_dados_jogos()
         if self.editing_index is not None:
             if 0 <= self.editing_index < len(jogos):
                 jogos[self.editing_index] = jogo
                 salvar_lista_jogos(jogos)
+                self._ajustar_jogos_pelo_vasco_jogadores_historico(participantes_antes, participantes_depois)
                 msg = "Partida atualizada com sucesso!"
             else:
                 messagebox.showerror("Erro", "Não foi possível localizar o jogo selecionado para edição.")
@@ -5701,6 +6938,7 @@ class App:
         else:
             jogos.append(jogo)
             salvar_lista_jogos(jogos)
+            self._ajustar_jogos_pelo_vasco_jogadores_historico(set(), participantes_depois)
             msg = "Partida registrada com sucesso!"
 
         self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
@@ -5760,8 +6998,6 @@ class App:
         self.lista_cartoes_vermelhos.delete(0, tk.END)
         self.entry_gol_vasco.delete(0, tk.END)
         self.entry_gol_contra.delete(0, tk.END)
-        self.gol_vasco_minuto_var.set("")
-        self.gol_contra_minuto_var.set("")
         self.entry_cartao_amarelo.delete(0, tk.END)
         self.entry_cartao_vermelho.delete(0, tk.END)
         self.obs_text.delete("1.0", "end")
@@ -6022,12 +7258,14 @@ class App:
             return
 
         jogo = jogos[jogo_idx]
+        participantes = _jogadores_que_participaram_do_jogo(jogo)
         desc = f"{jogo.get('data', '')} - Vasco x {jogo.get('adversario', '')} ({jogo.get('competicao', '')})"
         if not messagebox.askyesno("Excluir jogo", f"Deseja excluir este jogo?\n\n{desc}"):
             return
 
         jogos.pop(jogo_idx)
         salvar_lista_jogos(jogos)
+        self._ajustar_jogos_pelo_vasco_jogadores_historico(participantes, set())
 
         if self.editing_index == jogo_idx:
             self._limpar_formulario()
@@ -6188,28 +7426,46 @@ class App:
             if alvo is None and hasattr(self, "adversario_var"):
                 alvo = self.adversario_var.get().strip()
             relacionados = carregar_estadios_adversario(alvo or "")
-            if not relacionados:
-                self.estadio_entry["values"] = base
-                return
-
-            ordenados = []
-            vistos = set()
-            for nome in relacionados:
-                chave = nome.casefold()
-                if chave in vistos:
-                    continue
-                vistos.add(chave)
-                ordenados.append(nome)
-            for nome in base:
-                chave = str(nome).casefold()
-                if chave in vistos:
-                    continue
-                vistos.add(chave)
-                ordenados.append(nome)
-            self.estadio_entry["values"] = ordenados
+            self.estadio_entry["values"] = self._ordenar_opcoes_estadios(base, relacionados)
 
     def _reordenar_estadios_para_adversario(self, adversario: str):
         self._atualizar_combo_estadios(adversario)
+
+    def _ordenar_opcoes_estadios(self, base, relacionados=None):
+        ordenados = []
+        vistos = set()
+        for nome in (relacionados or []):
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                continue
+            chave = nome_limpo.casefold()
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            ordenados.append(nome_limpo)
+        for nome in base or []:
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                continue
+            chave = nome_limpo.casefold()
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            ordenados.append(nome_limpo)
+
+        sao_januario = next((n for n in ordenados if n.casefold() == "são januário".casefold()), None)
+        maracana = next((n for n in ordenados if n.casefold() == "maracanã".casefold()), None)
+        resto = [
+            n for n in ordenados
+            if n.casefold() not in {"são januário".casefold(), "maracanã".casefold()}
+        ]
+        final = []
+        if sao_januario:
+            final.append(sao_januario)
+        if maracana:
+            final.append(maracana)
+        final.extend(resto)
+        return final
 
     def _mascara_campo_horario(self, var_name, proximo_widget=None):
         var = getattr(self, var_name, None)
@@ -6250,6 +7506,14 @@ class App:
                 salvar_listas(self.listas)
                 self._atualizar_combo_tecnicos()
             self.estadio_var.set(estadio_adversario)
+
+    def _sugerir_estadio_por_adversario(self, adversario: str, local: str) -> str:
+        local_norm = str(local or "").strip().casefold()
+        if local_norm == "casa":
+            return "São Januário"
+        if local_norm == "fora":
+            return carregar_estadio_adversario(adversario)
+        return ""
 
     def _ao_mudar_adversario_registro(self, *_args):
         adversario = self.adversario_var.get().strip() if hasattr(self, "adversario_var") else ""
@@ -6630,6 +7894,12 @@ class App:
             for r in rows
             if str((r.get("raw") or {}).get("estadio", "")).strip()
         }, key=lambda s: s.casefold())
+        ttk.Label(filtros_temporada, text="Competição:").pack(side="left", padx=(8, 0))
+        competicoes_temporada = sorted({
+            str(r.get("competicao", "")).strip()
+            for r in rows
+            if str(r.get("competicao", "")).strip()
+        }, key=lambda s: s.casefold())
         filtro_estadio_var = tk.StringVar(value="Todos")
         self._temporadas_filtros_vars.append(filtro_estadio_var)
         combo_filtro_estadio = ttk.Combobox(
@@ -6640,6 +7910,16 @@ class App:
             width=26,
         )
         combo_filtro_estadio.pack(side="left", padx=(6, 6))
+        filtro_competicao_var = tk.StringVar(value="Todas")
+        self._temporadas_filtros_vars.append(filtro_competicao_var)
+        combo_filtro_competicao = ttk.Combobox(
+            filtros_temporada,
+            textvariable=filtro_competicao_var,
+            values=["Todas"] + competicoes_temporada,
+            state="readonly",
+            width=26,
+        )
+        combo_filtro_competicao.pack(side="left", padx=(6, 6))
 
         table_wrap = ttk.Frame(frame_ano)
         table_wrap.pack(fill="both", expand=True)
@@ -6719,6 +7999,7 @@ class App:
             rows_base,
             termo_busca="",
             estadio_sel="Todos",
+            competicao_sel="Todas",
             local_sel="todos",
             tv_ref=tv,
             tooltip_map_ref=tooltip_map,
@@ -6787,6 +8068,12 @@ class App:
                     r for r in linhas
                     if str((r.get("raw") or {}).get("estadio", "")).strip().casefold() == estadio_sel.casefold()
                 ]
+            competicao_sel = str(competicao_sel or "").strip()
+            if competicao_sel and competicao_sel != "Todas":
+                linhas = [
+                    r for r in linhas
+                    if str(r.get("competicao", "")).strip().casefold() == competicao_sel.casefold()
+                ]
 
             _atualizar_cards_temporada(linhas)
 
@@ -6854,6 +8141,7 @@ class App:
             filtro_local_var.set("todos")
             filtro_adversario_var.set("")
             filtro_estadio_var.set("Todos")
+            filtro_competicao_var.set("Todas")
 
         def _toggle_sort_temporada(
             coluna,
@@ -6861,6 +8149,7 @@ class App:
             rows_ref=rows,
             filtro_var=filtro_adversario_var,
             filtro_estadio_var_ref=filtro_estadio_var,
+            filtro_competicao_var_ref=filtro_competicao_var,
             filtro_local_var_ref=filtro_local_var,
             render_fn=_render_rows_temporada,
         ):
@@ -6869,20 +8158,30 @@ class App:
             else:
                 sort_state_ref["col"] = coluna
                 sort_state_ref["reverse"] = False
-            render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
+            render_fn(
+                rows_ref,
+                filtro_var.get(),
+                filtro_estadio_var_ref.get(),
+                filtro_competicao_var_ref.get(),
+                filtro_local_var_ref.get(),
+            )
 
         ttk.Button(filtros_temporada, text="Limpar", command=_limpar_filtro_temporada).pack(side="left")
         filtro_adversario_var.trace_add(
             "write",
-            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_competicao_var_ref=filtro_competicao_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_competicao_var_ref.get(), filtro_local_var_ref.get())
         )
         filtro_estadio_var.trace_add(
             "write",
-            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_competicao_var_ref=filtro_competicao_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_competicao_var_ref.get(), filtro_local_var_ref.get())
+        )
+        filtro_competicao_var.trace_add(
+            "write",
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_competicao_var_ref=filtro_competicao_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_competicao_var_ref.get(), filtro_local_var_ref.get())
         )
         filtro_local_var.trace_add(
             "write",
-            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_local_var_ref.get())
+            lambda *_args, rows_ref=rows, filtro_var=filtro_adversario_var, filtro_estadio_var_ref=filtro_estadio_var, filtro_competicao_var_ref=filtro_competicao_var, filtro_local_var_ref=filtro_local_var, render_fn=_render_rows_temporada: render_fn(rows_ref, filtro_var.get(), filtro_estadio_var_ref.get(), filtro_competicao_var_ref.get(), filtro_local_var_ref.get())
         )
         for c in cols:
             if c == "tecnico":
@@ -6892,7 +8191,7 @@ class App:
             else:
                 titulo = c.capitalize() if c != "placar" else "Placar"
             tv.heading(c, text=titulo, command=lambda col=c, toggle_fn=_toggle_sort_temporada: toggle_fn(col))
-        _render_rows_temporada(rows, "", filtro_estadio_var.get(), filtro_local_var.get())
+        _render_rows_temporada(rows, "", filtro_estadio_var.get(), filtro_competicao_var.get(), filtro_local_var.get())
 
     def _tooltip_gols_text(self, jogo):
         def fmt_lista(lst):

@@ -18,8 +18,10 @@ from storage_sqlite import (
     db_path_for,
     load_current_squad as db_load_current_squad,
     load_future_matches as db_load_future_matches,
+    load_historic_players as db_load_historic_players,
     load_listas as db_load_listas,
     load_matches as db_load_matches,
+    save_historic_players as db_save_historic_players,
     save_listas as db_save_listas,
     save_matches as db_save_matches,
 )
@@ -50,12 +52,13 @@ POSICOES_ELENCO = [
     "Meio-Campista",
     "Atacante",
 ]
-CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Emprestado"]
+CONDICOES_ELENCO = ["Titular", "Reserva", "Não Relacionado", "Lesionado", "Suspenso", "Servindo a seleção", "Emprestado"]
 CATEGORIAS_ESCALACAO_EXTRAS = (
     ("reservas", "Reservas"),
     ("nao_relacionados", "Não Relacionados"),
     ("lesionados", "Lesionados"),
     ("suspensos", "Suspensos"),
+    ("servindo_selecao", "Servindo a seleção"),
 )
 
 
@@ -137,8 +140,12 @@ def _escalacao_partida_base():
     return {
         "titulares_por_posicao": {pos: [] for pos in POSICOES_ELENCO},
         "reservas": [],
+        "reservas_que_entraram": [],
+        "substituicoes": [],
         "nao_relacionados": [],
         "lesionados": [],
+        "suspensos": [],
+        "servindo_selecao": [],
     }
 
 
@@ -178,7 +185,83 @@ def _normalizar_escalacao_partida(escalacao: dict | None) -> dict:
             vistos.add(cf)
             filtrados.append(nome)
         base[chave] = filtrados
+    reservas_cf = {str(nome).strip().casefold() for nome in base["reservas"] if str(nome).strip()}
+    substituicoes = escalacao.get("substituicoes", [])
+    if isinstance(substituicoes, list):
+        base["substituicoes"] = [item for item in substituicoes if isinstance(item, dict)]
+    if base["substituicoes"]:
+        bruto_entraram = [item.get("jogador_entrou", "") for item in base["substituicoes"]]
+    elif "reservas_que_entraram" in escalacao:
+        bruto_entraram = escalacao.get("reservas_que_entraram")
+    else:
+        bruto_entraram = list(base["reservas"])
+    vistos_entraram = set()
+    for nome in bruto_entraram:
+        nome_limpo = str(nome).strip()
+        chave = nome_limpo.casefold()
+        if not nome_limpo or chave in vistos_entraram or chave not in reservas_cf:
+            continue
+        vistos_entraram.add(chave)
+        base["reservas_que_entraram"].append(nome_limpo)
     return base
+
+
+def _chave_nome_jogador(nome: str) -> str:
+    return str(nome or "").strip().casefold()
+
+
+def _jogadores_que_participaram_do_jogo(jogo: dict) -> set[str]:
+    esc = jogo.get("escalacao_partida", jogo.get("escalacao"))
+    if not isinstance(esc, dict):
+        return set()
+    participantes = set()
+    tit_por_pos = esc.get("titulares_por_posicao", {})
+    if isinstance(tit_por_pos, dict):
+        for pos in POSICOES_ELENCO:
+            for nome in tit_por_pos.get(pos, []):
+                chave = _chave_nome_jogador(nome)
+                if chave:
+                    participantes.add(chave)
+    reservas_que_entraram = esc.get("reservas_que_entraram")
+    if not isinstance(reservas_que_entraram, list):
+        reservas_que_entraram = esc.get("reservas", [])
+    for nome in reservas_que_entraram:
+        chave = _chave_nome_jogador(nome)
+        if chave:
+            participantes.add(chave)
+    return participantes
+
+
+def _ajustar_jogos_pelo_vasco_historico(participantes_antes: set[str], participantes_depois: set[str]) -> None:
+    dados = db_load_historic_players(DB_PATH)
+    jogadores = dados.get("jogadores", []) if isinstance(dados, dict) else []
+    if not isinstance(jogadores, list):
+        jogadores = []
+    alterou = False
+    atualizados = []
+    for item in jogadores:
+        if not isinstance(item, dict):
+            continue
+        jogador = dict(item)
+        chave = _chave_nome_jogador(jogador.get("nome", ""))
+        valor_atual = jogador.get("jogos_pelo_vasco")
+        try:
+            valor_atual = int(valor_atual)
+            if valor_atual < 0:
+                valor_atual = None
+        except (TypeError, ValueError):
+            valor_atual = None
+        novo_valor = valor_atual
+        if chave in participantes_antes and chave not in participantes_depois:
+            novo_valor = max(0, (valor_atual or 0) - 1)
+        elif chave in participantes_depois and chave not in participantes_antes:
+            novo_valor = (valor_atual or 0) + 1
+        if novo_valor != valor_atual:
+            jogador["jogos_pelo_vasco"] = novo_valor
+            alterou = True
+        atualizados.append(jogador)
+    if alterou:
+        db_save_historic_players(DB_PATH, {"jogadores": atualizados})
 
 
 def escalacao_padrao_do_elenco(elenco: dict) -> dict:
@@ -199,6 +282,8 @@ def escalacao_padrao_do_elenco(elenco: dict) -> dict:
             base["lesionados"].append(nome)
         elif cond == "Suspenso":
             base["suspensos"].append(nome)
+        elif cond == "Servindo a seleção":
+            base["servindo_selecao"].append(nome)
         # Emprestados ficam fora da escalação padrão da partida.
     return _normalizar_escalacao_partida(base)
 
@@ -306,10 +391,12 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
 
     jogos = carregar_jogos()
     jogo_base = {}
+    participantes_antes = set()
     if edit_idx is not None:
         if not (0 <= edit_idx < len(jogos)):
             return False, "Não foi possível localizar o jogo para edição.", None
         jogo_base = jogos[edit_idx] if isinstance(jogos[edit_idx], dict) else {}
+        participantes_antes = _jogadores_que_participaram_do_jogo(jogo_base)
 
     data = str(payload.get("data", "")).strip()
     adversario = str(payload.get("adversario", "")).strip()
@@ -449,6 +536,7 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
         "posicao_tabela": posicao_tabela,
         "escalacao_partida": escalacao_partida,
     }
+    participantes_depois = _jogadores_que_participaram_do_jogo(jogo)
 
     if edit_idx is None:
         jogos.append(jogo)
@@ -457,6 +545,7 @@ def _salvar_ou_atualizar_partida_web(payload: dict, edit_idx: int | None = None)
         jogos[edit_idx] = jogo
         msg_ok = "Partida atualizada com sucesso!"
     salvar_lista_jogos(jogos)
+    _ajustar_jogos_pelo_vasco_historico(participantes_antes, participantes_depois)
     return True, msg_ok, jogo
 
 
@@ -1940,6 +2029,7 @@ INDEX_HTML = """<!doctype html>
           <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Não Relacionados</div>${chipsFromList(esc?.nao_relacionados || [])}</div>
           <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Lesionados</div>${chipsFromList(esc?.lesionados || [])}</div>
           <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Suspensos</div>${chipsFromList(esc?.suspensos || [])}</div>
+          <div class="card" style="padding:10px"><div class="muted" style="margin-bottom:6px">Servindo a seleção</div>${chipsFromList(esc?.servindo_selecao || [])}</div>
         </div>
       `;
     }
@@ -2284,6 +2374,7 @@ INDEX_HTML = """<!doctype html>
       rows.push(linhaTextareaEscalacao("Não Relacionados", "esc-nao_relacionados"));
       rows.push(linhaTextareaEscalacao("Lesionados", "esc-lesionados"));
       rows.push(linhaTextareaEscalacao("Suspensos", "esc-suspensos"));
+      rows.push(linhaTextareaEscalacao("Servindo a seleção", "esc-servindo_selecao"));
       wrap.innerHTML = rows.join("");
       ["change","input"].forEach(evt => wrap.addEventListener(evt, atualizarResumoEscalacaoWeb));
     }
@@ -2328,6 +2419,7 @@ INDEX_HTML = """<!doctype html>
         nao_relacionados: parseTextareaNames($("#esc-nao_relacionados")?.value),
         lesionados: parseTextareaNames($("#esc-lesionados")?.value),
         suspensos: parseTextareaNames($("#esc-suspensos")?.value),
+        servindo_selecao: parseTextareaNames($("#esc-servindo_selecao")?.value),
       };
     }
 
@@ -2338,7 +2430,7 @@ INDEX_HTML = """<!doctype html>
         const el = document.getElementById(`esc-${pos}`);
         if (el) el.value = (tit[pos] || []).join("\\n");
       });
-      const extras = ["reservas", "nao_relacionados", "lesionados", "suspensos"];
+      const extras = ["reservas", "nao_relacionados", "lesionados", "suspensos", "servindo_selecao"];
       extras.forEach(k => {
         const el = document.getElementById(`esc-${k}`);
         if (el) el.value = (data[k] || []).join("\\n");
@@ -2354,8 +2446,9 @@ INDEX_HTML = """<!doctype html>
       const naoRel = (esc.nao_relacionados || []).length;
       const lesionados = (esc.lesionados || []).length;
       const suspensos = (esc.suspensos || []).length;
+      const servindoSelecao = (esc.servindo_selecao || []).length;
       $("#escalacao-resumo-web").textContent =
-        `Titulares: ${titulares}/11 | Reservas: ${reservas} (mín. 4) | Não Relac.: ${naoRel} | Lesionados: ${lesionados} | Suspensos: ${suspensos}`;
+        `Titulares: ${titulares}/11 | Reservas: ${reservas} (mín. 4) | Não Relac.: ${naoRel} | Lesionados: ${lesionados} | Suspensos: ${suspensos} | Seleção: ${servindoSelecao}`;
       atualizarOpcoesGolsVasco();
     }
 
@@ -2672,6 +2765,7 @@ INDEX_HTML = """<!doctype html>
         editEscalacaoField("edit-esc-nao_relacionados", "Não Relacionados"),
         editEscalacaoField("edit-esc-lesionados", "Lesionados"),
         editEscalacaoField("edit-esc-suspensos", "Suspensos"),
+        editEscalacaoField("edit-esc-servindo_selecao", "Servindo a seleção"),
       ].join("");
     }
 
@@ -2696,6 +2790,7 @@ INDEX_HTML = """<!doctype html>
         nao_relacionados: get("edit-esc-nao_relacionados"),
         lesionados: get("edit-esc-lesionados"),
         suspensos: get("edit-esc-suspensos"),
+        servindo_selecao: get("edit-esc-servindo_selecao"),
       };
     }
 
@@ -2714,6 +2809,7 @@ INDEX_HTML = """<!doctype html>
       setv("edit-esc-nao_relacionados", data.nao_relacionados);
       setv("edit-esc-lesionados", data.lesionados);
       setv("edit-esc-suspensos", data.suspensos);
+      setv("edit-esc-servindo_selecao", data.servindo_selecao);
     }
 
     function updateEditPosicaoField() {
