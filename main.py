@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from collections import defaultdict, Counter
+import copy
 import json
 import os
 import sys
@@ -120,6 +121,7 @@ ARQUIVO_FUTUROS = os.path.join(DATA_DIR, "jogos_futuros.json")
 ARQUIVO_ELENCO_ATUAL = os.path.join(DATA_DIR, "elenco_atual.json")
 ARQUIVO_JOGADORES_HISTORICO = os.path.join(DATA_DIR, "jogadores_historico.json")
 DB_PATH = db_path_for(DATA_DIR)
+_DATA_CACHE = {}
 
 
 def _json_origem_inicial(nome_arquivo: str) -> str:
@@ -127,6 +129,24 @@ def _json_origem_inicial(nome_arquivo: str) -> str:
     if os.path.exists(preferido):
         return preferido
     return os.path.join(PROJECT_ROOT, nome_arquivo)
+
+
+def _cache_get(key, loader):
+    if key not in _DATA_CACHE:
+        _DATA_CACHE[key] = copy.deepcopy(loader())
+    return copy.deepcopy(_DATA_CACHE[key])
+
+
+def _cache_set(key, value):
+    _DATA_CACHE[key] = copy.deepcopy(value)
+
+
+def _cache_clear(*keys):
+    if not keys:
+        _DATA_CACHE.clear()
+        return
+    for key in keys:
+        _DATA_CACHE.pop(key, None)
 
 
 def _copiar_db_inicial_se_necessario():
@@ -228,14 +248,17 @@ def _ordenar_listas(dados: dict) -> dict:
 
 
 def carregar_dados_jogos():
-    return db_load_matches(DB_PATH)
+    return _cache_get("matches", lambda: db_load_matches(DB_PATH))
 
 
 def carregar_jogos_futuros():
-    return db_load_future_matches(DB_PATH)
+    return _cache_get("future_matches", lambda: db_load_future_matches(DB_PATH))
 
 
 def carregar_listas():
+    if "listas" in _DATA_CACHE:
+        return copy.deepcopy(_DATA_CACHE["listas"])
+
     dados = db_load_listas(DB_PATH)
     alterou = False
     dados = _ordenar_listas(dados)
@@ -300,12 +323,14 @@ def carregar_listas():
 
     if alterou:
         db_save_listas(DB_PATH, dados)
+    _cache_set("listas", dados)
     return dados
 
 
 def salvar_listas(data):
     data = _ordenar_listas(data)
     db_save_listas(DB_PATH, data)
+    _cache_set("listas", data)
 
 
 def salvar_jogo(jogo):
@@ -316,10 +341,12 @@ def salvar_jogo(jogo):
 
 def salvar_lista_jogos(dados):
     db_save_matches(DB_PATH, dados)
+    _cache_set("matches", dados if isinstance(dados, list) else [])
 
 
 def salvar_lista_futuros(dados):
     db_save_future_matches(DB_PATH, dados)
+    _cache_set("future_matches", dados if isinstance(dados, list) else [])
 
 
 def carregar_estadio_adversario(nome_time: str) -> str:
@@ -356,13 +383,13 @@ def _normalizar_titulo_vasco_item(item):
 
 
 def carregar_titulos_vasco():
-    dados = db_load_titles(DB_PATH)
+    dados = _cache_get("titles", lambda: db_load_titles(DB_PATH))
     if not isinstance(dados, list):
         dados = []
     if not dados:
         dados = list(TITULOS_VASCO_PADRAO)
         db_save_titles(DB_PATH, dados)
-        dados = db_load_titles(DB_PATH)
+        _cache_set("titles", dados)
 
     normalizados = []
     vistos = set()
@@ -392,6 +419,7 @@ def salvar_titulos_vasco(titulos):
         normalizados.append(titulo)
     normalizados = _ordenar_titulos_vasco(normalizados)
     db_save_titles(DB_PATH, normalizados)
+    _cache_set("titles", normalizados)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -476,7 +504,7 @@ def _ordenar_jogadores_por_posicao(jogadores):
 
 
 def carregar_elenco_atual():
-    dados = db_load_current_squad(DB_PATH)
+    dados = _cache_get("current_squad", lambda: db_load_current_squad(DB_PATH))
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
@@ -537,7 +565,9 @@ def salvar_elenco_atual(dados):
         normalizados.append(jogador)
 
     jogadores_limpos = _ordenar_jogadores_elenco(normalizados)
-    db_save_current_squad(DB_PATH, {"jogadores": jogadores_limpos, "tecnico": tecnico})
+    dados_limpos = {"jogadores": jogadores_limpos, "tecnico": tecnico}
+    db_save_current_squad(DB_PATH, dados_limpos)
+    _cache_set("current_squad", dados_limpos)
 
 
 def _normalizar_jogador_historico(item):
@@ -625,7 +655,7 @@ def _ordenar_jogadores_historico(jogadores):
 
 
 def carregar_jogadores_historico():
-    dados = db_load_historic_players(DB_PATH)
+    dados = _cache_get("historic_players", lambda: db_load_historic_players(DB_PATH))
     if isinstance(dados, list):
         dados = {"jogadores": dados}
     if not isinstance(dados, dict):
@@ -670,7 +700,9 @@ def salvar_jogadores_historico(dados):
         vistos.add(chave)
         normalizados.append(jogador)
 
-    db_save_historic_players(DB_PATH, {"jogadores": _ordenar_jogadores_historico(normalizados)})
+    dados_limpos = {"jogadores": _ordenar_jogadores_historico(normalizados)}
+    db_save_historic_players(DB_PATH, dados_limpos)
+    _cache_set("historic_players", dados_limpos)
 
 
 def _chave_nome_jogador(nome):
@@ -1540,7 +1572,6 @@ class App:
                 ]
             }
             salvar_elenco_atual(self.elenco_atual)
-            self.elenco_atual = carregar_elenco_atual()
         self._evolucao_subtab_index = 0
         self._evolucao_geral_art_page = 0
         self._evolucao_geral_art_page_size = 20
@@ -3091,7 +3122,13 @@ class App:
         list_wrap.columnconfigure(0, weight=1)
 
         cols = ("posicao", "jogador", "condicao", "capitao")
-        self.tv_elenco_atual = ttk.Treeview(list_wrap, columns=cols, show="headings", height=14)
+        self.tv_elenco_atual = ttk.Treeview(
+            list_wrap,
+            columns=cols,
+            show="headings",
+            height=14,
+            selectmode="extended",
+        )
         self.tv_elenco_atual["displaycolumns"] = ("posicao", "jogador", "condicao")
         self.tv_elenco_atual.heading("posicao", text="Posição", command=lambda: self._toggle_ordenacao_elenco_atual("posicao"))
         self.tv_elenco_atual.heading("jogador", text="Jogador", command=lambda: self._toggle_ordenacao_elenco_atual("jogador"))
@@ -3219,7 +3256,7 @@ class App:
         itens = list(jogadores or [])
         col = getattr(self, "_elenco_sort_col", None)
         if col not in {"posicao", "jogador"}:
-            return itens
+            return _ordenar_jogadores_elenco(itens)
 
         pos_ordem = {pos: i for i, pos in enumerate(POSICOES_ELENCO)}
 
@@ -3351,7 +3388,6 @@ class App:
 
         self.elenco_atual["jogadores"] = jogadores
         salvar_elenco_atual(self.elenco_atual)
-        self.elenco_atual = carregar_elenco_atual()
         self._sincronizar_jogadores_vasco_com_elenco()
 
     def _elenco_campinho_drag_start(self, event):
@@ -3511,7 +3547,6 @@ class App:
             "tecnico": str(self.elenco_atual.get("tecnico", "")).strip(),
         }
         salvar_elenco_atual(self.elenco_atual)
-        self.elenco_atual = carregar_elenco_atual()
         self._render_elenco_atual()
         self._sincronizar_jogadores_vasco_com_elenco()
 
@@ -3522,7 +3557,6 @@ class App:
             return
         self.elenco_atual["tecnico"] = tecnico
         salvar_elenco_atual(self.elenco_atual)
-        self.elenco_atual = carregar_elenco_atual()
         lista_tecnicos = self.listas.setdefault("tecnicos", [])
         if tecnico not in lista_tecnicos:
             lista_tecnicos.append(tecnico)
@@ -3541,8 +3575,8 @@ class App:
             return tecnico_elenco
         return str(self.listas.get("tecnico_atual", "") or "Fernando Diniz").strip()
 
-    def _sincronizar_jogadores_vasco_com_elenco(self):
-        self._atualizar_opcoes_gol_vasco(persistir=True)
+    def _sincronizar_jogadores_vasco_com_elenco(self, persistir_listas=False):
+        self._atualizar_opcoes_gol_vasco(persistir=persistir_listas)
         self._sincronizar_jogadores_historico()
         if hasattr(self, "_render_elenco_atual"):
             self._render_elenco_atual()
@@ -3646,6 +3680,7 @@ class App:
 
     def _atualizar_opcoes_gol_vasco(self, persistir=False):
         opcoes = self._ordenar_opcoes_gol_vasco()
+        alterou = opcoes != list(self.listas.get("jogadores_vasco", []))
         self.listas["jogadores_vasco"] = opcoes
         if hasattr(self, "entry_gol_vasco"):
             self.entry_gol_vasco["values"] = opcoes
@@ -3654,7 +3689,7 @@ class App:
         if hasattr(self, "entry_cartao_vermelho"):
             self.entry_cartao_vermelho["values"] = opcoes
         self._atualizar_opcoes_capitao_partida()
-        if persistir:
+        if persistir and alterou:
             salvar_listas(self.listas)
 
     def _on_notebook_tab_changed(self, event):
@@ -3780,7 +3815,6 @@ class App:
 
         if alterou:
             salvar_elenco_atual(self.elenco_atual)
-            self.elenco_atual = carregar_elenco_atual()
             self._sincronizar_jogadores_vasco_com_elenco()
 
     def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
@@ -3833,7 +3867,6 @@ class App:
 
         if alterou:
             salvar_elenco_atual(self.elenco_atual)
-            self.elenco_atual = carregar_elenco_atual()
             self._sincronizar_jogadores_vasco_com_elenco()
 
     def _adicionar_jogador_elenco(self, _event=None):
@@ -4162,7 +4195,7 @@ class App:
         self.entry_jogadores_hist_busca.pack(side="left", padx=(6, 6))
         ttk.Label(filtros, text="Filtro:").pack(side="left", padx=(8, 0))
         self.jogadores_hist_filtro_var = tk.StringVar(value="Todos")
-        opcoes_filtro = ["Todos", "Capitães do Vasco"] + POSICOES_ELENCO + CONDICOES_ELENCO + ["Ex-jogador"]
+        opcoes_filtro = ["Todos", "Somente Elenco Atual", "Capitães do Vasco"] + POSICOES_ELENCO + CONDICOES_ELENCO + ["Ex-jogador"]
         self.combo_jogadores_hist_filtro = ttk.Combobox(
             filtros,
             textvariable=self.jogadores_hist_filtro_var,
@@ -4280,9 +4313,11 @@ class App:
                 haystack = f"{posicao} {nome} {status} {'sim' if foi_capitao else 'nao'}".casefold()
                 if termo not in haystack:
                     continue
+            if filtro == "Somente Elenco Atual" and not cond:
+                continue
             if filtro == "Capitães do Vasco" and not foi_capitao:
                 continue
-            if filtro not in {"Todos", "Capitães do Vasco"} and filtro not in {posicao, status}:
+            if filtro not in {"Todos", "Somente Elenco Atual", "Capitães do Vasco"} and filtro not in {posicao, status}:
                 continue
             jogadores_filtrados.append({
                 "posicao": posicao,
@@ -4993,7 +5028,6 @@ class App:
             }
         )
         salvar_elenco_atual(self.elenco_atual)
-        self.elenco_atual = carregar_elenco_atual()
         self._sincronizar_jogadores_vasco_com_elenco()
         self._render_aba_jogadores_historico()
 
@@ -5001,9 +5035,14 @@ class App:
         iid = self.tv_elenco_atual.identify_row(event.y)
         if not iid:
             return
-        self.tv_elenco_atual.selection_set(iid)
+        selecionados = set(self.tv_elenco_atual.selection())
+        if iid not in selecionados:
+            self.tv_elenco_atual.selection_set(iid)
+            selecionados = {iid}
         self.tv_elenco_atual.focus(iid)
+        selecionados = list(self.tv_elenco_atual.selection())
         _pos, nome, _cond, eh_capitao = self._dados_linha_elenco(iid)
+        selecao_unica = len(selecionados) == 1
 
         menu = tk.Menu(self.root, tearoff=0)
         submenu_tit = tk.Menu(menu, tearoff=0)
@@ -5024,6 +5063,7 @@ class App:
         menu.add_command(
             label="Remover Capitão" if eh_capitao else f"Tornar Capitão: {nome}",
             command=self._alternar_capitao_elenco_selecionado,
+            state=("normal" if selecao_unica else "disabled"),
         )
         try:
             menu.tk_popup(event.x_root, event.y_root)
@@ -5070,44 +5110,57 @@ class App:
         sel = self.tv_elenco_atual.selection()
         if not sel:
             return
-        iid = sel[0]
-        posicao_atual, nome, condicao_atual, eh_capitao = self._dados_linha_elenco(iid)
-        nome = str(nome).strip()
-        if not nome:
-            return
 
         tipo, chave = destino
-        nova_posicao = str(posicao_atual).strip()
-        nova_condicao = _normalizar_condicao_elenco(condicao_atual)
         if tipo == "titulares":
-            nova_posicao = _normalizar_posicao_elenco(chave)
-            nova_condicao = "Titular"
+            nova_posicao_titular = _normalizar_posicao_elenco(chave)
+            selecionados_cf = set()
+            for iid in sel:
+                _pos, nome, _cond, _cap = self._dados_linha_elenco(iid)
+                nome = str(nome).strip()
+                if nome:
+                    selecionados_cf.add(nome.casefold())
             titulares_atuais = 0
             for row_iid in self.tv_elenco_atual.get_children():
                 _p, row_nome, row_cond, _row_cap = self._dados_linha_elenco(row_iid)
-                if _normalizar_condicao_elenco(row_cond) == "Titular" and str(row_nome).strip().casefold() != nome.casefold():
+                if (
+                    _normalizar_condicao_elenco(row_cond) == "Titular"
+                    and str(row_nome).strip().casefold() not in selecionados_cf
+                ):
                     titulares_atuais += 1
-            if titulares_atuais >= 11:
+            if titulares_atuais + len(selecionados_cf) > 11:
                 messagebox.showerror("Limite de titulares", "Não é possível ter mais de 11 titulares no elenco atual.")
                 return
-        else:
-            if chave == "reservas":
-                nova_condicao = "Reserva"
-            elif chave == "nao_relacionados":
-                nova_condicao = "Não Relacionado"
-            elif chave == "lesionados":
-                nova_condicao = "Lesionado"
-            elif chave == "suspensos":
-                nova_condicao = "Suspenso"
-            elif chave == "servindo_selecao":
-                nova_condicao = "Servindo a seleção"
-            elif chave == "emprestados":
-                nova_condicao = "Emprestado"
 
-        self.tv_elenco_atual.item(
-            iid,
-            values=(nova_posicao, _nome_exibicao_capitao(nome, eh_capitao), nova_condicao, "1" if eh_capitao else ""),
-        )
+        for iid in sel:
+            posicao_atual, nome, condicao_atual, eh_capitao = self._dados_linha_elenco(iid)
+            nome = str(nome).strip()
+            if not nome:
+                continue
+
+            nova_posicao = str(posicao_atual).strip()
+            nova_condicao = _normalizar_condicao_elenco(condicao_atual)
+            if tipo == "titulares":
+                nova_posicao = nova_posicao_titular
+                nova_condicao = "Titular"
+            else:
+                if chave == "reservas":
+                    nova_condicao = "Reserva"
+                elif chave == "nao_relacionados":
+                    nova_condicao = "Não Relacionado"
+                elif chave == "lesionados":
+                    nova_condicao = "Lesionado"
+                elif chave == "suspensos":
+                    nova_condicao = "Suspenso"
+                elif chave == "servindo_selecao":
+                    nova_condicao = "Servindo a seleção"
+                elif chave == "emprestados":
+                    nova_condicao = "Emprestado"
+
+            self.tv_elenco_atual.item(
+                iid,
+                values=(nova_posicao, _nome_exibicao_capitao(nome, eh_capitao), nova_condicao, "1" if eh_capitao else ""),
+            )
         self._salvar_elenco_da_interface()
 
     def _grupo_reordenacao_elenco(self, values):
@@ -6840,7 +6893,12 @@ class App:
         cartoes_amarelos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_amarelos_eventos", []))
         cartoes_vermelhos_vasco = _agrupar_eventos_cartao(getattr(self, "cartoes_vermelhos_eventos", []))
 
+        alterou_listas = False
+
+        clubes_antes = len(self.listas.get("clubes_adversarios", []))
         adversario = self._registrar_clube_adversario(adversario)
+        if len(self.listas.get("clubes_adversarios", [])) != clubes_antes:
+            alterou_listas = True
         if hasattr(self, "adversario_var"):
             self.adversario_var.set(adversario)
 
@@ -6848,16 +6906,19 @@ class App:
             self.listas.setdefault("competicoes", []).append(competicao)
             self.listas["competicoes"] = sorted(self.listas["competicoes"], key=lambda s: s.casefold())
             self.competicao_entry['values'] = self.listas["competicoes"]
+            alterou_listas = True
         if estadio and estadio not in self.listas.get("estadios", []):
             self.listas.setdefault("estadios", []).append(estadio)
             self.listas["estadios"] = sorted(self.listas["estadios"], key=lambda s: s.casefold())
             if hasattr(self, "estadio_entry"):
                 self.estadio_entry['values'] = self.listas["estadios"]
+            alterou_listas = True
 
         lista_tecnicos = self.listas.setdefault("tecnicos", [])
         if tecnico and tecnico not in lista_tecnicos:
             lista_tecnicos.append(tecnico)
             self.listas["tecnicos"] = sorted(lista_tecnicos, key=lambda s: s.casefold())
+            alterou_listas = True
         if hasattr(self, "tecnico_var"):
             self.tecnico_var.set(tecnico)
         self._atualizar_combo_tecnicos()
@@ -6869,6 +6930,7 @@ class App:
             if arbitro.casefold() not in arbitros_cf:
                 lista_arbitros.append(arbitro)
                 self.listas["arbitros"] = sorted(lista_arbitros, key=lambda s: s.casefold())
+                alterou_listas = True
             if hasattr(self, "arbitro_entry"):
                 self.arbitro_entry["values"] = self.listas["arbitros"]
 
@@ -6884,6 +6946,7 @@ class App:
                     alterou_aux = True
             if alterou_aux:
                 self.listas["auxiliares"] = sorted(lista_auxiliares, key=lambda s: s.casefold())
+                alterou_listas = True
             if hasattr(self, "auxiliar_1_entry"):
                 self.auxiliar_1_entry["values"] = self.listas["auxiliares"]
             if hasattr(self, "auxiliar_2_entry"):
@@ -6896,10 +6959,12 @@ class App:
             if var_nome.casefold() not in vars_cf:
                 lista_vars.append(var_nome)
                 self.listas["vars"] = sorted(lista_vars, key=lambda s: s.casefold())
+                alterou_listas = True
             if hasattr(self, "var_arbitragem_entry"):
                 self.var_arbitragem_entry["values"] = self.listas["vars"]
 
-        salvar_listas(self.listas)
+        if alterou_listas:
+            salvar_listas(self.listas)
 
         jogo = {
             "data": data,
@@ -7278,7 +7343,6 @@ class App:
     def _atualizar_abas(self):
         self.elenco_atual = carregar_elenco_atual()
         self._aplicar_suspensoes_pendentes_no_elenco()
-        self.elenco_atual = carregar_elenco_atual()
         self.titulos_vasco = carregar_titulos_vasco()
         self.jogadores_historico = carregar_jogadores_historico()
         self._sincronizar_jogadores_historico()
