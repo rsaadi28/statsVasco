@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any
 
 DB_FILENAME = "stats_vasco.sqlite3"
+_schema_done: set[str] = set()
 DEFAULT_TECNICO = "Fernando Diniz"
 DEFAULT_TEAM_STADIUMS = {
     "Atlético-MG": "Arena MRV",
@@ -118,6 +119,10 @@ def _normalize_listas(data: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def _create_schema(conn: sqlite3.Connection) -> None:
+    row = conn.execute("PRAGMA database_list").fetchone()
+    db_file = str(row["file"]) if row else ""
+    if db_file and db_file in _schema_done:
+        return
     conn.executescript(
         """
         CREATE TABLE IF NOT EXISTS metadata (
@@ -338,6 +343,9 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         ).fetchall()
         for row in rows:
             _ensure_team_stadium(conn, int(row["id"]), str(row["stadium_name"]).strip(), is_primary=True)
+
+    if db_file:
+        _schema_done.add(db_file)
 
 
 def _ensure_player(conn: sqlite3.Connection, name: str) -> int | None:

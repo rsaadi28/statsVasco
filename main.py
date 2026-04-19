@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from collections import defaultdict, Counter
-import copy
 import json
 import os
 import sys
@@ -133,12 +132,12 @@ def _json_origem_inicial(nome_arquivo: str) -> str:
 
 def _cache_get(key, loader):
     if key not in _DATA_CACHE:
-        _DATA_CACHE[key] = copy.deepcopy(loader())
-    return copy.deepcopy(_DATA_CACHE[key])
+        _DATA_CACHE[key] = loader()
+    return _DATA_CACHE[key]
 
 
 def _cache_set(key, value):
-    _DATA_CACHE[key] = copy.deepcopy(value)
+    _DATA_CACHE[key] = value
 
 
 def _cache_clear(*keys):
@@ -257,7 +256,7 @@ def carregar_jogos_futuros():
 
 def carregar_listas():
     if "listas" in _DATA_CACHE:
-        return copy.deepcopy(_DATA_CACHE["listas"])
+        return _DATA_CACHE["listas"]
 
     dados = db_load_listas(DB_PATH)
     alterou = False
@@ -276,25 +275,14 @@ def carregar_listas():
         dados = _ordenar_listas(dados)
         alterou = True
 
-    tecnicos_jogos = {
-        str(j.get("tecnico", "") or "").strip()
-        for j in carregar_dados_jogos()
-        if str(j.get("tecnico", "") or "").strip()
-    }
-    if tecnicos_jogos:
-        base = list(dados.get("tecnicos", []))
-        base_cf = {str(nome).casefold() for nome in base}
-        for nome in sorted(tecnicos_jogos, key=str.casefold):
-            if nome.casefold() not in base_cf:
-                base.append(nome)
-                base_cf.add(nome.casefold())
-                alterou = True
-        dados["tecnicos"] = sorted(base, key=lambda s: s.casefold())
-
+    tecnicos_jogos = set()
     arbitros_jogos = set()
     auxiliares_jogos = set()
     vars_jogos = set()
     for jogo in carregar_dados_jogos():
+        tecnico = str(jogo.get("tecnico", "") or "").strip()
+        if tecnico:
+            tecnicos_jogos.add(tecnico)
         arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
         arbitro = arbitragem.get("arbitro", "")
         if arbitro:
@@ -305,6 +293,16 @@ def carregar_listas():
         var_nome = arbitragem.get("var", "")
         if var_nome:
             vars_jogos.add(var_nome)
+
+    if tecnicos_jogos:
+        base = list(dados.get("tecnicos", []))
+        base_cf = {str(nome).casefold() for nome in base}
+        for nome in sorted(tecnicos_jogos, key=str.casefold):
+            if nome.casefold() not in base_cf:
+                base.append(nome)
+                base_cf.add(nome.casefold())
+                alterou = True
+        dados["tecnicos"] = sorted(base, key=lambda s: s.casefold())
 
     for chave_lista, nomes in (
         ("arbitros", arbitros_jogos),
@@ -1577,6 +1575,7 @@ class App:
         self._evolucao_geral_art_page_size = 20
         self._calendar_popup = None
         self._elenco_info_por_nome_cf = {}
+        self._tabs_sujas: set[str] = set()
 
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True)
@@ -1614,15 +1613,18 @@ class App:
         self._criar_aba_jogadores_historico(self.frame_jogadores_historico)
         self._criar_formulario(self.frame_registro)
         self._sincronizar_jogadores_historico()
-        self._carregar_temporadas()
-        self._carregar_geral()
-        self._carregar_estadios()
-        self._carregar_comparativo()
-        self._carregar_graficos()
-        self._carregar_tecnicos()
-        self._carregar_arbitros()
-        self._carregar_titulos()
         self._criar_aba_retro(self.frame_retro)
+        # Abas estatísticas carregadas sob demanda (lazy) na primeira visita
+        self._tabs_sujas = {
+            "frame_temporadas",
+            "frame_geral",
+            "frame_estadios",
+            "frame_comparativo",
+            "frame_graficos",
+            "frame_tecnicos",
+            "frame_arbitros",
+            "frame_titulos",
+        }
         self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
         self.notebook.select(self.frame_registro)
 
@@ -1669,9 +1671,10 @@ class App:
         self.fut_manual_local_var = tk.StringVar()
 
         ttk.Label(manual_frame, text="Adversário:").grid(row=0, column=0, sticky="w", pady=3)
+        _jogos_futuros_manual = carregar_dados_jogos()
         adversarios_disputados = sorted({
             str(j.get("adversario", "")).strip()
-            for j in carregar_dados_jogos()
+            for j in _jogos_futuros_manual
             if str(j.get("adversario", "")).strip()
         }, key=lambda s: s.casefold())
         opcoes_adversario = sorted(set(self.listas.get("clubes_adversarios", []) + adversarios_disputados), key=lambda s: s.casefold())
@@ -1688,7 +1691,7 @@ class App:
         ttk.Label(manual_frame, text="Campeonato:").grid(row=1, column=0, sticky="w", pady=3)
         competicoes_disputadas = sorted({
             str(j.get("competicao", "")).strip()
-            for j in carregar_dados_jogos()
+            for j in _jogos_futuros_manual
             if str(j.get("competicao", "")).strip()
         }, key=lambda s: s.casefold())
         opcoes_campeonato = sorted(set(self.listas.get("competicoes", []) + competicoes_disputadas), key=lambda s: s.casefold())
@@ -3547,7 +3550,6 @@ class App:
             "tecnico": str(self.elenco_atual.get("tecnico", "")).strip(),
         }
         salvar_elenco_atual(self.elenco_atual)
-        self._render_elenco_atual()
         self._sincronizar_jogadores_vasco_com_elenco()
 
     def _salvar_tecnico_elenco_atual(self, _event=None):
@@ -3696,6 +3698,14 @@ class App:
         if event.widget is not self.notebook:
             return
         atual = self.notebook.select()
+        # Lazy load: carrega aba estatística se estiver suja ou nunca carregada
+        for frame_attr, loader in self._LAZY_TAB_LOADERS:
+            frame = getattr(self, frame_attr, None)
+            if frame is not None and str(atual) == str(frame):
+                if frame_attr in self._tabs_sujas:
+                    getattr(self, loader)()
+                    self._tabs_sujas.discard(frame_attr)
+                return
         if hasattr(self, "frame_retro") and str(atual) == str(self.frame_retro):
             self._atualizar_opcoes_aba_retro()
             if getattr(self, "retro_adversario_var", None) and self.retro_adversario_var.get().strip():
@@ -4170,8 +4180,6 @@ class App:
         self._adicionar_jogadores_historico(candidatos)
         self._atualizar_datas_estreia_jogadores_historico()
         self._sincronizar_jogos_pelo_vasco_jogadores_historico()
-        if hasattr(self, "_render_aba_jogadores_historico"):
-            self._render_aba_jogadores_historico()
 
     def _criar_aba_jogadores_historico(self, frame):
         frame.columnconfigure(0, weight=2)
@@ -7340,6 +7348,29 @@ class App:
         self._atualizar_abas()
         messagebox.showinfo("Sucesso", "Jogo excluído com sucesso.")
 
+    _LAZY_TAB_LOADERS: list[tuple[str, str]] = [
+        ("frame_temporadas", "_carregar_temporadas"),
+        ("frame_geral", "_carregar_geral"),
+        ("frame_estadios", "_carregar_estadios"),
+        ("frame_comparativo", "_carregar_comparativo"),
+        ("frame_graficos", "_carregar_graficos"),
+        ("frame_tecnicos", "_carregar_tecnicos"),
+        ("frame_arbitros", "_carregar_arbitros"),
+        ("frame_titulos", "_carregar_titulos"),
+    ]
+
+    def _marcar_tabs_sujas(self):
+        """Marca todas as abas estatísticas como desatualizadas e recarrega a ativa imediatamente."""
+        for frame_attr, _ in self._LAZY_TAB_LOADERS:
+            self._tabs_sujas.add(frame_attr)
+        atual = self.notebook.select()
+        for frame_attr, loader in self._LAZY_TAB_LOADERS:
+            frame = getattr(self, frame_attr, None)
+            if frame is not None and str(atual) == str(frame):
+                getattr(self, loader)()
+                self._tabs_sujas.discard(frame_attr)
+                break
+
     def _atualizar_abas(self):
         self.elenco_atual = carregar_elenco_atual()
         self._aplicar_suspensoes_pendentes_no_elenco()
@@ -7347,14 +7378,7 @@ class App:
         self.jogadores_historico = carregar_jogadores_historico()
         self._sincronizar_jogadores_historico()
         self._atualizar_elenco_disponivel_partida()
-        self._carregar_temporadas()
-        self._carregar_geral()
-        self._carregar_estadios()
-        self._carregar_comparativo()
-        self._carregar_tecnicos()
-        self._carregar_arbitros()
-        self._carregar_titulos()
-        self._carregar_graficos()
+        self._marcar_tabs_sujas()
         self._render_aba_jogadores_historico()
         if hasattr(self, "retro_adversario_combo"):
             self._atualizar_opcoes_aba_retro()
