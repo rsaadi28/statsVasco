@@ -1,11 +1,12 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from collections import defaultdict, Counter
 import json
 import os
 import sys
 import ast
 import shutil
+from difflib import SequenceMatcher
 try:
     from tkcalendar import Calendar
     TKCALENDAR_OK = True
@@ -959,7 +960,7 @@ def _ordenar_jogos_por_data(jogos):
 
 
 def _normalizar_minuto_partida(valor):
-    txt = str(valor or "").strip().replace("'", "")
+    txt = "" if valor is None else str(valor).strip().replace("'", "")
     if not txt:
         return None
     try:
@@ -969,26 +970,86 @@ def _normalizar_minuto_partida(valor):
     return minuto if 0 <= minuto <= 120 else None
 
 
-PERIODOS_SUBSTITUICAO = (
+PERIODOS_EVENTO = (
     ("1T", "1º tempo"),
     ("2T", "2º tempo"),
     ("1P", "1º tempo da prorrogação"),
     ("2P", "2º tempo da prorrogação"),
 )
+PERIODOS_SUBSTITUICAO = (
+    ("1T", "1º tempo"),
+    ("INT", "Intervalo"),
+    ("2T", "2º tempo"),
+    ("1P", "1º tempo da prorrogação"),
+    ("INTP", "Intervalo da prorrogação"),
+    ("2P", "2º tempo da prorrogação"),
+)
+PERIODOS_INTERVALO_SUBSTITUICAO = {"INT", "INTP"}
+
+
+def _normalizar_periodo_partida(periodo: str, *, substituicao=False) -> str:
+    periodo_txt = str(periodo or "").strip()
+    if not periodo_txt:
+        return ""
+    direto = {codigo: codigo for codigo, _label in (PERIODOS_SUBSTITUICAO if substituicao else PERIODOS_EVENTO)}
+    if periodo_txt in direto:
+        return periodo_txt
+    chave = unicodedata.normalize("NFKD", periodo_txt)
+    chave = "".join(ch for ch in chave if not unicodedata.combining(ch))
+    chave = re.sub(r"[^a-zA-Z0-9]+", "", chave).casefold()
+    aliases = {
+        "1t": "1T",
+        "1tempo": "1T",
+        "1otempo": "1T",
+        "primeirotempo": "1T",
+        "2t": "2T",
+        "2tempo": "2T",
+        "2otempo": "2T",
+        "segundotempo": "2T",
+        "1p": "1P",
+        "1prorrogacao": "1P",
+        "1tempodaprorrogacao": "1P",
+        "1otempodaprorrogacao": "1P",
+        "primeirotempodaprorrogacao": "1P",
+        "2p": "2P",
+        "2prorrogacao": "2P",
+        "2tempodaprorrogacao": "2P",
+        "2otempodaprorrogacao": "2P",
+        "segundotempodaprorrogacao": "2P",
+    }
+    if substituicao:
+        aliases.update({
+            "int": "INT",
+            "intervalo": "INT",
+            "intervalodojogo": "INT",
+            "intervalonormal": "INT",
+            "ht": "INT",
+            "intp": "INTP",
+            "intervaloprorrogacao": "INTP",
+            "intervalodaprorrogacao": "INTP",
+            "intervalodaprorr": "INTP",
+            "intervaloentreprorrogacoes": "INTP",
+        })
+    return aliases.get(chave, "")
 
 
 def _limite_minuto_por_periodo(periodo: str) -> int:
-    return 15 if str(periodo or "").strip() in {"1P", "2P"} else 45
+    periodo_norm = _normalizar_periodo_partida(periodo, substituicao=True)
+    if periodo_norm in PERIODOS_INTERVALO_SUBSTITUICAO:
+        return 0
+    return 15 if periodo_norm in {"1P", "2P"} else 45
 
 
 def _minuto_absoluto_substituicao(minuto: int | None, periodo: str) -> int | None:
     if minuto is None:
         return None
-    periodo_norm = str(periodo or "").strip()
+    periodo_norm = _normalizar_periodo_partida(periodo, substituicao=True)
     offsets = {
         "1T": 0,
+        "INT": 45,
         "2T": 45,
         "1P": 90,
+        "INTP": 105,
         "2P": 105,
     }
     if periodo_norm not in offsets:
@@ -1003,13 +1064,16 @@ def _formatar_minuto_periodo(minuto: int | None, periodo: str) -> str:
     minuto_ok = _normalizar_minuto_partida(minuto)
     if minuto_ok is None:
         return "—"
-    periodo_norm = str(periodo or "").strip()
+    periodo_norm = _normalizar_periodo_partida(periodo, substituicao=True) or str(periodo or "").strip()
+    if periodo_norm in PERIODOS_INTERVALO_SUBSTITUICAO:
+        labels = {codigo: label for codigo, label in PERIODOS_SUBSTITUICAO}
+        return labels.get(periodo_norm, periodo_norm)
     return f"{minuto_ok}' {periodo_norm}" if periodo_norm else f"{minuto_ok}'"
 
 
 def _minuto_absoluto_evento(minuto: int | None, periodo: str) -> int | None:
     minuto_ok = _normalizar_minuto_partida(minuto)
-    periodo_norm = str(periodo or "").strip()
+    periodo_norm = _normalizar_periodo_partida(periodo, substituicao=False)
     if periodo_norm:
         return _minuto_absoluto_substituicao(minuto_ok, periodo_norm)
     return minuto_ok
@@ -1020,8 +1084,10 @@ def _normalizar_substituicao_partida(item):
         return None
     jogador_entrou = str(item.get("jogador_entrou", "")).strip()
     jogador_saiu = str(item.get("jogador_saiu", "")).strip()
-    periodo = str(item.get("periodo", "")).strip()
+    periodo = _normalizar_periodo_partida(item.get("periodo"), substituicao=True)
     minuto = _normalizar_minuto_partida(item.get("minuto"))
+    if periodo in PERIODOS_INTERVALO_SUBSTITUICAO and minuto is None:
+        minuto = 0
     minuto_absoluto = _minuto_absoluto_substituicao(minuto, periodo)
     if not jogador_entrou or not jogador_saiu or minuto_absoluto is None:
         return None
@@ -1523,6 +1589,7 @@ class App:
         }
 
         self.editing_index = None
+        self._elenco_edicao_partida_cf = None
         # Aplicar às principais classes ttk/tk
         self.root.configure(bg=self.colors["bg"])  # fundo da janela
         # garante cursor de digitação visível nas entradas
@@ -3586,7 +3653,10 @@ class App:
             self._render_aba_jogadores_historico()
         self._atualizar_elenco_disponivel_partida()
         if hasattr(self, "escalacao_partida"):
-            self._inicializar_escalacao_partida()
+            if getattr(self, "editing_index", None) is None:
+                self._inicializar_escalacao_partida()
+            else:
+                self._carregar_escalacao_partida(self.escalacao_partida)
 
     def _nome_capitao_elenco_atual(self) -> str:
         for jogador in self.elenco_atual.get("jogadores", []):
@@ -4043,7 +4113,11 @@ class App:
                 mapa[chave] = atual
                 alterou = True
             elif str(passagens[-1].get("data_saida", "")).strip():
-                nova_entrada = hoje
+                nova_entrada = (
+                    str(jogador.get("data_entrada", "")).strip()
+                    or str(jogador.get("data_registro", "")).strip()
+                    or hoje
+                )
                 passagens.append({
                     "data_entrada": nova_entrada,
                     "data_saida": "",
@@ -5555,6 +5629,7 @@ class App:
         ttk.Label(botoes, textvariable=self.modo_edicao_var, foreground=self.colors["accent"]).pack(side="left", padx=(0, 12))
         self.btn_salvar = ttk.Button(botoes, textvariable=self.salvar_btn_label, command=self.salvar_partida)
         self.btn_salvar.pack(side="left", padx=6)
+        ttk.Button(botoes, text="Importar JSON", command=self._abrir_importador_jogo_json).pack(side="left", padx=6)
         ttk.Button(botoes, text="Limpar Campos", command=self._limpar_formulario).pack(side="left", padx=6)
         self.btn_cancelar_edicao = ttk.Button(botoes, text="Cancelar Edição", command=self._cancelar_edicao)
         self.btn_cancelar_edicao.pack(side="left", padx=6)
@@ -5981,6 +6056,9 @@ class App:
 
         def atualizar_resumo(*_args):
             periodo = periodo_map.get(periodo_var.get().strip(), "")
+            if periodo in PERIODOS_INTERVALO_SUBSTITUICAO and minuto_var.get().strip() != "0":
+                minuto_var.set("0")
+                return
             minuto = _normalizar_minuto_partida(minuto_var.get())
             titular, reserva = self._calcular_resumo_minutos_substituicao(minuto, periodo)
             resumo_var.set(f"Titular: {titular} min | Reserva: {reserva} min")
@@ -6002,6 +6080,8 @@ class App:
             if periodo not in {codigo for codigo, _ in PERIODOS_SUBSTITUICAO}:
                 messagebox.showerror("Substituição", "Selecione o período da substituição.", parent=top)
                 return
+            if periodo in PERIODOS_INTERVALO_SUBSTITUICAO and minuto is None:
+                minuto = 0
             if minuto is None:
                 messagebox.showerror("Substituição", "Informe um minuto válido.", parent=top)
                 return
@@ -6327,7 +6407,25 @@ class App:
     def _coletar_escalacao_partida(self):
         return self._normalizar_escalacao_partida(getattr(self, "escalacao_partida", self._escalacao_partida_base()))
 
-    def _validar_escalacao_partida(self, escalacao):
+    def _nomes_presentes_na_escalacao(self, escalacao):
+        nomes = set()
+        if not isinstance(escalacao, dict):
+            return nomes
+        tit_por_pos = escalacao.get("titulares_por_posicao", {})
+        if isinstance(tit_por_pos, dict):
+            for pos in POSICOES_ELENCO:
+                for nome in tit_por_pos.get(pos, []):
+                    nome_limpo = str(nome).strip()
+                    if nome_limpo:
+                        nomes.add(nome_limpo.casefold())
+        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+            for nome in escalacao.get(chave, []):
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    nomes.add(nome_limpo.casefold())
+        return nomes
+
+    def _validar_escalacao_partida(self, escalacao, nomes_elenco_obrigatorios=None):
         titulares = sum(len(escalacao["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
         goleiros_titulares = len(escalacao["titulares_por_posicao"].get("Goleiro", []))
         reservas = len(escalacao.get("reservas", []))
@@ -6338,30 +6436,30 @@ class App:
         if reservas < 4:
             return False, "A escalação precisa ter pelo menos 4 reservas."
 
-        nomes_elenco = {
-            str(j.get("nome", "")).strip().casefold()
-            for j in self.elenco_atual.get("jogadores", [])
-            if (
-                isinstance(j, dict)
-                and str(j.get("nome", "")).strip()
-                and _normalizar_condicao_elenco(j.get("condicao")) != "Emprestado"
-            )
-        }
-        nomes_escalados = set()
-        for pos in POSICOES_ELENCO:
-            for nome in escalacao["titulares_por_posicao"].get(pos, []):
-                nome_limpo = str(nome).strip()
-                if nome_limpo:
-                    nomes_escalados.add(nome_limpo.casefold())
-        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
-            for nome in escalacao.get(chave, []):
-                nome_limpo = str(nome).strip()
-                if nome_limpo:
-                    nomes_escalados.add(nome_limpo.casefold())
+        usando_elenco_atual = nomes_elenco_obrigatorios is None
+        if usando_elenco_atual:
+            nomes_elenco = {
+                str(j.get("nome", "")).strip().casefold()
+                for j in self.elenco_atual.get("jogadores", [])
+                if (
+                    isinstance(j, dict)
+                    and str(j.get("nome", "")).strip()
+                    and _normalizar_condicao_elenco(j.get("condicao")) != "Emprestado"
+                )
+            }
+        else:
+            nomes_elenco = {
+                str(nome).strip().casefold()
+                for nome in nomes_elenco_obrigatorios
+                if str(nome).strip()
+            }
+        nomes_escalados = self._nomes_presentes_na_escalacao(escalacao)
 
         faltando = sorted(nomes_elenco - nomes_escalados)
         if faltando:
-            return False, "Todos os jogadores do elenco (exceto emprestados) precisam estar em alguma lista da escalação."
+            if usando_elenco_atual:
+                return False, "Todos os jogadores do elenco atual (exceto emprestados) precisam estar em alguma lista da escalação."
+            return False, "Todos os jogadores do elenco-base da partida precisam estar em alguma lista da escalação."
         return True, ""
 
     def _carregar_escalacao_partida(self, escalacao):
@@ -6558,8 +6656,8 @@ class App:
         card.pack(fill="both", expand=True)
         card.columnconfigure(0, weight=1)
 
-        periodo_map = {label: codigo for codigo, label in PERIODOS_SUBSTITUICAO}
-        periodo_map_inv = {codigo: label for codigo, label in PERIODOS_SUBSTITUICAO}
+        periodo_map = {label: codigo for codigo, label in PERIODOS_EVENTO}
+        periodo_map_inv = {codigo: label for codigo, label in PERIODOS_EVENTO}
         minuto_var = tk.StringVar(value=str(minuto_inicial or ""))
         periodo_var = tk.StringVar(value=periodo_map_inv.get(periodo_inicial, ""))
 
@@ -6599,7 +6697,7 @@ class App:
         combo_periodo = ttk.Combobox(
             linha_tempo,
             textvariable=periodo_var,
-            values=[label for _codigo, label in PERIODOS_SUBSTITUICAO],
+            values=[label for _codigo, label in PERIODOS_EVENTO],
             state="readonly",
             width=28,
         )
@@ -6800,7 +6898,15 @@ class App:
             escalacao_partida = {}
             escalacao_ok, escalacao_msg = True, ""
         else:
-            escalacao_ok, escalacao_msg = self._validar_escalacao_partida(escalacao_partida)
+            nomes_base_edicao = (
+                getattr(self, "_elenco_edicao_partida_cf", None)
+                if self.editing_index is not None
+                else None
+            )
+            escalacao_ok, escalacao_msg = self._validar_escalacao_partida(
+                escalacao_partida,
+                nomes_elenco_obrigatorios=nomes_base_edicao,
+            )
 
         if not (data and adversario and placar_vasco and placar_adv):
             messagebox.showerror("Erro", "Preencha apenas os campos obrigatórios: data, adversário e placar.")
@@ -7014,14 +7120,964 @@ class App:
             self._ajustar_jogos_pelo_vasco_jogadores_historico(set(), participantes_depois)
             msg = "Partida registrada com sucesso!"
 
-        self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
+        if self.editing_index is None:
+            self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
         self._aplicar_suspensoes_pendentes_no_elenco()
         self._limpar_formulario()
         self._atualizar_abas()
         self.notebook.select(self.frame_temporadas)
 
+    def _abrir_importador_jogo_json(self):
+        top = tk.Toplevel(self.root)
+        top.title("Importar jogo por JSON")
+        top.transient(self.root)
+        top.grab_set()
+        top.lift()
+        top.focus_force()
+        top.geometry("900x620")
+        top.configure(bg=self.colors["bg"])
+
+        frame = ttk.Frame(top, padding=12)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+
+        status_var = tk.StringVar(value="Cole um objeto de jogo ou uma lista de jogos.")
+        ttk.Label(frame, textvariable=status_var).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        texto = tk.Text(
+            frame,
+            wrap="none",
+            bg=self.colors["entry_bg"],
+            fg=self.colors["entry_fg"],
+            insertbackground=self.colors["fg"],
+        )
+        texto.grid(row=1, column=0, sticky="nsew")
+        self._forcar_cursor_visivel(texto)
+
+        scroll_y = ttk.Scrollbar(frame, orient="vertical", command=texto.yview)
+        scroll_y.grid(row=1, column=1, sticky="ns")
+        texto.configure(yscrollcommand=scroll_y.set)
+
+        botoes = ttk.Frame(frame)
+        botoes.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+
+        def carregar_arquivo():
+            caminho = filedialog.askopenfilename(
+                title="Selecionar JSON de jogo",
+                filetypes=(("Arquivos JSON", "*.json"), ("Todos os arquivos", "*.*")),
+                parent=top,
+            )
+            if not caminho:
+                return
+            try:
+                with open(caminho, "r", encoding="utf-8") as f:
+                    conteudo = f.read()
+            except Exception as exc:
+                messagebox.showerror("Erro", f"Não foi possível ler o arquivo:\n{exc}", parent=top)
+                return
+            texto.delete("1.0", "end")
+            texto.insert("1.0", conteudo)
+            status_var.set(os.path.basename(caminho))
+
+        def importar():
+            if self._importar_json_jogos_texto(texto.get("1.0", "end"), parent=top):
+                top.destroy()
+
+        ttk.Button(botoes, text="Carregar Arquivo", command=carregar_arquivo).pack(side="left")
+        ttk.Button(botoes, text="Importar", command=importar).pack(side="right", padx=(8, 0))
+        ttk.Button(botoes, text="Cancelar", command=top.destroy).pack(side="right")
+        top.bind("<Escape>", lambda _e: top.destroy())
+        texto.focus_set()
+
+    def _importar_json_jogos_texto(self, texto_json: str, parent=None) -> bool:
+        texto_json = str(texto_json or "").strip()
+        if not texto_json:
+            messagebox.showerror("Importar JSON", "Cole o JSON do jogo antes de importar.", parent=parent)
+            return False
+        try:
+            payload = json.loads(texto_json)
+        except json.JSONDecodeError as exc:
+            messagebox.showerror("Importar JSON", f"JSON inválido: {exc}", parent=parent)
+            return False
+
+        try:
+            jogos_importados = self._normalizar_payload_jogos_importacao(payload)
+        except ValueError as exc:
+            messagebox.showerror("Importar JSON", str(exc), parent=parent)
+            return False
+
+        if not jogos_importados:
+            messagebox.showerror("Importar JSON", "Nenhum jogo válido encontrado no JSON.", parent=parent)
+            return False
+
+        duplicados = self._jogos_importados_possivelmente_duplicados(jogos_importados)
+        if duplicados:
+            previa = "\n".join(duplicados[:5])
+            sufixo = "" if len(duplicados) <= 5 else f"\n... e mais {len(duplicados) - 5}."
+            if not messagebox.askyesno(
+                "Possíveis duplicados",
+                f"Já existe jogo com mesma data, adversário e competição:\n{previa}{sufixo}\n\nImportar mesmo assim?",
+                parent=parent,
+            ):
+                return False
+
+        if len(jogos_importados) > 1:
+            if not messagebox.askyesno(
+                "Confirmar importação",
+                f"Importar {len(jogos_importados)} jogos?",
+                parent=parent,
+            ):
+                return False
+
+        self._salvar_jogos_importados(jogos_importados)
+        qtd = len(jogos_importados)
+        messagebox.showinfo(
+            "Importação concluída",
+            f"{qtd} jogo{'s' if qtd != 1 else ''} importado{'s' if qtd != 1 else ''} com sucesso.",
+            parent=parent,
+        )
+        return True
+
+    def _normalizar_payload_jogos_importacao(self, payload):
+        if isinstance(payload, dict):
+            itens = [payload]
+        elif isinstance(payload, list):
+            itens = payload
+        else:
+            raise ValueError("O JSON deve ser um objeto de jogo ou uma lista de jogos.")
+
+        self._atualizar_elenco_disponivel_partida()
+        jogos = []
+        for idx, item in enumerate(itens, start=1):
+            prefixo = f"Jogo {idx}: " if len(itens) > 1 else ""
+            jogos.append(self._normalizar_jogo_importado(item, prefixo))
+        return jogos
+
+    def _chave_fuzzy_importacao(self, valor, *, tipo="geral"):
+        texto = str(valor or "").strip()
+        if not texto:
+            return "", set()
+        texto = unicodedata.normalize("NFKD", texto)
+        texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+        texto = re.sub(r"[^0-9a-zA-Z]+", " ", texto).casefold()
+        tokens = [tok for tok in texto.split() if tok]
+        stopwords = {"de", "do", "da", "dos", "das", "e"}
+        if tipo == "competicao":
+            stopwords |= {
+                "betano",
+                "betnado",
+                "betnacional",
+                "pixbet",
+                "kings",
+                "superbet",
+                "sicredi",
+            }
+        tokens = [tok for tok in tokens if tok not in stopwords]
+        return " ".join(tokens), set(tokens)
+
+    def _resolver_fuzzy_importacao(self, valor, opcoes, *, tipo="geral", threshold=0.78):
+        valor_limpo = str(valor or "").strip()
+        if not valor_limpo:
+            return ""
+
+        opcoes_limpas = []
+        vistos = set()
+        for opcao in opcoes or []:
+            nome = str(opcao or "").strip()
+            chave_nome = nome.casefold()
+            if not nome or chave_nome in vistos:
+                continue
+            vistos.add(chave_nome)
+            opcoes_limpas.append(nome)
+
+        entrada_chave, entrada_tokens = self._chave_fuzzy_importacao(valor_limpo, tipo=tipo)
+        if not entrada_chave:
+            return valor_limpo
+
+        melhor = None
+        segundo_score = 0.0
+        for opcao in opcoes_limpas:
+            opcao_chave, opcao_tokens = self._chave_fuzzy_importacao(opcao, tipo=tipo)
+            if not opcao_chave:
+                continue
+            if entrada_chave == opcao_chave:
+                score = 1.0
+            else:
+                ratio = SequenceMatcher(None, entrada_chave, opcao_chave).ratio()
+                inter = entrada_tokens & opcao_tokens
+                uniao = entrada_tokens | opcao_tokens
+                jaccard = (len(inter) / len(uniao)) if uniao else 0.0
+                subset = bool(inter) and (inter == entrada_tokens or inter == opcao_tokens)
+                score = max(ratio, jaccard)
+                if subset and min(len(entrada_tokens), len(opcao_tokens)) >= 1:
+                    score = max(score, 0.92)
+            if melhor is None or score > melhor[0]:
+                segundo_score = melhor[0] if melhor else 0.0
+                melhor = (score, opcao)
+            elif score > segundo_score:
+                segundo_score = score
+
+        if not melhor:
+            return valor_limpo
+        score, nome = melhor
+        if score >= threshold and (score - segundo_score >= 0.08 or score >= 0.98):
+            return nome
+        return valor_limpo
+
+    def _opcoes_importacao_campo(self, chave_lista):
+        opcoes = list(self.listas.get(chave_lista, [])) if isinstance(self.listas, dict) else []
+        if chave_lista == "competicoes":
+            for jogo in carregar_dados_jogos():
+                nome = str(jogo.get("competicao", "") or "").strip()
+                if nome:
+                    opcoes.append(nome)
+        elif chave_lista == "estadios":
+            for jogo in carregar_dados_jogos():
+                nome = str(jogo.get("estadio", "") or "").strip()
+                if nome:
+                    opcoes.append(nome)
+        elif chave_lista == "tecnicos":
+            for jogo in carregar_dados_jogos():
+                nome = str(jogo.get("tecnico", "") or "").strip()
+                if nome:
+                    opcoes.append(nome)
+        return opcoes
+
+    def _resolver_competicao_importacao(self, valor):
+        resolvido = self._resolver_fuzzy_importacao(
+            valor,
+            self._opcoes_importacao_campo("competicoes"),
+            tipo="competicao",
+            threshold=0.72,
+        )
+        chave, tokens = self._chave_fuzzy_importacao(resolvido, tipo="competicao")
+        if tokens == {"copa", "brasil"}:
+            return "Copa do Brasil"
+        return resolvido
+
+    def _opcoes_jogadores_importacao(self):
+        opcoes = []
+        for jogador in getattr(self, "elenco_atual", {}).get("jogadores", []):
+            if isinstance(jogador, dict):
+                nome = str(jogador.get("nome", "") or "").strip()
+                if nome:
+                    opcoes.append(nome)
+        opcoes.extend(self.listas.get("jogadores_vasco", []))
+        historico = getattr(self, "jogadores_historico", {})
+        for jogador in historico.get("jogadores", []) if isinstance(historico, dict) else []:
+            if isinstance(jogador, dict):
+                nome = str(jogador.get("nome", "") or "").strip()
+                if nome:
+                    opcoes.append(nome)
+        for jogo in carregar_dados_jogos():
+            esc = jogo.get("escalacao_partida", jogo.get("escalacao", {}))
+            if isinstance(esc, dict):
+                tit_por_pos = esc.get("titulares_por_posicao", {})
+                if isinstance(tit_por_pos, dict):
+                    for pos in POSICOES_ELENCO:
+                        opcoes.extend(tit_por_pos.get(pos, []))
+                for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+                    opcoes.extend(esc.get(chave, []))
+            for evento in _expandir_eventos_gol(jogo.get("gols_vasco", [])):
+                opcoes.append(evento.get("nome", ""))
+            for evento in _expandir_eventos_cartao(jogo.get("cartoes_amarelos_vasco", [])):
+                opcoes.append(evento.get("nome", ""))
+            for evento in _expandir_eventos_cartao(jogo.get("cartoes_vermelhos_vasco", [])):
+                opcoes.append(evento.get("nome", ""))
+        return opcoes
+
+    def _resolver_jogador_importacao(self, nome):
+        opcoes_elenco = [
+            str(jogador.get("nome", "") or "").strip()
+            for jogador in getattr(self, "elenco_atual", {}).get("jogadores", [])
+            if isinstance(jogador, dict) and str(jogador.get("nome", "") or "").strip()
+        ]
+        resolvido_elenco = self._resolver_fuzzy_importacao(
+            nome,
+            opcoes_elenco,
+            tipo="pessoa",
+            threshold=0.72,
+        )
+        if str(resolvido_elenco or "").strip() and str(resolvido_elenco).strip() != str(nome or "").strip():
+            return resolvido_elenco
+        return self._resolver_fuzzy_importacao(
+            nome,
+            self._opcoes_jogadores_importacao(),
+            tipo="pessoa",
+            threshold=0.72,
+        )
+
+    def _resolver_jogador_contra_importacao(self, nome):
+        opcoes = list(self.listas.get("jogadores_contra", []))
+        for jogo in carregar_dados_jogos():
+            for evento in _expandir_eventos_gol(jogo.get("gols_adversario", [])):
+                opcoes.append(evento.get("nome", ""))
+        return self._resolver_fuzzy_importacao(nome, opcoes, tipo="pessoa", threshold=0.72)
+
+    def _normalizar_arbitragem_importada(self, dados):
+        arbitragem = _normalizar_arbitragem(dados)
+        return {
+            "arbitro": self._resolver_fuzzy_importacao(
+                arbitragem.get("arbitro", ""),
+                self.listas.get("arbitros", []),
+                tipo="pessoa",
+                threshold=0.76,
+            ),
+            "auxiliares": [
+                self._resolver_fuzzy_importacao(
+                    auxiliar,
+                    self.listas.get("auxiliares", []),
+                    tipo="pessoa",
+                    threshold=0.76,
+                )
+                for auxiliar in arbitragem.get("auxiliares", [])
+            ],
+            "var": self._resolver_fuzzy_importacao(
+                arbitragem.get("var", ""),
+                self.listas.get("vars", []),
+                tipo="pessoa",
+                threshold=0.76,
+            ),
+        }
+
+    def _normalizar_nomes_importados_lista(self, nomes):
+        if not isinstance(nomes, list):
+            return nomes
+        return [self._resolver_jogador_importacao(nome) for nome in nomes]
+
+    def _posicao_historico_jogador_importacao(self, nome):
+        alvo = _chave_nome_jogador(nome)
+        if not alvo:
+            return ""
+        historico = getattr(self, "jogadores_historico", {})
+        for jogador in historico.get("jogadores", []) if isinstance(historico, dict) else []:
+            if not isinstance(jogador, dict):
+                continue
+            if _chave_nome_jogador(jogador.get("nome", "")) != alvo:
+                continue
+            posicao = str(jogador.get("posicao", "") or "").strip()
+            if posicao in POSICOES_ELENCO:
+                return posicao
+        return ""
+
+    def _coletar_jogadores_escalacao_importada_para_elenco(self, escalacao, data_jogo=""):
+        if not isinstance(escalacao, dict) or not escalacao:
+            return []
+
+        candidatos = {}
+        titulares_pos_por_cf = {}
+
+        def registrar(nome, posicao, condicao):
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                return
+            chave = nome_limpo.casefold()
+            posicao_norm = _normalizar_posicao_elenco(
+                posicao or self._posicao_historico_jogador_importacao(nome_limpo)
+            )
+            novo = {
+                "nome": nome_limpo,
+                "posicao": posicao_norm,
+                "condicao": _normalizar_condicao_elenco(condicao),
+                "capitao": False,
+                "data_registro": str(data_jogo or "").strip(),
+                "data_entrada": str(data_jogo or "").strip(),
+            }
+            atual = candidatos.get(chave)
+            if not atual:
+                candidatos[chave] = novo
+                return
+            if atual.get("posicao") == "Meio-Campista" and posicao_norm != "Meio-Campista":
+                atual["posicao"] = posicao_norm
+            atual["condicao"] = novo["condicao"]
+
+        titulares_por_posicao = escalacao.get("titulares_por_posicao", {})
+        if isinstance(titulares_por_posicao, dict):
+            for posicao in POSICOES_ELENCO:
+                for nome in titulares_por_posicao.get(posicao, []):
+                    nome_limpo = str(nome or "").strip()
+                    if not nome_limpo:
+                        continue
+                    titulares_pos_por_cf[nome_limpo.casefold()] = posicao
+                    registrar(nome_limpo, posicao, "Titular")
+
+        posicao_reserva_por_cf = {}
+        for sub in escalacao.get("substituicoes", []) if isinstance(escalacao.get("substituicoes", []), list) else []:
+            if not isinstance(sub, dict):
+                continue
+            entrou = str(sub.get("jogador_entrou", "") or "").strip()
+            saiu = str(sub.get("jogador_saiu", "") or "").strip()
+            posicao_saiu = titulares_pos_por_cf.get(saiu.casefold())
+            if entrou and posicao_saiu:
+                posicao_reserva_por_cf.setdefault(entrou.casefold(), posicao_saiu)
+
+        for nome in escalacao.get("reservas", []) if isinstance(escalacao.get("reservas", []), list) else []:
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                continue
+            posicao = self._posicao_historico_jogador_importacao(nome_limpo) or posicao_reserva_por_cf.get(nome_limpo.casefold(), "")
+            registrar(nome_limpo, posicao, "Reserva")
+
+        for chave, condicao in (
+            ("nao_relacionados", "Não Relacionado"),
+            ("lesionados", "Lesionado"),
+            ("suspensos", "Suspenso"),
+            ("servindo_selecao", "Servindo a seleção"),
+        ):
+            for nome in escalacao.get(chave, []) if isinstance(escalacao.get(chave, []), list) else []:
+                nome_limpo = str(nome or "").strip()
+                if not nome_limpo:
+                    continue
+                registrar(nome_limpo, self._posicao_historico_jogador_importacao(nome_limpo), condicao)
+
+        return list(candidatos.values())
+
+    def _garantir_jogadores_importados_no_elenco_atual(self, jogos_importados):
+        if not isinstance(jogos_importados, list) or not jogos_importados:
+            return
+
+        atuais_cf = {
+            str(jogador.get("nome", "") or "").strip().casefold()
+            for jogador in self.elenco_atual.get("jogadores", [])
+            if isinstance(jogador, dict) and str(jogador.get("nome", "") or "").strip()
+        }
+        candidatos = {}
+        jogos_ordenados = sorted(
+            [jogo for jogo in jogos_importados if isinstance(jogo, dict)],
+            key=lambda jogo: _parse_data_ptbr_safe(str(jogo.get("data", "") or "").strip()) or datetime.max,
+        )
+
+        for jogo in jogos_ordenados:
+            for jogador in self._coletar_jogadores_escalacao_importada_para_elenco(
+                jogo.get("escalacao_partida", {}),
+                jogo.get("data", ""),
+            ):
+                nome = str(jogador.get("nome", "") or "").strip()
+                if not nome:
+                    continue
+                chave = nome.casefold()
+                if chave in atuais_cf:
+                    continue
+                atual = candidatos.get(chave)
+                if not atual:
+                    candidatos[chave] = jogador
+                    continue
+                if atual.get("posicao") == "Meio-Campista" and jogador.get("posicao") != "Meio-Campista":
+                    atual["posicao"] = jogador["posicao"]
+                atual["condicao"] = jogador["condicao"]
+
+        if not candidatos:
+            return
+
+        jogadores_novos = []
+        for jogador in candidatos.values():
+            jogadores_novos.append({
+                "nome": jogador["nome"],
+                "posicao": _normalizar_posicao_elenco(jogador.get("posicao")),
+                "condicao": _normalizar_condicao_elenco(jogador.get("condicao")),
+                "capitao": False,
+                "data_registro": str(jogador.get("data_registro", "") or "").strip(),
+                "data_entrada": str(jogador.get("data_entrada", "") or "").strip(),
+            })
+
+        self.elenco_atual.setdefault("jogadores", []).extend(
+            {
+                "nome": jogador["nome"],
+                "posicao": jogador["posicao"],
+                "condicao": jogador["condicao"],
+                "capitao": False,
+            }
+            for jogador in jogadores_novos
+        )
+        salvar_elenco_atual(self.elenco_atual)
+        self.elenco_atual = carregar_elenco_atual()
+        self._adicionar_jogadores_historico(jogadores_novos)
+        self._atualizar_elenco_disponivel_partida()
+        if hasattr(self, "_render_elenco_atual"):
+            self._render_elenco_atual()
+        if hasattr(self, "_render_aba_jogadores_historico"):
+            self._render_aba_jogadores_historico()
+
+    def _canonicalizar_escalacao_importada(self, bruto):
+        if not isinstance(bruto, dict):
+            return bruto
+        out = dict(bruto)
+        tit = out.get("titulares_por_posicao")
+        if isinstance(tit, dict):
+            tit_norm = {}
+            for pos in POSICOES_ELENCO:
+                nomes = tit.get(pos, [])
+                tit_norm[pos] = self._normalizar_nomes_importados_lista(nomes) if isinstance(nomes, list) else nomes
+            out["titulares_por_posicao"] = tit_norm
+        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+            nomes = out.get(chave)
+            if isinstance(nomes, list):
+                out[chave] = self._normalizar_nomes_importados_lista(nomes)
+        reservas_cf_para_nome = {
+            str(nome).strip().casefold(): str(nome).strip()
+            for nome in out.get("reservas", [])
+            if str(nome).strip()
+        }
+        titulares_cf_para_nome = {}
+        tit = out.get("titulares_por_posicao", {})
+        if isinstance(tit, dict):
+            for pos in POSICOES_ELENCO:
+                for nome in tit.get(pos, []):
+                    nome_limpo = str(nome).strip()
+                    if nome_limpo:
+                        titulares_cf_para_nome[nome_limpo.casefold()] = nome_limpo
+        subs = out.get("substituicoes")
+        if isinstance(subs, list):
+            subs_norm = []
+            for sub in subs:
+                if not isinstance(sub, dict):
+                    subs_norm.append(sub)
+                    continue
+                sub_norm = dict(sub)
+                entrou = self._resolver_jogador_importacao(sub_norm.get("jogador_entrou", ""))
+                saiu = self._resolver_jogador_importacao(sub_norm.get("jogador_saiu", ""))
+                sub_norm["jogador_entrou"] = reservas_cf_para_nome.get(str(entrou).strip().casefold(), entrou)
+                sub_norm["jogador_saiu"] = titulares_cf_para_nome.get(str(saiu).strip().casefold(), saiu)
+                subs_norm.append(sub_norm)
+            out["substituicoes"] = subs_norm
+        entraram = out.get("reservas_que_entraram")
+        if isinstance(entraram, list):
+            entraram_norm = []
+            for nome in entraram:
+                nome_resolvido = self._resolver_jogador_importacao(nome)
+                entraram_norm.append(
+                    reservas_cf_para_nome.get(str(nome_resolvido).strip().casefold(), nome_resolvido)
+                )
+            out["reservas_que_entraram"] = entraram_norm
+        return out
+
+    def _normalizar_jogo_importado(self, item, prefixo=""):
+        if not isinstance(item, dict):
+            raise ValueError(f"{prefixo}cada jogo precisa ser um objeto JSON.")
+
+        data = str(item.get("data", "") or "").strip()
+        adversario = self._resolver_fuzzy_importacao(
+            item.get("adversario", ""),
+            self._opcoes_clubes_adversarios(),
+            tipo="geral",
+            threshold=0.76,
+        )
+        adversario = self._resolver_nome_clube_canonico(adversario)
+        competicao = self._resolver_competicao_importacao(item.get("competicao", ""))
+        local = str(item.get("local", "casa") or "casa").strip().casefold()
+        estadio = self._resolver_fuzzy_importacao(
+            item.get("estadio", ""),
+            self._opcoes_importacao_campo("estadios"),
+            tipo="geral",
+            threshold=0.76,
+        )
+        horario = self._normalizar_horario_importado(item.get("horario", item.get("hora", "")), prefixo)
+        tecnico = self._resolver_fuzzy_importacao(
+            item.get("tecnico", ""),
+            self._opcoes_importacao_campo("tecnicos"),
+            tipo="pessoa",
+            threshold=0.76,
+        )
+        capitao = self._resolver_jogador_importacao(item.get("capitao", ""))
+        observacao = str(item.get("observacao", "") or "").strip()
+
+        if not data or not adversario:
+            raise ValueError(f"{prefixo}informe data e adversário.")
+        if not _parse_data_ptbr_safe(data):
+            raise ValueError(f"{prefixo}data inválida. Use dd/mm/aaaa.")
+        if local not in {"casa", "fora"}:
+            raise ValueError(f"{prefixo}local inválido. Use 'casa' ou 'fora'.")
+
+        placar = item.get("placar")
+        if not isinstance(placar, dict):
+            raise ValueError(f"{prefixo}informe o placar como objeto com 'vasco' e 'adversario'.")
+        placar_vasco = self._int_importado_obrigatorio(placar.get("vasco"), f"{prefixo}placar.vasco")
+        placar_adv = self._int_importado_obrigatorio(placar.get("adversario"), f"{prefixo}placar.adversario")
+        if placar_vasco < 0 or placar_adv < 0:
+            raise ValueError(f"{prefixo}placar não pode ter número negativo.")
+
+        publico_pagante = self._int_importado_opcional(item.get("publico_pagante"), f"{prefixo}publico_pagante")
+        publico_presente = self._int_importado_opcional(item.get("publico_presente"), f"{prefixo}publico_presente")
+        if publico_pagante is not None and publico_presente is not None and publico_presente < publico_pagante:
+            raise ValueError(f"{prefixo}publico_presente não pode ser menor que publico_pagante.")
+        renda = self._float_importado_opcional(item.get("renda"), f"{prefixo}renda")
+
+        posicao_tabela = None
+        if self._competicao_usa_posicao(competicao):
+            posicao_tabela = self._int_importado_opcional(item.get("posicao_tabela"), f"{prefixo}posicao_tabela")
+
+        escalacao_partida = self._normalizar_escalacao_importada(item, prefixo)
+        titulares_cf, reservas_cf = self._chaves_titulares_reservas(escalacao_partida)
+
+        gols_vasco = self._normalizar_gols_importados(
+            item.get("gols_vasco", []),
+            "vasco",
+            adversario,
+            placar_vasco,
+            titulares_cf,
+            reservas_cf,
+            prefixo,
+        )
+        gols_adversario = self._normalizar_gols_importados(
+            item.get("gols_adversario", []),
+            "adversario",
+            adversario,
+            placar_adv,
+            titulares_cf,
+            reservas_cf,
+            prefixo,
+        )
+
+        if escalacao_partida:
+            reservas_que_entraram_cf = {
+                sub["jogador_entrou"].casefold()
+                for sub in escalacao_partida.get("substituicoes", [])
+                if isinstance(sub, dict)
+            }
+            for evento in _expandir_eventos_gol(gols_vasco):
+                nome_cf = str(evento.get("nome", "")).strip().casefold()
+                if nome_cf in reservas_cf and nome_cf not in titulares_cf:
+                    reservas_que_entraram_cf.add(nome_cf)
+            escalacao_partida["reservas_que_entraram"] = [
+                nome for nome in escalacao_partida.get("reservas", [])
+                if str(nome).strip().casefold() in reservas_que_entraram_cf
+            ]
+
+        return {
+            "data": data,
+            "adversario": adversario,
+            "competicao": competicao,
+            "local": local,
+            "estadio": estadio,
+            "horario": horario,
+            "placar": {"vasco": placar_vasco, "adversario": placar_adv},
+            "gols_vasco": gols_vasco,
+            "gols_adversario": gols_adversario,
+            "cartoes_amarelos_vasco": self._normalizar_cartoes_importados(
+                item.get("cartoes_amarelos_vasco", []),
+                f"{prefixo}cartoes_amarelos_vasco",
+            ),
+            "cartoes_vermelhos_vasco": self._normalizar_cartoes_importados(
+                item.get("cartoes_vermelhos_vasco", []),
+                f"{prefixo}cartoes_vermelhos_vasco",
+            ),
+            "observacao": observacao,
+            "capitao": capitao,
+            "publico_pagante": publico_pagante,
+            "publico_presente": publico_presente,
+            "renda": renda,
+            "tecnico": tecnico,
+            "posicao_tabela": posicao_tabela,
+            "escalacao_partida": escalacao_partida,
+            "arbitragem": self._normalizar_arbitragem_importada(item.get("arbitragem", {})),
+        }
+
+    def _normalizar_escalacao_importada(self, item, prefixo=""):
+        bruto = item.get("escalacao_partida", item.get("escalacao", {}))
+        if _escalacao_partida_vazia(bruto):
+            return {}
+        if not isinstance(bruto, dict):
+            raise ValueError(f"{prefixo}escalacao_partida precisa ser um objeto.")
+        bruto = self._canonicalizar_escalacao_importada(bruto)
+
+        escalacao_payload = dict(bruto)
+        if "reservas_que_entraram" not in escalacao_payload:
+            escalacao_payload["reservas_que_entraram"] = []
+        elif not isinstance(escalacao_payload.get("reservas_que_entraram"), list):
+            raise ValueError(f"{prefixo}reservas_que_entraram precisa ser uma lista.")
+
+        substituicoes_brutas = escalacao_payload.get("substituicoes", [])
+        if substituicoes_brutas in (None, ""):
+            substituicoes_brutas = []
+            escalacao_payload["substituicoes"] = []
+        if not isinstance(substituicoes_brutas, list):
+            raise ValueError(f"{prefixo}substituicoes precisa ser uma lista.")
+        for sub_idx, sub in enumerate(substituicoes_brutas, start=1):
+            if not isinstance(sub, dict):
+                raise ValueError(f"{prefixo}substituição {sub_idx} precisa ser um objeto.")
+            if not _normalizar_substituicao_partida(sub):
+                raise ValueError(
+                    f"{prefixo}substituição {sub_idx} inválida. Informe jogador_entrou, "
+                    "jogador_saiu e periodo. Para intervalo, use INT ou INTP; minuto pode ser 0 ou omitido."
+                )
+
+        escalacao = self._normalizar_escalacao_partida(escalacao_payload)
+        if len(substituicoes_brutas) != len(escalacao.get("substituicoes", [])):
+            raise ValueError(
+                f"{prefixo}há substituição duplicada, jogador que entrou fora da lista de reservas "
+                "ou jogador substituído repetido."
+            )
+        escalacao = self._completar_escalacao_importada_com_elenco(escalacao)
+
+        ok, msg = self._validar_escalacao_partida(escalacao)
+        if not ok:
+            raise ValueError(f"{prefixo}{msg}")
+        return escalacao
+
+    def _completar_escalacao_importada_com_elenco(self, escalacao):
+        if not isinstance(escalacao, dict):
+            return escalacao
+
+        mencionados = set()
+        tit_por_pos = escalacao.get("titulares_por_posicao", {})
+        if isinstance(tit_por_pos, dict):
+            for pos in POSICOES_ELENCO:
+                for nome in tit_por_pos.get(pos, []):
+                    nome_limpo = str(nome).strip()
+                    if nome_limpo:
+                        mencionados.add(nome_limpo.casefold())
+        for chave, _titulo in CATEGORIAS_ESCALACAO_EXTRAS:
+            for nome in escalacao.get(chave, []):
+                nome_limpo = str(nome).strip()
+                if nome_limpo:
+                    mencionados.add(nome_limpo.casefold())
+
+        destino_por_condicao = {
+            "Titular": "nao_relacionados",
+            "Reserva": "nao_relacionados",
+            "Não Relacionado": "nao_relacionados",
+            "Lesionado": "lesionados",
+            "Suspenso": "suspensos",
+            "Servindo a seleção": "servindo_selecao",
+        }
+        for jogador in self.elenco_atual.get("jogadores", []):
+            if not isinstance(jogador, dict):
+                continue
+            nome = str(jogador.get("nome", "")).strip()
+            if not nome:
+                continue
+            condicao = _normalizar_condicao_elenco(jogador.get("condicao"))
+            if condicao == "Emprestado" or nome.casefold() in mencionados:
+                continue
+            destino = destino_por_condicao.get(condicao, "nao_relacionados")
+            escalacao.setdefault(destino, []).append(nome)
+            mencionados.add(nome.casefold())
+        return self._normalizar_escalacao_partida(escalacao)
+
+    def _normalizar_gols_importados(self, dados, lado, adversario, limite, titulares_cf, reservas_cf, prefixo=""):
+        if dados in (None, ""):
+            dados = []
+        if not isinstance(dados, list):
+            raise ValueError(f"{prefixo}{'gols_vasco' if lado == 'vasco' else 'gols_adversario'} precisa ser uma lista.")
+        eventos = _expandir_eventos_gol(dados)
+        if len(eventos) > limite:
+            label = "Vasco" if lado == "vasco" else "adversário"
+            raise ValueError(f"{prefixo}há mais autores de gols do {label} do que gols no placar.")
+
+        normalizados = []
+        for idx, evento in enumerate(eventos, start=1):
+            if lado == "vasco":
+                nome = self._resolver_jogador_importacao(evento.get("nome", ""))
+            else:
+                nome = self._resolver_jogador_contra_importacao(evento.get("nome", ""))
+            if not nome:
+                raise ValueError(f"{prefixo}gol {idx} está sem nome do jogador.")
+            minuto, periodo = self._normalizar_tempo_evento_importado(evento, f"{prefixo}gol {idx}")
+            item = {
+                "nome": nome,
+                "minuto": minuto,
+                "periodo": periodo,
+            }
+            if lado == "vasco":
+                nome_cf = nome.casefold()
+                if titulares_cf or reservas_cf:
+                    item["saiu_do_banco"] = nome_cf in reservas_cf and nome_cf not in titulares_cf
+                else:
+                    item["saiu_do_banco"] = bool(evento.get("saiu_do_banco", False))
+            else:
+                item["clube"] = str(evento.get("clube", "") or "").strip() or adversario
+            normalizados.append(item)
+        return _agrupar_eventos_gol(normalizados)
+
+    def _normalizar_tempo_evento_importado(self, evento, label):
+        minuto_raw = evento.get("minuto")
+        periodo = _normalizar_periodo_partida(evento.get("periodo"), substituicao=False)
+        minuto = self._minuto_importado_opcional(minuto_raw, label)
+        if minuto is None:
+            if str(evento.get("periodo", "") or "").strip():
+                raise ValueError(f"{label}: período informado sem minuto.")
+            return None, ""
+        if periodo not in {codigo for codigo, _label in PERIODOS_EVENTO}:
+            raise ValueError(f"{label}: periodo inválido. Use 1T, 2T, 1P ou 2P.")
+        if minuto > _limite_minuto_por_periodo(periodo):
+            raise ValueError(f"{label}: o periodo {periodo} aceita no máximo {_limite_minuto_por_periodo(periodo)}.")
+        return minuto, periodo
+
+    def _normalizar_cartoes_importados(self, dados, label):
+        if dados in (None, ""):
+            return []
+        if not isinstance(dados, list):
+            raise ValueError(f"{label} precisa ser uma lista.")
+        eventos = []
+        for evento in _expandir_eventos_cartao(dados):
+            nome = self._resolver_jogador_importacao(evento.get("nome", ""))
+            if nome:
+                eventos.append({"nome": nome})
+        return _agrupar_eventos_cartao(eventos)
+
+    def _normalizar_horario_importado(self, valor, prefixo=""):
+        horario = str(valor or "").strip()
+        if not horario:
+            return ""
+        if not re.match(r"^\d{2}:\d{2}$", horario):
+            raise ValueError(f"{prefixo}horário inválido. Use HH:MM.")
+        horas, minutos = [int(parte) for parte in horario.split(":", 1)]
+        if horas > 23 or minutos > 59:
+            raise ValueError(f"{prefixo}horário inválido. Use um valor entre 00:00 e 23:59.")
+        return horario
+
+    def _int_importado_obrigatorio(self, valor, campo):
+        if valor in (None, ""):
+            raise ValueError(f"{campo} é obrigatório.")
+        return self._int_importado_opcional(valor, campo)
+
+    def _int_importado_opcional(self, valor, campo):
+        if valor in (None, ""):
+            return None
+        if isinstance(valor, bool):
+            raise ValueError(f"{campo} precisa ser um número inteiro.")
+        txt = str(valor).strip()
+        if not re.match(r"^-?\d+$", txt):
+            raise ValueError(f"{campo} precisa ser um número inteiro.")
+        numero = int(txt)
+        if numero < 0:
+            raise ValueError(f"{campo} não pode ser negativo.")
+        return numero
+
+    def _minuto_importado_opcional(self, valor, campo):
+        if valor in (None, ""):
+            return None
+        txt = str(valor).strip().replace("'", "")
+        if not re.match(r"^\d+$", txt):
+            raise ValueError(f"{campo}: minuto precisa ser um inteiro entre 0 e 120.")
+        minuto = int(txt)
+        if minuto < 0 or minuto > 120:
+            raise ValueError(f"{campo}: minuto precisa estar entre 0 e 120.")
+        return minuto
+
+    def _float_importado_opcional(self, valor, campo):
+        if valor in (None, ""):
+            return None
+        if isinstance(valor, bool):
+            raise ValueError(f"{campo} precisa ser um número.")
+        txt = str(valor).strip().replace("R$", "").replace(" ", "")
+        if "," in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        try:
+            numero = float(txt)
+        except Exception:
+            raise ValueError(f"{campo} precisa ser um número válido.")
+        if numero < 0:
+            raise ValueError(f"{campo} não pode ser negativo.")
+        return numero
+
+    def _chaves_titulares_reservas(self, escalacao_partida):
+        titulares_cf = set()
+        reservas_cf = set()
+        if not isinstance(escalacao_partida, dict):
+            return titulares_cf, reservas_cf
+        tit_por_pos = escalacao_partida.get("titulares_por_posicao", {})
+        if isinstance(tit_por_pos, dict):
+            for pos in POSICOES_ELENCO:
+                for nome in tit_por_pos.get(pos, []):
+                    nome_limpo = str(nome).strip()
+                    if nome_limpo:
+                        titulares_cf.add(nome_limpo.casefold())
+        for nome in escalacao_partida.get("reservas", []):
+            nome_limpo = str(nome).strip()
+            if nome_limpo:
+                reservas_cf.add(nome_limpo.casefold())
+        return titulares_cf, reservas_cf
+
+    def _jogos_importados_possivelmente_duplicados(self, jogos_importados):
+        existentes = carregar_dados_jogos()
+        chaves = {
+            (
+                str(jogo.get("data", "") or "").strip(),
+                str(jogo.get("adversario", "") or "").strip().casefold(),
+                str(jogo.get("competicao", "") or "").strip().casefold(),
+            )
+            for jogo in existentes
+            if isinstance(jogo, dict)
+        }
+        duplicados = []
+        for jogo in jogos_importados:
+            chave = (
+                str(jogo.get("data", "") or "").strip(),
+                str(jogo.get("adversario", "") or "").strip().casefold(),
+                str(jogo.get("competicao", "") or "").strip().casefold(),
+            )
+            if chave in chaves:
+                duplicados.append(
+                    f"{jogo.get('data', '')} - Vasco x {jogo.get('adversario', '')} ({jogo.get('competicao', '')})"
+                )
+        return duplicados
+
+    def _salvar_jogos_importados(self, jogos_importados):
+        jogos = carregar_dados_jogos()
+        self._garantir_jogadores_importados_no_elenco_atual(jogos_importados)
+        for jogo in jogos_importados:
+            jogo["adversario"] = self._registrar_clube_adversario(jogo.get("adversario", ""))
+            self._registrar_listas_jogo_importado(jogo)
+            jogos.append(jogo)
+
+        salvar_lista_jogos(jogos)
+        salvar_listas(_ordenar_listas(self.listas))
+        self._atualizar_combo_tecnicos()
+        self._atualizar_combos_arbitragem()
+        if hasattr(self, "competicao_entry"):
+            self.competicao_entry["values"] = self.listas.get("competicoes", [])
+        if hasattr(self, "entry_gol_contra"):
+            self.entry_gol_contra["values"] = self.listas.get("jogadores_contra", [])
+        self._atualizar_opcoes_gol_vasco()
+
+        for jogo in jogos_importados:
+            self._ajustar_jogos_pelo_vasco_jogadores_historico(set(), _jogadores_que_participaram_do_jogo(jogo))
+
+        jogos_com_escalacao = [
+            jogo for jogo in jogos_importados
+            if isinstance(jogo.get("escalacao_partida"), dict) and jogo.get("escalacao_partida")
+        ]
+        if jogos_com_escalacao:
+            ultimo = max(
+                jogos_com_escalacao,
+                key=lambda jogo: _parse_data_ptbr_safe(str(jogo.get("data", "")).strip()) or datetime.min,
+            )
+            self._atualizar_condicoes_elenco_por_escalacao(ultimo.get("escalacao_partida", {}))
+        self._aplicar_suspensoes_pendentes_no_elenco(jogos)
+
+        self._limpar_formulario()
+        self._atualizar_abas()
+        self.notebook.select(self.frame_temporadas)
+
+    def _registrar_listas_jogo_importado(self, jogo):
+        def add_unico(chave, nome):
+            nome_limpo = str(nome or "").strip()
+            if not nome_limpo:
+                return
+            lista = self.listas.setdefault(chave, [])
+            if not any(str(item).casefold() == nome_limpo.casefold() for item in lista):
+                lista.append(nome_limpo)
+
+        add_unico("competicoes", jogo.get("competicao", ""))
+        add_unico("tecnicos", jogo.get("tecnico", ""))
+        add_unico("estadios", jogo.get("estadio", ""))
+
+        arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+        add_unico("arbitros", arbitragem.get("arbitro", ""))
+        for auxiliar in arbitragem.get("auxiliares", []):
+            add_unico("auxiliares", auxiliar)
+        add_unico("vars", arbitragem.get("var", ""))
+
+        for evento in _expandir_eventos_gol(jogo.get("gols_vasco", [])):
+            add_unico("jogadores_vasco", evento.get("nome", ""))
+        for evento in _expandir_eventos_gol(jogo.get("gols_adversario", [])):
+            add_unico("jogadores_contra", evento.get("nome", ""))
+
     def _limpar_formulario(self):
         self.editing_index = None
+        self._elenco_edicao_partida_cf = None
         if hasattr(self, "salvar_btn_label"):
             self.salvar_btn_label.set("Salvar Partida")
         if hasattr(self, "modo_edicao_var"):
@@ -7114,6 +8170,7 @@ class App:
 
         jogo = jogos[jogo_idx]
         self.editing_index = jogo_idx
+        self._elenco_edicao_partida_cf = None
         self.notebook.select(self.frame_registro)
         adversario = jogo.get("adversario", "")
         data = jogo.get("data", "")
@@ -7171,8 +8228,10 @@ class App:
                 tem_escalacao = True
         if tem_escalacao:
             self._carregar_escalacao_partida(escalacao_salva)
+            self._elenco_edicao_partida_cf = self._nomes_presentes_na_escalacao(self.escalacao_partida)
         else:
-            self._inicializar_escalacao_partida()
+            self._carregar_escalacao_partida({})
+            self._elenco_edicao_partida_cf = set()
         if hasattr(self, "capitao_partida_var"):
             self._atualizar_opcoes_capitao_partida(preservar_valor=False)
             self.capitao_partida_var.set(str(jogo.get("capitao", "")).strip())

@@ -1,0 +1,881 @@
+# Referências para IA - Importação de Jogos do Vasco
+Gerado em: 22/04/2026 11:39
+Use este relatório como lista canônica preferencial ao montar o JSON de importação. Se a fonte trouxer nome abreviado ou com patrocinador, prefira o nome cadastrado abaixo quando for claramente o mesmo item.
+## Formatos Obrigatórios
+- `data`: `dd/mm/aaaa`, exemplo `21/04/2026`.
+- `horario`: `HH:MM`, exemplo `21:30`; se não souber, use `""`.
+- `local`: `"casa"` ou `"fora"`.
+- `placar.vasco` e `placar.adversario`: inteiros >= 0.
+- `publico_pagante` e `publico_presente`: inteiros >= 0 ou `null`.
+- `renda`: número >= 0 com ponto decimal ou `null`.
+- Gols aceitam períodos: `1T`, `2T`, `1P`, `2P`.
+- Substituições aceitam períodos: `1T`, `INT`, `2T`, `1P`, `INTP`, `2P`.
+- Em substituição no intervalo (`INT` ou `INTP`), `minuto` pode ser omitido ou `0`.
+- `titulares_por_posicao` deve somar 11 titulares e ter exatamente 1 goleiro.
+- `reservas` deve ter pelo menos 4 jogadores.
+## Posições Válidas
+- Goleiro
+- Lateral-Direito
+- Zagueiro
+- Lateral-Esquerdo
+- Volante
+- Meio-Campista
+- Atacante
+
+## Elenco Atual
+| Nome | Posição | Condição | Capitão |
+| --- | --- | --- | --- |
+| Gabriel Silva (GB) | Atacante | Emprestado | - |
+| Garré | Atacante | Emprestado | - |
+| Loide Augusto | Atacante | Emprestado | - |
+| Riquelme | Lateral-Esquerdo | Emprestado | - |
+| Guilherme Estrella | Meio-Campista | Emprestado | - |
+| Ray Breno | Meio-Campista | Emprestado | - |
+| Juan Sforza | Volante | Emprestado | - |
+| Lyncon | Zagueiro | Emprestado | - |
+| Jair | Volante | Lesionado | - |
+| Mateus Carvalho | Volante | Lesionado | - |
+| Marino | Atacante | Não Relacionado | - |
+| Allan Vitor | Goleiro | Não Relacionado | - |
+| Daniel Fuzato | Goleiro | Não Relacionado | - |
+| Pablo | Goleiro | Não Relacionado | - |
+| JP | Meio-Campista | Não Relacionado | - |
+| Cauan Barros | Volante | Não Relacionado | - |
+| Tche Tche | Volante | Não Relacionado | - |
+| Carlos Cuesta | Zagueiro | Não Relacionado | - |
+| João Vitor | Zagueiro | Não Relacionado | - |
+| Walace Falcão | Zagueiro | Não Relacionado | - |
+| Adson | Atacante | Reserva | - |
+| Brenner | Atacante | Reserva | - |
+| David | Atacante | Reserva | - |
+| Matheus França | Atacante | Reserva | - |
+| Paulo Henrique | Lateral-Direito | Reserva | - |
+| Lucas Piton | Lateral-Esquerdo | Reserva | - |
+| Nuno Moreira | Meio-Campista | Reserva | - |
+| Hugo Moura | Volante | Reserva | - |
+| Lucas Freitas | Zagueiro | Reserva | - |
+| Andrés Gómez | Atacante | Titular | - |
+| Claudio Spinelli | Atacante | Titular | - |
+| Léo Jardim | Goleiro | Titular | - |
+| Puma Rodríguez | Lateral-Direito | Titular | - |
+| Cuiabano | Lateral-Esquerdo | Titular | - |
+| Johan Rojas | Meio-Campista | Titular | - |
+| Thiago Mendes | Volante | Titular | sim |
+| Robert Renan | Zagueiro | Titular | - |
+| Saldivia | Zagueiro | Titular | - |
+
+## Jogadores do Vasco Cadastrados
+- A. Oliveira
+- Abedi
+- Abuda
+- Adriano
+- Adson
+- Alan
+- Alan Franco (contra)
+- Alan Kardec
+- Alberoni
+- Alecsandro
+- Alessandro
+- Alex
+- Alex Alves
+- Alex Dias
+- Alex Oliveira
+- Alex Teixeira
+- Alisson
+- Allan
+- Allan Kardec
+- Allan Vitor
+- Amaral
+- Anderson Conceição
+- Anderson Martins
+- Anderson Salles
+- Andrade
+- Andrey
+- Andrey Santos
+- Andrezinho
+- André
+- André Dias
+- André Ladaga
+- André Leone
+- André Lima
+- André Ribeiro
+- André Rocha
+- André Silva
+- Andrés Gómez
+- Andrés Ríos
+- Anselmo
+- Barros
+- Bebeto
+- Bernardo
+- Beto
+- Botti
+- Brenner
+- Breno
+- Bruno (contra)
+- Bruno Cosendey
+- Bruno César
+- Bruno Gomes
+- Bruno Meneghel
+- Bruno Nazário
+- Bruno Paulo
+- Bruno Tubarão
+- Cadu
+- Caio Lopes
+- Caio Monteiro
+- Calisto
+- Capasso
+- Carlinhos
+- Carlos Alberto
+- Carlos Cuesta
+- Carlos César
+- Cauan Barros
+- Caíque
+- Cesinha
+- Chiquinho
+- Claudemir
+- Claudio Spinelli
+- Clébson
+- Coutinho
+- Cris
+- Cuesta
+- Cuiabano
+- Da Silva
+- Dagoberto
+- Dakson
+- Daniel Amorim
+- Daniel Fuzato
+- Danilo
+- Danilo Barcelos
+- Darío Conca
+- David
+- Dedé
+- Denílson
+- Desconhecido (contra)
+- Diego
+- Diego Renan
+- Diego Souza
+- Dodô
+- Donizete
+- Douglas
+- Douglas Luiz
+- Douglas Silva
+- Dudu
+- Edgar
+- Edilson
+- Edinho
+- Edmilson
+- Edmundo
+- Eduardo
+- Eduardo Costa
+- Eduardo Luiz
+- Eguinaldo
+- Ely Thadeu
+- Emanuel Biancucchi
+- Emerson Rodríguez
+- Enrico
+- Enílton
+- Erazo
+- Erick
+- Erick Marcus
+- Ernane
+- Ernani
+- Escudero
+- Euller
+- Evander
+- Everton Costa
+- Fabiano
+- Fabiano Eller
+- Fabrício
+- Faioli
+- Felipe
+- Fellipe Bastos
+- Fernandinho
+- Fernando
+- Figueiredo
+- Fredy Guarín
+- Fumagalli
+- Fuzato
+- Fábio
+- Fábio Braz
+- Fábio Gomes
+- Fábio Junior
+- Fábio Júnior
+- Fágner
+- Gabriel Pec
+- Gabriel Silva (GB)
+- Galarza
+- Galdames
+- Garré
+- Geder
+- Geovani
+- Germán Cano
+- Getúlio
+- Gian Mariano
+- Gilberto
+- Giovanni Augusto
+- Gol contra
+- Gomes
+- Guilherme Biteco
+- Guilherme Costa
+- Guilherme Estrella
+- Haroldo
+- Henrique
+- Herrera
+- Hugo Moura
+- Ives
+- J. Baiano
+- Jailson
+- Jair
+- Jamir
+- Jean
+- Jhon Cley
+- Johan Rojas
+- Jomar
+- Jonas
+- Jonathan
+- Jorge Henrique
+- Jorge Luiz
+- Jorginho
+- Jorginho Paulista
+- João Carlos
+- João Victor
+- João Vitor
+- JP
+- Juan Sforza
+- Jumar
+- Juninho
+- Juninho Paulista
+- Junior Dutra
+- Jéferson
+- Júlio César
+- Júlio Santos
+- Júnior
+- Júnior Baiano
+- Kelvin
+- Kim
+- Kleber
+- Leandrinho
+- Leandro
+- Leandro Amaral
+- Leandro Bonfim
+- Leandro Castan
+- Leandrão
+- Leonardo
+- Loide Augusto
+- Luan
+- Lucas
+- Lucas Crispim
+- Lucas Freitas
+- Lucas Mineiro
+- Lucas Piton
+- Luciano Juba (contra)
+- Luis Fabiano
+- Luiz Cláudio
+- Luizão
+- Lyncon
+- Léo
+- Léo Gago
+- Léo Jabá
+- Léo Jardim
+- Léo Lima
+- Léo Macaé
+- Léo Matos
+- Maciel
+- Madson
+- Magno
+- Maicon
+- Manga Escobar
+- Marcel
+- Marcelinho
+- Marcelo Mattos
+- Marcinho
+- Marco Brito
+- Marcos Júnior
+- Maricá
+- Marino
+- Marino Hinestroza
+- Marlon
+- Marlon Gomes
+- Marlone
+- Marques
+- Marquinhos Gabriel
+- Marrony
+- Martin Carvalho
+- Martín Benítez
+- Martín García
+- Mateus
+- Mateus Carvalho
+- Mateus Vital
+- Matheus França
+- Matías Galarza
+- Max
+- Maxi López
+- Maxi Rodriguez
+- Maxime Dominguez
+- Miguel
+- Montoya
+- Morais
+- Morato
+- MT
+- Muriqui
+- Nasa
+- Nenê
+- Nunes
+- Nuno Moreira
+- Nílton
+- Odvan
+- Orellano
+- Osmar
+- Oswaldo Henríquez
+- Ozéia
+- P. Miranda
+- Pablo
+- Pablo Vegetti
+- Paixão
+- Palacios
+- Patrício
+- Paulinho
+- Paulinho Paula
+- Paulo César
+- Paulo Henrique
+- Paulo Ricardo
+- Paulo Sérgio
+- Paulo Vitor
+- Paulão
+- Payet
+- Pedrinho
+- Pedro Ken
+- Pedro Raul
+- Petkovic
+- Philippe Coutinho
+- Praxedes
+- Puma Rodríguez
+- Quintero
+- Rafael
+- Rafael Coelho
+- Rafael Marques
+- Rafael Silva
+- Rafael Vaz
+- Ramon
+- Raniel
+- Raul
+- Ray Breno
+- Rayan
+- Reginaldo
+- Renato
+- Renato Augusto
+- Renato Silva
+- Riascos
+- Ribamar
+- Ricardinho
+- Ricardo Bóvio
+- Ricardo Graça
+- Rildo
+- Riquelme
+- Robert Renan
+- Robinho
+- Rodolfo
+- Rodrigo
+- Rodrigo Antônio
+- Rodrigo Pimpão
+- Rodrigo Souto
+- Rogério Pinheiro
+- Romulo
+- Romário
+- Romário Corrêa
+- Rossi
+- Rubens
+- Rubens Junior
+- Rubens Júnior
+- Russo
+- Régis
+- Róbson Luiz
+- Róbson Luís
+- Saldivia
+- Sarrafiore
+- Serginho
+- Siston
+- Souza
+- Talles Magno
+- Tche Tche
+- Tchê Tchê
+- Tenorio
+- Thalles
+- Thiago Feltri
+- Thiago Galhardo
+- Thiago Maciel
+- Thiago Martinelli
+- Thiago Mendes
+- Thiaguinho
+- Tiago
+- Tiago Reis
+- Titi
+- Torres
+- Valdir
+- Valdiram
+- Valmir
+- Vergara
+- Victor Boleta
+- Victor Luís
+- Vinícius
+- Viola
+- Vitinho
+- Vílson
+- Wagner
+- Walace Falcão
+- Washington
+- Wellington
+- Wellington Monteiro
+- Wellington Paulo
+- Wendel
+- Werley
+- Wescley
+- William Barbio
+- Willian
+- Willie
+- Wágner Diniz
+- Yago
+- Yago Pikachu
+- Yan Sasse
+- Ygor
+- Ygor Catatau
+- Zada
+- Zeca
+- Zé Carlos
+- Zé Gabriel
+- Zé Roberto
+- Ânderson
+- Éder
+- Éder Luís
+- Éderson
+- Élton
+
+## Clubes Adversários Cadastrados
+- 15 de Novembro-RS
+- ABC-RN
+- Ajax-HOL
+- Alianza Lima-PER
+- Altos-PI
+- Americano-RJ
+- América
+- América Cáli
+- América-MEX
+- América-MG
+- América-RN
+- Angra dos Reis-RJ
+- ASA-AL
+- Athletic-MG
+- Athletico-PR
+- Atlético
+- Atlético-GO
+- Atlético-MG
+- Atlético-PR
+- Audax
+- Audax Rio
+- Aurora-BOL
+- Avaí-SC
+- Bahia-BA
+- Bangu-RJ
+- Baraúnas-RN
+- Barcelona-EQU
+- Barra Mansa
+- Boa
+- Boavista-RJ
+- Boca Juniors
+- Bonsucesso
+- Botafogo
+- Botafogo-PB
+- Botafogo-RJ
+- Botafogo-SP
+- Bragantino-SP
+- Brasil
+- Brasil de Pelotas
+- Brasiliense-DF
+- Brusque
+- C. Porteño
+- Cabo Frio
+- Cabofriense-RJ
+- Caldense-MG
+- Campinense-PB
+- Caracas-VEN
+- Cardoso Moreira
+- Ceará-CE
+- Central-PE
+- Cerro Porteño-PAR
+- Chapecoense
+- Comercial-MS
+- Confiança
+- Corinthians
+- Corinthians-AL
+- Corinthians-PR
+- Corinthians-SP
+- Coritiba-PR
+- CRB
+- Criciúma-SC
+- Cruzeiro-MG
+- CSA
+- CSA-AL
+- Cuiabá
+- Defensa y Justicia-ARG
+- Dep. Concepción
+- Dep. Táchira
+- Deportivo Maldonado-URU
+- Desportiva-ES
+- Duque de Caxias-RJ
+- Entrerriense-RJ
+- Fast-AM
+- Ferroviária
+- Figueirense-SC
+- Flamengo-PI
+- Flamengo-RJ
+- Fluminense-RJ
+- Fortaleza-CE
+- Friburguense
+- Friburguense-RJ
+- Gama-DF
+- Goiás-GO
+- Grêmio-RS
+- Guarani-SP
+- Hamburgo-ALE
+- Hyunday-COR
+- Icasa-CE
+- Independiente del Valle
+- Independiente del Valle-EQU
+- Inter Miami
+- Inter-RS
+- Internacional-RS
+- Ipatinga-MG
+- Iraty-PR
+- Itabaiana-SE
+- Ituano
+- Joinville
+- Jorge Wilstermann-BOL
+- Juazeirense-BA
+- Jundiaí
+- Juventude-RS
+- Lanús
+- Lanús-ARG
+- Libertad-PAR
+- Londrina
+- Luverdense
+- Macaé-RJ
+- Madureira-RJ
+- Manchester United
+- Marcílio Dias
+- Maricá
+- Melgar
+- Melgar-PER
+- Mesquita-RJ
+- Mirassol
+- Moto Clube-MA
+- Nacional-AM
+- Nacional-URU
+- Necaxa
+- Nova Iguaçu
+- Novorizontino
+- Náutico-PE
+- Oeste
+- Olaria-RJ
+- Operário-PR
+- Oriente Petrolero-BOL
+- Palmeiras-BRA
+- Palmeiras-SP
+- Paraná-PR
+- Paysandu
+- Paysandu-PA
+- Peñarol
+- Ponte Preta-SP
+- Portuguesa
+- Portuguesa-RJ
+- Portuguesa-SP
+- Prudente-SP
+- Puerto Cabello
+- Puerto Cabello-VEN
+- Quissamã
+- R. Central
+- Racing-ARG
+- Red Bull Bragantino
+- Remo
+- Resende-RJ
+- Rio Branco
+- Rio Branco-AC
+- Rio Branco-RJ
+- River Plate
+- River Plate-ARG
+- Sagrada Esperança-ANG
+- Sampaio Corrêa
+- San Lorenzo
+- San Lorenzo-ARG
+- Santa Cruz-PE
+- Santos
+- Santos-AP
+- Santos-SP
+- Sel. Argélia
+- Sel. México Sub-23
+- Seleção Capixaba
+- Seleção dos Emirados Árabes
+- Sergipe
+- Serra-ES
+- Serrano-BA
+- Sousa-PB
+- South Melbourne
+- Sport Recife
+- Sport-PE
+- São Caetano-SP
+- São Cristóvão
+- São Paulo-SP
+- São Raimundo-AM
+- Teresópolis-RJ
+- Tigres-RJ
+- Tombense-MG
+- Trem-AP
+- Treze
+- Tupi-MG
+- U. Católica
+- Universidad de Chile-CHI
+- Universidad de Concepción-CHI
+- Universidad-CHI
+- Universitario-PER
+- União Rondonópolis-MT
+- União-MT
+- V. Redonda
+- Vila Nova-GO
+- Villa Rio-RJ
+- Vitória-BA
+- Volta Redonda-RJ
+- Água Santa
+
+## Competições Cadastradas
+- Amistoso
+- Campeonato Brasileiro Serie A
+- Campeonato Brasileiro Serie B
+- Campeonato Carioca
+- Copa Betano do Brasil
+- Copa da Hora
+- Copa do Brasil
+- Copa dos Campeões
+- Copa Libertadores
+- Copa Mercosul
+- Copa Sul-Americana
+- Florida Cup
+- Mundial de Clubes
+- Serie Río de la Plata
+- Super Series
+- Torneio Rio-São Paulo
+
+Observação: se a fonte trouxer patrocinador no nome da competição, remova o patrocinador quando houver equivalência clara. Exemplo: `Copa Betano do Brasil` deve virar `Copa do Brasil`.
+
+## Estádios Cadastrados
+- Aflitos
+- Albertão
+- Alfredo Jaconi
+- Allianz Parque
+- Antônio Accioly
+- Arena Barueri
+- Arena BRB
+- Arena Castelão
+- Arena Condá
+- Arena da Amazônia
+- Arena da Baixada
+- Arena de Pernambuco
+- Arena do Grêmio
+- Arena Fonte Nova
+- Arena MRV
+- Arena Pantanal
+- Barradão
+- Beira-Rio
+- Brinco de Ouro
+- Castelão de São Luís
+- Couto Pereira
+- Heriberto Hülse
+- Ilha do Retiro
+- José Maria de Campos Maia
+- Kléber Andrade
+- Ligga Arena
+- Mangueirão
+- Mané Garrincha
+- Maracanã
+- Mineirão
+- Moisés Lucarelli
+- Morumbi
+- Nabi Abi Chedid
+- Neo Química Arena
+- Nilton Santos
+- Onésio Brasileiro Alvarenga
+- Presidente Vargas
+- Ressacada
+- Serra Dourada
+- Serrinha
+- São Januário
+- Vila Belmiro
+
+## Técnicos Cadastrados
+- Abel Braga
+- Adilson Batista
+- Alberto Valentim
+- Alcir Portela
+- Alfredo Sampaio
+- Amilton Oliveira
+- Antônio Lopes
+- Bruno Lazaroni (interino)
+- Celso Roth
+- Cristóvão Borges
+- Doriva
+- Dorival Júnior
+- Emílio Faro (interino)
+- Evaristo de Macedo
+- Felipe (interino)
+- Fernando Diniz
+- Fábio Carille
+- Gaúcho
+- Geninho
+- Hélio dos Anjos
+- Joel Santana
+- Jorginho
+- Lisca
+- Marcelo Cabo
+- Marcelo Oliveira
+- Marcos Valadares
+- Mauro Galvão
+- Maurício Barbieri
+- Maurício Souza
+- Milton Mendes
+- Oswaldo de Oliveira
+- Paulo Autuori
+- PC Gusmão
+- Rafael Paiva
+- Rafael Paiva (interino)
+- Ramon Lima
+- Ramon Menezes
+- Ramón Díaz
+- Renato Gaúcho
+- Ricardo Gomes
+- Ricardo Sá Pinto
+- Romário
+- Tita
+- Vagner Mancini
+- Valdir Bigode
+- Valdir Espinosa
+- Vanderlei Luxemburgo
+- William Batista (interino)
+- Zé Ricardo
+- Álvaro Pacheco
+
+## Árbitros Cadastrados
+- Davi de Oliveira Lacerda
+- Ramon Abatti Abel
+
+## Auxiliares/Bandeirinhas Cadastrados
+- Alex dos Santos
+- Henrique Neu Ribeiro
+- Nailton Junior de Sousa Oliveira
+- Pedro Amorim de Freitas
+
+## VARs Cadastrados
+- Daiane Muniz
+- José Cláudio Rocha Filho
+
+## Jogadores Adversários Cadastrados
+- Ademilson
+- Aitor Cantalapiedra
+- Alesson
+- Alex Azeredo
+- Alex Telles
+- Amuzu
+- André Silva
+- Arthur Cabral
+- Artur Victor
+- Barreal
+- Brayann
+- Bruno Henrique
+- Bruno Santos
+- Cabrera
+- Canobbio
+- Carlos Cuesta (contra)
+- Carlos Eduardo
+- Carlos Vinicius
+- Carrascal
+- Castro
+- Chico da Costa
+- Christian
+- Claudio Spinelli
+- David Ricardo
+- Dudu
+- Eduardo
+- Erick Pulga
+- Everton Cebolinha
+- Ewerthon
+- Flaco López
+- Gabriel Boschilia
+- Gabriel Menino
+- Gabriel Pereira Taliari
+- Galeano
+- Ganso
+- Gerardo Padrón
+- Germán Cano
+- Guga
+- Guilherme
+- Guilherme Lopes
+- Guilherme William
+- Gustavo Henrique Vernes
+- Gustavo Martins
+- Hercules
+- Hugo Moura (contra)
+- Hulk
+- Isidro Pitta
+- Japa
+- Jean Carlos
+- Johan Carbonero
+- Jorge Carrascal
+- João Victor (contra)
+- Joãozinho
+- Junior Alonso
+- Junior Paredes
+- Kevin Serna
+- Lucas Halter
+- Lucas Lima
+- Lucas Moura
+- Luciano Juba
+- Luiz Araújo
+- Luiz Gustavo
+- Marcelo
+- Marcelo Hermes
+- Mateo Carabajal
+- Mateo Sanabria
+- Maycon
+- Memphis Depay
+- Nathan Fernandes
+- Negueba
+- Neiser
+- Nenê
+- Neymar
+- Pablo Vegetti (contra)
+- Patrick Mercado
+- Paulo Henrique (contra)
+- Pedro Henrique Konzen
+- Pedro Raul
+- Ramiro Carrera
+- Ramon Menezes
+- Raudy Guerrero
+- Raúl Cáceres
+- Renato Kayzer
+- Renato Marques
+- Ricardo Mathias
+- Rodriguez
+- Ryan Francisco
+- Serna
+- Sidney
+- Thiago Silva
+- Victor Luis (contra)
+- Victor Luís (contra)
+- Vitor Roque
+- Ygor Catatau
+- Yuri Alberto
+- Zé Vitor
+
+## Recomendações para a IA
+- Priorize os nomes deste relatório quando houver abreviação, erro de acento ou nome com patrocinador na fonte.
+- Não invente jogadores ausentes. Se não tiver certeza, use o nome da fonte e coloque a dúvida em `observacao`.
+- Para escalação parcial, informe os jogadores encontrados; o sistema completa ausentes conforme o elenco atual.
+- Em gols e substituições, use o mesmo nome canônico usado na escalação sempre que possível.
+- Para dados incertos, mantenha o valor possível e registre `VERIFICAR:` em `observacao`.
