@@ -1,0 +1,131 @@
+{
+  "data": "06/05/2026",
+  "adversario": "Audax Italiano",
+  "competicao": "Copa Sul-Americana",
+  "local": "fora",
+  "estadio": "Estádio Bicentenário de La Florida",
+  "horario": "19:00",
+  "tecnico": "Alexandre Mendes",
+  "capitao": "",
+  "posicao_tabela": null,
+  "placar": {
+    "vasco": 2,
+    "adversario": 1
+  },
+  "gols_vasco": [
+    {
+      "nome": "Claudio Spinelli",
+      "gols": 1,
+      "minutos": [18],
+      "periodos": ["2T"]
+    },
+    {
+      "nome": "Matheus França",
+      "gols": 1,
+      "minutos": [25],
+      "periodos": ["2T"]
+    }
+  ],
+  "gols_adversario": [
+    {
+      "nome": "Saldivia",
+      "gols": 1,
+      "minutos": [5],
+      "periodos": ["1T"],
+      "clube": "Audax Italiano"
+    }
+  ],
+  "cartoes_amarelos_vasco": [
+    {"nome": "Saldivia", "cartoes": 1},
+    {"nome": "Cauan Barros", "cartoes": 1},
+    {"nome": "Lucas Piton", "cartoes": 1},
+    {"nome": "Matheus França", "cartoes": 1}
+  ],
+  "cartoes_vermelhos_vasco": [],
+  "publico_pagante": null,
+  "publico_presente": null,
+  "renda": null,
+  "arbitragem": {
+    "arbitro": "Jhon Ospina (COL)",
+    "auxiliares": ["David Fuentes (COL)", "Jhon Gallego (COL)"],
+    "var": "Ricardo Garcia (COL)"
+  },
+  "escalacao_partida": {
+    "titulares_por_posicao": {
+      "Goleiro": ["Daniel Fuzato"],
+      "Lateral-Direito": ["Paulo Henrique"],
+      "Zagueiro": ["Saldivia", "Lucas Freitas"],
+      "Lateral-Esquerdo": ["Lucas Piton"],
+      "Volante": ["Cauan Barros", "JP", "Tche Tche"],
+      "Meio-Campista": ["Marino", "Nuno Moreira"],
+      "Atacante": ["Claudio Spinelli"]
+    },
+    "reservas": [
+      "Pablo",
+      "Breno Vereza",
+      "Avellar",
+      "Walace Falcão",
+      "Bruno André",
+      "Alison",
+      "Samuel Jesus",
+      "Gustavo Guimarães",
+      "Ramon Rique",
+      "Matheus França",
+      "Lukas Zucarello",
+      "Andrey Fernandes"
+    ],
+    "substituicoes": [
+      {
+        "jogador_saiu": "JP",
+        "jogador_entrou": "Matheus França",
+        "minuto": 0,
+        "periodo": "INT"
+      },
+      {
+        "jogador_saiu": "Tche Tche",
+        "jogador_entrou": "Ramon Rique",
+        "minuto": 0,
+        "periodo": "INT"
+      },
+      {
+        "jogador_saiu": "Marino",
+        "jogador_entrou": "Lukas Zucarello",
+        "minuto": 43,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Lucas Piton",
+        "jogador_entrou": "Walace Falcão",
+        "minuto": 44,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Nuno Moreira",
+        "jogador_entrou": "Avellar",
+        "minuto": 44,
+        "periodo": "2T"
+      }
+    ],
+    "nao_relacionados": [
+      "Adson",
+      "Allan Vitor",
+      "Andrés Gómez",
+      "Brenner",
+      "Carlos Cuesta",
+      "David",
+      "Hugo Moura",
+      "Johan Rojas",
+      "João Vitor",
+      "Juninho",
+      "Léo Jardim",
+      "Phillipe Gabriel",
+      "Puma Rodríguez",
+      "Robert Renan",
+      "Thiago Mendes"
+    ],
+    "lesionados": ["Jair", "Mateus Carvalho", "Cuiabano"],
+    "suspensos": [],
+    "servindo_selecao": []
+  },
+  "observacao": "Vasco venceu de virada fora de casa pela 4ª rodada do Grupo G da Copa Sul-Americana (7 pts, liderança). Gol do Audax foi gol contra de Saldivia (jogador do Vasco) aos 5'/1T — registrado em gols_adversario com nome Saldivia. Spinelli marcou de pênalti. Ortiz (Audax) foi expulso aos 17'/2T. Renato Gaúcho suspenso pela Conmebol (3 jogos) — Alexandre Mendes assumiu como técnico interino. Vasco usou time alternativo com cerca de 10 atletas do sub-20. Árbitro Jhon Ospina (COL), auxiliar David Fuentes (COL) e VAR Ricardo Garcia (COL) são novos no banco — cadastrar antes de importar. Auxiliar normalizado para Jhon Gallego (COL) conforme banco. Estádio Bicentenário de La Florida não cadastrado no banco — cadastrar antes de importar. Ambiguidade: fonte cita Riquelme Avellar como um único jogador; banco tem Avellar e Riquelme separados — usou-se Avellar como o substituto de Nuno Moreira. Capitão não identificado em fonte confiável — campo em branco. Público pagante, público presente e renda não encontrados em nenhuma fonte — preencher antes de importar ou confirmar null."
+}

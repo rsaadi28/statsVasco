@@ -2,6 +2,8 @@
 
 Este documento serve para repetir o processo sem retrabalho: buscar o ultimo jogo ja realizado do Vasco, coletar os dados da fonte principal, normalizar tudo com base no banco, montar o payload completo e aplicar no projeto.
 
+Se o objetivo for apenas gerar um JSON para o importador, sem salvar diretamente em DEV/PRD, use `docs/GUIA_GERAR_JSON_ULTIMO_JOGO.md`.
+
 ## 1) Objetivo
 Buscar e inserir o ultimo jogo ja realizado do Vasco no sistema garantindo:
 
