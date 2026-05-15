@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from collections import defaultdict, Counter
 import json
+import math
 import os
 import sys
 import ast
@@ -21,6 +22,8 @@ from storage_sqlite import (
     backup_database_snapshot,
     bootstrap_database,
     db_path_for,
+    delete_external_opponent_probability_data as db_delete_external_opponent_probability_data,
+    load_external_opponent_probability_data as db_load_external_opponent_probability_data,
     load_team_stadium as db_load_team_stadium,
     load_team_stadiums as db_load_team_stadiums,
     load_current_squad as db_load_current_squad,
@@ -30,6 +33,7 @@ from storage_sqlite import (
     load_matches as db_load_matches,
     load_titles as db_load_titles,
     save_current_squad as db_save_current_squad,
+    save_external_opponent_probability_data as db_save_external_opponent_probability_data,
     save_future_matches as db_save_future_matches,
     save_historic_players as db_save_historic_players,
     save_listas as db_save_listas,
@@ -419,6 +423,18 @@ def salvar_titulos_vasco(titulos):
     normalizados = _ordenar_titulos_vasco(normalizados)
     db_save_titles(DB_PATH, normalizados)
     _cache_set("titles", normalizados)
+
+
+def carregar_dados_externos_adversario_probabilidade(adversario: str):
+    return db_load_external_opponent_probability_data(DB_PATH, adversario)
+
+
+def salvar_dados_externos_adversario_probabilidade(adversario: str, dados: dict):
+    db_save_external_opponent_probability_data(DB_PATH, adversario, dados)
+
+
+def excluir_dados_externos_adversario_probabilidade(adversario: str):
+    db_delete_external_opponent_probability_data(DB_PATH, adversario)
 
 
 def _normalizar_posicao_elenco(posicao: str) -> str:
@@ -2614,10 +2630,10 @@ class App:
             return retrospecto
 
         jogos = carregar_dados_jogos()
-        alvo = adversario.casefold()
+        alvo = _chave_nome_consulta(adversario)
         for jogo in jogos:
             adv_jogo = str(jogo.get("adversario", "")).strip()
-            if not adv_jogo or adv_jogo.casefold() != alvo:
+            if not adv_jogo or _chave_nome_consulta(adv_jogo) != alvo:
                 continue
 
             placar = jogo.get("placar", {})
@@ -2853,6 +2869,1368 @@ class App:
                 return futuros, idx, normalizado
         return futuros, None, None
 
+    def _inferir_em_casa_futuro(self, futuro: dict):
+        em_casa = futuro.get("em_casa")
+        if em_casa is True or em_casa is False:
+            return em_casa
+        jogo_txt = str(futuro.get("jogo", "") or "").strip()
+        jogo_clean = re.sub(r"\s*×\s*", " x ", jogo_txt)
+        partes = re.split(r"\s+(?:x|vs\.?)\s+", jogo_clean, maxsplit=1, flags=re.IGNORECASE)
+        if len(partes) != 2:
+            return None
+        p1, p2 = partes[0].strip().casefold(), partes[1].strip().casefold()
+        if "vasco" in p1:
+            return True
+        if "vasco" in p2:
+            return False
+        return None
+
+    def _partidas_base_probabilidade(self, limite_data=None):
+        partidas = []
+        for jogo in carregar_dados_jogos():
+            data_txt = str(jogo.get("data", "") or "").strip()
+            data_obj = _parse_data_ptbr_safe(data_txt)
+            if not data_obj:
+                continue
+            if limite_data and data_obj.date() >= limite_data.date():
+                continue
+
+            placar = jogo.get("placar", {}) if isinstance(jogo.get("placar"), dict) else {}
+            try:
+                gols_vasco = int(placar.get("vasco", 0) or 0)
+                gols_adv = int(placar.get("adversario", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+            if gols_vasco < 0 or gols_adv < 0:
+                continue
+
+            if gols_vasco > gols_adv:
+                resultado = "vitoria"
+            elif gols_vasco < gols_adv:
+                resultado = "derrota"
+            else:
+                resultado = "empate"
+
+            local_txt = str(jogo.get("local", "casa") or "casa").strip().casefold()
+            if local_txt == "fora":
+                em_casa = False
+            elif local_txt == "casa":
+                em_casa = True
+            else:
+                em_casa = None
+
+            adversario = str(jogo.get("adversario", "") or "").strip()
+            partidas.append({
+                "data": data_obj,
+                "data_txt": data_txt,
+                "adversario": adversario,
+                "adversario_chave": _chave_nome_consulta(adversario),
+                "competicao": str(jogo.get("competicao", "") or "").strip(),
+                "competicao_chave": _chave_nome_consulta(jogo.get("competicao", "")),
+                "em_casa": em_casa,
+                "gols_vasco": gols_vasco,
+                "gols_adversario": gols_adv,
+                "resultado": resultado,
+            })
+        return sorted(partidas, key=lambda p: p["data"])
+
+    def _resumir_partidas_probabilidade(self, partidas):
+        resumo = {
+            "jogos": len(partidas),
+            "vitorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "gols_vasco": 0,
+            "gols_adversario": 0,
+            "media_gols_vasco": 0.0,
+            "media_gols_adversario": 0.0,
+            "aproveitamento": 0.0,
+        }
+        for partida in partidas:
+            if partida["resultado"] == "vitoria":
+                resumo["vitorias"] += 1
+            elif partida["resultado"] == "derrota":
+                resumo["derrotas"] += 1
+            else:
+                resumo["empates"] += 1
+            resumo["gols_vasco"] += partida["gols_vasco"]
+            resumo["gols_adversario"] += partida["gols_adversario"]
+
+        jogos = resumo["jogos"]
+        if jogos:
+            resumo["media_gols_vasco"] = resumo["gols_vasco"] / jogos
+            resumo["media_gols_adversario"] = resumo["gols_adversario"] / jogos
+            pontos = resumo["vitorias"] * 3 + resumo["empates"]
+            resumo["aproveitamento"] = (pontos / (jogos * 3)) * 100
+        return resumo
+
+    def _distribuicao_partidas_probabilidade(self, partidas, pesos=None, suavizacao=0.0):
+        chaves = ("vitoria", "empate", "derrota")
+        contagem = {chave: float(suavizacao) for chave in chaves}
+        if pesos is None:
+            pesos = [1.0] * len(partidas)
+        for partida, peso in zip(partidas, pesos):
+            chave = partida.get("resultado")
+            if chave in contagem:
+                contagem[chave] += max(float(peso), 0.0)
+        total = sum(contagem.values())
+        if total <= 0:
+            return {chave: 1 / 3 for chave in chaves}
+        return {chave: contagem[chave] / total for chave in chaves}
+
+    def _distribuicao_poisson_probabilidade(self, gols_vasco_esp, gols_adv_esp):
+        gols_vasco_esp = max(0.05, min(float(gols_vasco_esp), 5.0))
+        gols_adv_esp = max(0.05, min(float(gols_adv_esp), 5.0))
+
+        def pmf(media, gols):
+            return math.exp(-media) * (media ** gols) / math.factorial(gols)
+
+        probs = {"vitoria": 0.0, "empate": 0.0, "derrota": 0.0}
+        total = 0.0
+        for gols_vasco in range(9):
+            prob_v = pmf(gols_vasco_esp, gols_vasco)
+            for gols_adv in range(9):
+                prob = prob_v * pmf(gols_adv_esp, gols_adv)
+                total += prob
+                if gols_vasco > gols_adv:
+                    probs["vitoria"] += prob
+                elif gols_vasco < gols_adv:
+                    probs["derrota"] += prob
+                else:
+                    probs["empate"] += prob
+        if total > 0:
+            probs = {chave: valor / total for chave, valor in probs.items()}
+        return probs
+
+    def _calcular_gols_esperados_probabilidade(self, grupos):
+        numerador_vasco = 0.0
+        numerador_adv = 0.0
+        peso_total = 0.0
+        fontes = []
+        for nome, partidas, peso_base, minimo_ref in grupos:
+            if not partidas:
+                continue
+            resumo = self._resumir_partidas_probabilidade(partidas)
+            fator_amostra = min(1.0, resumo["jogos"] / max(1, minimo_ref))
+            peso = peso_base * fator_amostra
+            if peso <= 0:
+                continue
+            numerador_vasco += resumo["media_gols_vasco"] * peso
+            numerador_adv += resumo["media_gols_adversario"] * peso
+            peso_total += peso
+            fontes.append((nome, resumo["jogos"], peso))
+        if peso_total <= 0:
+            return None
+        return {
+            "gols_vasco": numerador_vasco / peso_total,
+            "gols_adversario": numerador_adv / peso_total,
+            "fontes": fontes,
+        }
+
+    def _adicionar_componente_probabilidade(self, componentes, nome, partidas, peso, suavizacao=0.0, pesos_partidas=None):
+        if not partidas or peso <= 0:
+            return
+        resumo = self._resumir_partidas_probabilidade(partidas)
+        componentes.append({
+            "nome": nome,
+            "peso": peso,
+            "partidas": partidas,
+            "resumo": resumo,
+            "distribuicao": self._distribuicao_partidas_probabilidade(
+                partidas,
+                pesos=pesos_partidas,
+                suavizacao=suavizacao,
+            ),
+        })
+
+    def _calcular_probabilidade_futuro(self, futuro: dict, adversario_externo=None):
+        futuro = _normalizar_futuro_item(futuro) or futuro
+        adversario = self._resolver_nome_clube_canonico(
+            _extrair_adversario_de_jogo(str(futuro.get("jogo", "") or "")).replace("Vasco", "").strip()
+        )
+        adversario_chave = _chave_nome_consulta(adversario)
+        competicao = str(futuro.get("campeonato", "") or "").strip()
+        competicao_chave = _chave_nome_consulta(competicao)
+        em_casa = self._inferir_em_casa_futuro(futuro)
+        data_futuro = _parse_data_ptbr_safe(str(futuro.get("data", "") or "").strip())
+
+        partidas = self._partidas_base_probabilidade(limite_data=data_futuro)
+        if not partidas:
+            return {
+                "erro": "Não há partidas anteriores suficientes na base para calcular probabilidade.",
+                "adversario": adversario,
+            }
+
+        partidas_desc = sorted(partidas, key=lambda p: p["data"], reverse=True)
+        recentes = partidas_desc[:10]
+        ultimos_cinco = partidas_desc[:5]
+        mesmo_mando = [p for p in partidas if em_casa is None or p["em_casa"] == em_casa]
+        h2h = [p for p in partidas if adversario_chave and p["adversario_chave"] == adversario_chave]
+        mesma_competicao = [p for p in partidas if competicao_chave and p["competicao_chave"] == competicao_chave]
+
+        componentes = []
+        self._adicionar_componente_probabilidade(
+            componentes,
+            "Histórico geral",
+            partidas,
+            peso=1.8,
+            suavizacao=1.0,
+        )
+
+        if recentes:
+            n = len(recentes)
+            pesos_recentes = [1.0 + ((n - idx - 1) * 0.08) for idx in range(n)]
+            self._adicionar_componente_probabilidade(
+                componentes,
+                "Momento recente (10 jogos)",
+                recentes,
+                peso=2.6 * min(1.0, n / 10),
+                pesos_partidas=pesos_recentes,
+            )
+
+        if ultimos_cinco:
+            self._adicionar_componente_probabilidade(
+                componentes,
+                "Recorte curto (5 jogos)",
+                ultimos_cinco,
+                peso=0.9 * min(1.0, len(ultimos_cinco) / 5),
+            )
+
+        if em_casa is not None and mesmo_mando:
+            nome_mando = "Mando: Vasco em casa" if em_casa else "Mando: Vasco fora"
+            self._adicionar_componente_probabilidade(
+                componentes,
+                nome_mando,
+                mesmo_mando,
+                peso=1.4 * min(1.0, len(mesmo_mando) / 20),
+            )
+
+        if h2h:
+            self._adicionar_componente_probabilidade(
+                componentes,
+                f"Retrospecto vs {adversario}",
+                h2h,
+                peso=1.2 * min(1.0, len(h2h) / 8),
+            )
+
+        if mesma_competicao:
+            self._adicionar_componente_probabilidade(
+                componentes,
+                "Mesma competição",
+                mesma_competicao,
+                peso=0.9 * min(1.0, len(mesma_competicao) / 12),
+            )
+
+        resumo_adversario = None
+        resumo_adversario_mando = None
+        resumo_adversario_tabela = None
+        partidas_adversario_recentes = []
+        partidas_adversario_mando = []
+        if adversario_externo:
+            partidas_adv = list(adversario_externo.get("partidas", []))
+            if data_futuro:
+                partidas_adv = [
+                    p for p in partidas_adv
+                    if p.get("data") == datetime.min or p.get("data").date() < data_futuro.date()
+                ]
+            partidas_adv = sorted(partidas_adv, key=lambda p: p.get("data") or datetime.min, reverse=True)
+            recentes_adv = partidas_adv[:10]
+            nivel_fator = float(adversario_externo.get("nivel_fator", 0.80) or 0.80)
+            if recentes_adv:
+                partidas_adversario_recentes = list(recentes_adv)
+                resumo_adversario = self._resumir_partidas_adversario_probabilidade(recentes_adv)
+                n = len(recentes_adv)
+                pesos_adv = [1.0 + ((n - idx - 1) * 0.08) for idx in range(n)]
+                componentes.append({
+                    "nome": f"Momento do adversário ({adversario_externo.get('time', adversario)})",
+                    "peso": 1.3 * min(1.0, n / 8) * nivel_fator,
+                    "partidas": [],
+                    "resumo": resumo_adversario,
+                    "resumo_tipo": "adversario",
+                    "distribuicao": self._distribuicao_adversario_para_vasco(
+                        recentes_adv,
+                        pesos=pesos_adv,
+                    ),
+                })
+
+            if em_casa is not None and partidas_adv:
+                mando_adv = not em_casa
+                partidas_adv_mando = [p for p in partidas_adv if p.get("em_casa") == mando_adv]
+                if partidas_adv_mando:
+                    partidas_adversario_mando = list(partidas_adv_mando)
+                    resumo_adversario_mando = self._resumir_partidas_adversario_probabilidade(partidas_adv_mando)
+                    nome_mando_adv = "adversário fora" if mando_adv is False else "adversário em casa"
+                    componentes.append({
+                        "nome": f"Momento do {nome_mando_adv}",
+                        "peso": 0.7 * min(1.0, len(partidas_adv_mando) / 5) * nivel_fator,
+                        "partidas": [],
+                        "resumo": resumo_adversario_mando,
+                        "resumo_tipo": "adversario",
+                        "distribuicao": self._distribuicao_adversario_para_vasco(partidas_adv_mando),
+                    })
+
+            resumo_adversario_tabela = self._resumo_tabela_adversario_probabilidade(
+                adversario_externo.get("tabela", {})
+            )
+            if resumo_adversario_tabela:
+                componentes.append({
+                    "nome": f"Campanha do adversário ({adversario_externo.get('nivel', 'nível não informado')})",
+                    "peso": 0.6 * min(1.0, resumo_adversario_tabela["jogos"] / 10) * nivel_fator,
+                    "partidas": [],
+                    "resumo": resumo_adversario_tabela,
+                    "resumo_tipo": "adversario",
+                    "distribuicao": self._distribuicao_tabela_adversario_para_vasco(resumo_adversario_tabela),
+                })
+
+        grupos_gols = [
+            ("histórico geral", partidas, 1.1, 30),
+            ("momento recente", recentes, 1.8, 10),
+            ("mando", mesmo_mando, 1.0, 18),
+            ("retrospecto direto", h2h, 0.9, 8),
+            ("competição", mesma_competicao, 0.6, 12),
+        ]
+        gols_esperados = self._calcular_gols_esperados_probabilidade(grupos_gols)
+        if gols_esperados:
+            componentes.append({
+                "nome": "Modelo de gols estimados",
+                "peso": 1.2,
+                "partidas": [],
+                "resumo": None,
+                "distribuicao": self._distribuicao_poisson_probabilidade(
+                    gols_esperados["gols_vasco"],
+                    gols_esperados["gols_adversario"],
+                ),
+            })
+
+        placar_prob = {"vitoria": 0.0, "empate": 0.0, "derrota": 0.0}
+        peso_total = 0.0
+        for componente in componentes:
+            peso = componente["peso"]
+            peso_total += peso
+            for chave in placar_prob:
+                placar_prob[chave] += componente["distribuicao"][chave] * peso
+        if peso_total <= 0:
+            prob_final = {chave: 1 / 3 for chave in placar_prob}
+        else:
+            prob_final = {chave: valor / peso_total for chave, valor in placar_prob.items()}
+
+        resumo_geral = self._resumir_partidas_probabilidade(partidas)
+        resumo_recente = self._resumir_partidas_probabilidade(recentes)
+        resumo_h2h = self._resumir_partidas_probabilidade(h2h)
+        resumo_mando = self._resumir_partidas_probabilidade(mesmo_mando)
+        resumo_comp = self._resumir_partidas_probabilidade(mesma_competicao)
+        indice_base = (
+            min(1.0, resumo_geral["jogos"] / 80) * 0.35
+            + min(1.0, resumo_recente["jogos"] / 10) * 0.25
+            + min(1.0, resumo_mando["jogos"] / 20) * 0.20
+            + min(1.0, resumo_h2h["jogos"] / 8) * 0.15
+            + min(1.0, resumo_comp["jogos"] / 12) * 0.05
+        )
+        if resumo_adversario:
+            indice_base = min(1.0, indice_base + min(1.0, resumo_adversario["jogos"] / 8) * 0.12)
+        if indice_base >= 0.75:
+            confianca = "Alta base de dados"
+        elif indice_base >= 0.45:
+            confianca = "Base de dados média"
+        else:
+            confianca = "Base de dados baixa"
+
+        return {
+            "adversario": adversario,
+            "competicao": competicao,
+            "em_casa": em_casa,
+            "probabilidades": prob_final,
+            "componentes": componentes,
+            "gols_esperados": gols_esperados,
+            "resumo_geral": resumo_geral,
+            "resumo_recente": resumo_recente,
+            "resumo_h2h": resumo_h2h,
+            "resumo_mando": resumo_mando,
+            "resumo_competicao": resumo_comp,
+            "partidas_recentes": recentes,
+            "partidas_h2h": h2h,
+            "partidas_mando": mesmo_mando,
+            "adversario_externo": adversario_externo,
+            "resumo_adversario": resumo_adversario,
+            "resumo_adversario_mando": resumo_adversario_mando,
+            "resumo_adversario_tabela": resumo_adversario_tabela,
+            "partidas_adversario_recentes": partidas_adversario_recentes,
+            "partidas_adversario_mando": partidas_adversario_mando,
+            "confianca": confianca,
+            "indice_base": indice_base,
+            "data_limite": data_futuro,
+        }
+
+    def _formatar_percentual_probabilidade(self, valor):
+        return f"{valor * 100:.1f}%"
+
+    def _formatar_ved_probabilidade(self, resumo):
+        if not resumo or resumo.get("jogos", 0) == 0:
+            return "—"
+        return f"{resumo['vitorias']}/{resumo['empates']}/{resumo['derrotas']}"
+
+    def _normalizar_resultado_probabilidade(self, valor):
+        chave = _chave_nome_consulta(valor)
+        if chave in {"v", "vitoria", "vitória", "win", "w"}:
+            return "vitoria"
+        if chave in {"e", "empate", "draw"}:
+            return "empate"
+        if chave in {"d", "derrota", "loss", "l"}:
+            return "derrota"
+        return ""
+
+    def _nivel_adversario_probabilidade(self, dados: dict):
+        bruto = ""
+        if isinstance(dados, dict):
+            bruto = (
+                dados.get("nivel")
+                or dados.get("divisao")
+                or dados.get("serie")
+                or dados.get("categoria")
+                or ""
+            )
+            tabela = dados.get("tabela")
+            if isinstance(tabela, dict):
+                bruto = bruto or tabela.get("divisao") or tabela.get("serie") or tabela.get("nivel") or ""
+        chave = _chave_nome_consulta(bruto)
+        if "serie a" in chave or "série a" in chave or chave in {"a", "1", "primeira divisao"}:
+            return str(bruto or "Série A").strip(), 1.0
+        if "serie b" in chave or "série b" in chave or chave in {"b", "2", "segunda divisao"}:
+            return str(bruto or "Série B").strip(), 0.86
+        if "serie c" in chave or "série c" in chave or chave in {"c", "3", "terceira divisao"}:
+            return str(bruto or "Série C").strip(), 0.72
+        if "serie d" in chave or "série d" in chave or chave in {"d", "4", "quarta divisao"}:
+            return str(bruto or "Série D").strip(), 0.58
+        if "estadual" in chave or "regional" in chave or "copa verde" in chave or "paraense" in chave:
+            return str(bruto or "Regional/Estadual").strip(), 0.62
+        return str(bruto or "Não informado").strip(), 0.80
+
+    def _extrair_gols_adversario_json(self, item: dict, time_chave: str):
+        placar = item.get("placar")
+        gols_time = None
+        gols_contra = None
+
+        def _int_placar(valor):
+            try:
+                numero = int(valor)
+            except (TypeError, ValueError):
+                return None
+            return numero if numero >= 0 else None
+
+        if isinstance(placar, dict):
+            diretos_time = ("time", "pro", "favor", "gols_time", "gols_pro", "gols_marcados")
+            diretos_contra = ("adversario", "contra", "gols_adversario", "gols_contra", "gols_sofridos")
+            for chave in diretos_time:
+                gols_time = _int_placar(placar.get(chave))
+                if gols_time is not None:
+                    break
+            for chave in diretos_contra:
+                gols_contra = _int_placar(placar.get(chave))
+                if gols_contra is not None:
+                    break
+
+            if gols_time is None or gols_contra is None:
+                casa = _int_placar(placar.get("mandante", placar.get("casa", placar.get("home"))))
+                fora = _int_placar(placar.get("visitante", placar.get("fora", placar.get("away"))))
+                if casa is not None and fora is not None:
+                    mandante = _chave_nome_consulta(item.get("mandante", item.get("casa", item.get("home_team", ""))))
+                    visitante = _chave_nome_consulta(item.get("visitante", item.get("fora", item.get("away_team", ""))))
+                    em_casa = _normalizar_em_casa(item.get("em_casa", item.get("local", item.get("mando"))))
+                    if mandante and mandante == time_chave:
+                        gols_time, gols_contra = casa, fora
+                    elif visitante and visitante == time_chave:
+                        gols_time, gols_contra = fora, casa
+                    elif em_casa is True:
+                        gols_time, gols_contra = casa, fora
+                    elif em_casa is False:
+                        gols_time, gols_contra = fora, casa
+
+        if gols_time is None:
+            for chave in ("gols_time", "gols_pro", "gols_marcados", "pro"):
+                gols_time = _int_placar(item.get(chave))
+                if gols_time is not None:
+                    break
+        if gols_contra is None:
+            for chave in ("gols_adversario", "gols_contra", "gols_sofridos", "contra"):
+                gols_contra = _int_placar(item.get(chave))
+                if gols_contra is not None:
+                    break
+
+        if (gols_time is None or gols_contra is None) and isinstance(placar, str):
+            m = re.match(r"^\s*(\d+)\s*[xX-]\s*(\d+)\s*$", placar.strip())
+            if m:
+                primeiro, segundo = int(m.group(1)), int(m.group(2))
+                em_casa = _normalizar_em_casa(item.get("em_casa", item.get("local", item.get("mando"))))
+                gols_time, gols_contra = (primeiro, segundo) if em_casa is not False else (segundo, primeiro)
+
+        if gols_time is None or gols_contra is None:
+            return None, None
+        return gols_time, gols_contra
+
+    def _normalizar_jogo_adversario_probabilidade(self, item, time_nome: str):
+        if not isinstance(item, dict):
+            return None, "Jogo ignorado: item não é objeto."
+        time_chave = _chave_nome_consulta(time_nome)
+        data_txt = str(item.get("data", item.get("date", "")) or "").strip()
+        data_obj = _parse_data_ptbr_safe(data_txt)
+        adversario = str(item.get("adversario", item.get("oponente", item.get("opponent", ""))) or "").strip()
+        if not adversario:
+            mandante = str(item.get("mandante", item.get("casa", item.get("home_team", ""))) or "").strip()
+            visitante = str(item.get("visitante", item.get("fora", item.get("away_team", ""))) or "").strip()
+            if _chave_nome_consulta(mandante) == time_chave:
+                adversario = visitante
+            elif _chave_nome_consulta(visitante) == time_chave:
+                adversario = mandante
+        em_casa = _normalizar_em_casa(item.get("em_casa", item.get("local", item.get("mando"))))
+        if em_casa is None:
+            mandante = _chave_nome_consulta(item.get("mandante", item.get("casa", item.get("home_team", ""))))
+            visitante = _chave_nome_consulta(item.get("visitante", item.get("fora", item.get("away_team", ""))))
+            if mandante and mandante == time_chave:
+                em_casa = True
+            elif visitante and visitante == time_chave:
+                em_casa = False
+
+        gols_time, gols_contra = self._extrair_gols_adversario_json(item, time_chave)
+        resultado = self._normalizar_resultado_probabilidade(item.get("resultado", item.get("result", "")))
+        if gols_time is not None and gols_contra is not None:
+            if gols_time > gols_contra:
+                resultado = "vitoria"
+            elif gols_time < gols_contra:
+                resultado = "derrota"
+            else:
+                resultado = "empate"
+        if not resultado:
+            return None, f"Jogo ignorado: faltou placar/resultado em {data_txt or 'data não informada'}."
+        if gols_time is None or gols_contra is None:
+            return None, f"Jogo ignorado: informe placar do adversário em {data_txt or 'data não informada'}."
+
+        return {
+            "data": data_obj or datetime.min,
+            "data_txt": data_txt or "—",
+            "adversario": adversario or "Adversário não informado",
+            "competicao": str(item.get("competicao", item.get("campeonato", "")) or "").strip(),
+            "em_casa": em_casa,
+            "gols_time": gols_time,
+            "gols_adversario": gols_contra,
+            "resultado": resultado,
+        }, None
+
+    def _normalizar_adversario_externo_probabilidade(self, dados, adversario_padrao: str):
+        if isinstance(dados, list):
+            dados = {"time": adversario_padrao, "jogos": dados}
+        if not isinstance(dados, dict):
+            raise ValueError("O JSON deve ser um objeto ou uma lista de jogos.")
+        time_nome = str(
+            dados.get("time")
+            or dados.get("clube")
+            or dados.get("nome")
+            or dados.get("adversario")
+            or adversario_padrao
+            or ""
+        ).strip()
+        if not time_nome:
+            raise ValueError("Informe o nome do time adversário no campo 'time'.")
+        jogos_raw = None
+        for chave in ("jogos", "partidas", "ultimos_jogos", "matches"):
+            if isinstance(dados.get(chave), list):
+                jogos_raw = dados.get(chave)
+                break
+        if jogos_raw is None:
+            raise ValueError("Informe uma lista de jogos em 'jogos', 'partidas' ou 'ultimos_jogos'.")
+
+        partidas = []
+        avisos = []
+        for item in jogos_raw:
+            partida, aviso = self._normalizar_jogo_adversario_probabilidade(item, time_nome)
+            if partida:
+                partidas.append(partida)
+            elif aviso:
+                avisos.append(aviso)
+        if not partidas:
+            raise ValueError("Nenhum jogo válido foi encontrado. Inclua data, mando/local e placar do adversário.")
+
+        partidas.sort(key=lambda p: p["data"])
+        nivel_nome, nivel_fator = self._nivel_adversario_probabilidade(dados)
+        tabela = dados.get("tabela") if isinstance(dados.get("tabela"), dict) else {}
+        dados_salvos = dados.get("_dados_salvos") if isinstance(dados.get("_dados_salvos"), dict) else None
+        return {
+            "time": time_nome,
+            "nivel": nivel_nome,
+            "nivel_fator": nivel_fator,
+            "partidas": partidas,
+            "resumo": self._resumir_partidas_adversario_probabilidade(partidas),
+            "tabela": tabela,
+            "avisos": avisos,
+            "dados_salvos": dados_salvos,
+        }
+
+    def _resumir_partidas_adversario_probabilidade(self, partidas):
+        resumo = {
+            "jogos": len(partidas),
+            "vitorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "gols_pro": 0,
+            "gols_contra": 0,
+            "media_gols_pro": 0.0,
+            "media_gols_contra": 0.0,
+            "aproveitamento": 0.0,
+        }
+        for partida in partidas:
+            if partida["resultado"] == "vitoria":
+                resumo["vitorias"] += 1
+            elif partida["resultado"] == "derrota":
+                resumo["derrotas"] += 1
+            else:
+                resumo["empates"] += 1
+            resumo["gols_pro"] += partida["gols_time"]
+            resumo["gols_contra"] += partida["gols_adversario"]
+        if resumo["jogos"]:
+            resumo["media_gols_pro"] = resumo["gols_pro"] / resumo["jogos"]
+            resumo["media_gols_contra"] = resumo["gols_contra"] / resumo["jogos"]
+            pontos = resumo["vitorias"] * 3 + resumo["empates"]
+            resumo["aproveitamento"] = (pontos / (resumo["jogos"] * 3)) * 100
+        return resumo
+
+    def _distribuicao_adversario_para_vasco(self, partidas, pesos=None, suavizacao=0.0):
+        dist_adv = self._distribuicao_partidas_probabilidade(
+            [{"resultado": p["resultado"]} for p in partidas],
+            pesos=pesos,
+            suavizacao=suavizacao,
+        )
+        return {
+            "vitoria": dist_adv["derrota"],
+            "empate": dist_adv["empate"],
+            "derrota": dist_adv["vitoria"],
+        }
+
+    def _resumo_tabela_adversario_probabilidade(self, tabela: dict):
+        if not isinstance(tabela, dict):
+            return None
+
+        def _int(valor):
+            try:
+                numero = int(valor)
+            except (TypeError, ValueError):
+                return None
+            return numero if numero >= 0 else None
+
+        jogos = _int(tabela.get("jogos", tabela.get("partidas")))
+        vitorias = _int(tabela.get("vitorias", tabela.get("vitórias")))
+        empates = _int(tabela.get("empates"))
+        derrotas = _int(tabela.get("derrotas"))
+        gols_pro = _int(tabela.get("gols_pro", tabela.get("gp")))
+        gols_contra = _int(tabela.get("gols_contra", tabela.get("gc")))
+        if jogos is None and None not in (vitorias, empates, derrotas):
+            jogos = vitorias + empates + derrotas
+        if None in (jogos, vitorias, empates, derrotas) or jogos <= 0:
+            return None
+        return {
+            "jogos": jogos,
+            "vitorias": vitorias,
+            "empates": empates,
+            "derrotas": derrotas,
+            "gols_pro": gols_pro or 0,
+            "gols_contra": gols_contra or 0,
+            "media_gols_pro": (gols_pro or 0) / jogos if gols_pro is not None else 0.0,
+            "media_gols_contra": (gols_contra or 0) / jogos if gols_contra is not None else 0.0,
+            "aproveitamento": ((vitorias * 3 + empates) / (jogos * 3)) * 100,
+        }
+
+    def _distribuicao_tabela_adversario_para_vasco(self, resumo_tabela):
+        total = resumo_tabela["jogos"]
+        dist_adv = {
+            "vitoria": resumo_tabela["vitorias"] / total,
+            "empate": resumo_tabela["empates"] / total,
+            "derrota": resumo_tabela["derrotas"] / total,
+        }
+        return {
+            "vitoria": dist_adv["derrota"],
+            "empate": dist_adv["empate"],
+            "derrota": dist_adv["vitoria"],
+        }
+
+    def _exemplo_json_adversario_probabilidade(self, adversario: str):
+        nome = adversario or "Paysandu-PA"
+        return json.dumps(
+            {
+                "time": nome,
+                "divisao": "Serie C",
+                "tabela": {
+                    "competicao": "Campeonato Brasileiro Serie C",
+                    "posicao": 1,
+                    "jogos": 6,
+                    "vitorias": 4,
+                    "empates": 2,
+                    "derrotas": 0,
+                    "gols_pro": 13,
+                    "gols_contra": 6,
+                },
+                "jogos": [
+                    {
+                        "data": "09/05/2026",
+                        "competicao": "Campeonato Brasileiro Serie C",
+                        "adversario": "Anapolis-GO",
+                        "local": "casa",
+                        "placar": {"time": 2, "adversario": 1},
+                    },
+                    {
+                        "data": "06/05/2026",
+                        "competicao": "Copa Verde",
+                        "adversario": "Aguia de Maraba",
+                        "local": "fora",
+                        "placar": {"time": 5, "adversario": 1},
+                    },
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    def _modelo_json_adversario_probabilidade(self, adversario: str):
+        nome = adversario or "Nome do adversário"
+        return json.dumps(
+            {
+                "time": nome,
+                "divisao": "Serie A|Serie B|Serie C|Serie D|Estadual/Regional",
+                "tabela": {
+                    "competicao": "",
+                    "posicao": 0,
+                    "jogos": 0,
+                    "vitorias": 0,
+                    "empates": 0,
+                    "derrotas": 0,
+                    "gols_pro": 0,
+                    "gols_contra": 0,
+                },
+                "jogos": [
+                    {
+                        "data": "dd/mm/aaaa",
+                        "competicao": "",
+                        "adversario": "",
+                        "local": "casa|fora",
+                        "placar": {
+                            "time": 0,
+                            "adversario": 0,
+                        },
+                    }
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    def _copiar_modelo_json_adversario_probabilidade(self, adversario: str):
+        texto = self._modelo_json_adversario_probabilidade(adversario)
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(texto)
+            messagebox.showinfo("Modelo copiado", "Modelo JSON do adversário copiado para a área de transferência.")
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Não foi possível copiar o modelo.\n\n{exc}")
+
+    def _prompt_json_adversario_probabilidade(self, adversario: str, futuro: dict):
+        adversario = adversario or "adversário"
+        jogo = str(futuro.get("jogo", "") or "").strip() or f"Vasco x {adversario}"
+        data = str(futuro.get("data", "") or "").strip() or "data não informada"
+        hora = str(futuro.get("hora", "") or "").strip()
+        campeonato = str(futuro.get("campeonato", "") or "").strip()
+        local = str(futuro.get("local", "") or "").strip()
+        detalhes = [f"jogo: {jogo}", f"data: {data}"]
+        if hora:
+            detalhes.append(f"hora: {hora}")
+        if campeonato:
+            detalhes.append(f"competição: {campeonato}")
+        if local:
+            detalhes.append(f"local: {local}")
+
+        modelo = self._modelo_json_adversario_probabilidade(adversario)
+        return (
+            f"Pesquise o momento atual do {adversario} para refinar uma análise estatística do Vasco.\n"
+            f"Contexto do jogo futuro: {'; '.join(detalhes)}.\n\n"
+            "Preciso que você retorne somente um JSON válido, sem Markdown, sem comentários e sem texto fora do JSON. "
+            "Use dados anteriores à data do jogo quando possível. Inclua os últimos 8 a 10 jogos oficiais mais recentes "
+            "do adversário, a campanha/tabela atual se existir, gols pró/contra e a divisão ou nível competitivo do time.\n\n"
+            "Regras do JSON:\n"
+            "- `time`: nome do adversário.\n"
+            "- `divisao`: use Serie A, Serie B, Serie C, Serie D ou Estadual/Regional.\n"
+            "- `tabela`: campanha atual na competição principal mais relevante.\n"
+            "- `jogos`: lista dos últimos jogos, em ordem do mais recente para o mais antigo.\n"
+            "- Em cada jogo, `local` deve ser `casa` ou `fora` do ponto de vista do adversário pesquisado.\n"
+            "- Em cada `placar`, `time` são os gols do adversário pesquisado e `adversario` são os gols do oponente dele.\n"
+            "- Se algum campo não existir em fonte confiável, use string vazia ou 0, mas não invente resultado.\n\n"
+            "Formato obrigatório:\n"
+            f"{modelo}"
+        )
+
+    def _copiar_prompt_json_adversario_probabilidade(self, adversario: str, futuro: dict):
+        texto = self._prompt_json_adversario_probabilidade(adversario, futuro)
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(texto)
+            messagebox.showinfo("Prompt copiado", "Prompt para pedir o JSON do adversário copiado para a área de transferência.")
+        except Exception as exc:
+            messagebox.showerror("Erro", f"Não foi possível copiar o prompt.\n\n{exc}")
+
+    def _resultado_exibicao_probabilidade(self, resultado: str):
+        chave = _chave_nome_consulta(resultado)
+        if chave == "vitoria":
+            return "Vitória"
+        if chave == "derrota":
+            return "Derrota"
+        return "Empate"
+
+    def _sequencia_probabilidade(self, partidas):
+        if not partidas:
+            return "—"
+        mapa = {"vitoria": "V", "empate": "E", "derrota": "D"}
+        return " ".join(mapa.get(p.get("resultado"), "?") for p in partidas[:8])
+
+    def _resumo_vasco_comum_probabilidade(self, resumo):
+        if not resumo:
+            return None
+        return {
+            "jogos": resumo.get("jogos", 0),
+            "vitorias": resumo.get("vitorias", 0),
+            "empates": resumo.get("empates", 0),
+            "derrotas": resumo.get("derrotas", 0),
+            "gols_pro": resumo.get("gols_vasco", 0),
+            "gols_contra": resumo.get("gols_adversario", 0),
+            "media_gols_pro": resumo.get("media_gols_vasco", 0.0),
+            "media_gols_contra": resumo.get("media_gols_adversario", 0.0),
+            "aproveitamento": resumo.get("aproveitamento", 0.0),
+        }
+
+    def _resumo_adversario_comum_probabilidade(self, resumo):
+        if not resumo:
+            return None
+        return {
+            "jogos": resumo.get("jogos", 0),
+            "vitorias": resumo.get("vitorias", 0),
+            "empates": resumo.get("empates", 0),
+            "derrotas": resumo.get("derrotas", 0),
+            "gols_pro": resumo.get("gols_pro", 0),
+            "gols_contra": resumo.get("gols_contra", 0),
+            "media_gols_pro": resumo.get("media_gols_pro", 0.0),
+            "media_gols_contra": resumo.get("media_gols_contra", 0.0),
+            "aproveitamento": resumo.get("aproveitamento", 0.0),
+        }
+
+    def _formatar_resumo_comum_probabilidade(self, resumo):
+        if not resumo or not resumo.get("jogos"):
+            return "Sem amostra"
+        saldo = resumo["gols_pro"] - resumo["gols_contra"]
+        sinal = "+" if saldo > 0 else ""
+        return (
+            f"{resumo['jogos']} jogos | V/E/D {resumo['vitorias']}/{resumo['empates']}/{resumo['derrotas']} | "
+            f"gols {resumo['gols_pro']} x {resumo['gols_contra']} | saldo {sinal}{saldo} | "
+            f"aproveitamento {resumo['aproveitamento']:.1f}%"
+        )
+
+    def _formatar_partida_vasco_probabilidade(self, partida):
+        adversario = partida.get("adversario") or "Adversário"
+        gols_vasco = int(partida.get("gols_vasco", 0) or 0)
+        gols_adv = int(partida.get("gols_adversario", 0) or 0)
+        em_casa = partida.get("em_casa")
+        if em_casa is False:
+            local = "Fora"
+            placar = f"{adversario} {gols_adv} x {gols_vasco} Vasco"
+        else:
+            local = "Casa" if em_casa is True else "—"
+            placar = f"Vasco {gols_vasco} x {gols_adv} {adversario}"
+        return (
+            partida.get("data_txt", "—"),
+            partida.get("competicao") or "—",
+            local,
+            placar,
+            self._resultado_exibicao_probabilidade(partida.get("resultado")),
+        )
+
+    def _formatar_partida_adversario_probabilidade(self, partida, time_nome):
+        time_nome = time_nome or "Adversário"
+        adversario = partida.get("adversario") or "Adversário"
+        gols_time = int(partida.get("gols_time", 0) or 0)
+        gols_adv = int(partida.get("gols_adversario", 0) or 0)
+        em_casa = partida.get("em_casa")
+        if em_casa is False:
+            local = "Fora"
+            placar = f"{adversario} {gols_adv} x {gols_time} {time_nome}"
+        else:
+            local = "Casa" if em_casa is True else "—"
+            placar = f"{time_nome} {gols_time} x {gols_adv} {adversario}"
+        return (
+            partida.get("data_txt", "—"),
+            partida.get("competicao") or "—",
+            local,
+            placar,
+            self._resultado_exibicao_probabilidade(partida.get("resultado")),
+        )
+
+    def _render_tabela_jogos_momento_probabilidade(self, container, titulo, partidas, formatter, vazio):
+        frame = ttk.Labelframe(container, text=titulo, padding=8)
+        frame.pack(fill="both", expand=True)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+        cols = ("data", "competicao", "local", "placar", "resultado")
+        tv = ttk.Treeview(frame, columns=cols, show="headings", height=8)
+        cabecalhos = {
+            "data": "Data",
+            "competicao": "Competição",
+            "local": "Local",
+            "placar": "Placar",
+            "resultado": "Resultado",
+        }
+        larguras = {"data": 85, "competicao": 160, "local": 60, "placar": 250, "resultado": 85}
+        for col in cols:
+            tv.heading(col, text=cabecalhos[col])
+            tv.column(col, width=larguras[col], anchor="w" if col in {"competicao", "placar"} else "center")
+        tv.grid(row=0, column=0, sticky="nsew")
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=tv.yview)
+        scroll.grid(row=0, column=1, sticky="ns")
+        tv.configure(yscrollcommand=scroll.set)
+        for partida in partidas:
+            tv.insert("", "end", values=formatter(partida))
+        if not partidas:
+            tv.insert("", "end", values=("—", "—", "—", vazio, "—"))
+        return tv
+
+    def _render_comparativo_probabilidade(self, container, analise, adversario):
+        for child in container.winfo_children():
+            child.destroy()
+        container.columnconfigure(0, weight=1)
+        container.columnconfigure(1, weight=1)
+        container.rowconfigure(2, weight=1)
+
+        partidas_vasco = list(analise.get("partidas_recentes", []))
+        partidas_adv = list(analise.get("partidas_adversario_recentes", []))
+        adversario_externo = analise.get("adversario_externo") or {}
+        nome_adv = adversario_externo.get("time") or adversario
+        resumo_vasco = self._resumo_vasco_comum_probabilidade(analise.get("resumo_recente"))
+        resumo_adv = self._resumo_adversario_comum_probabilidade(analise.get("resumo_adversario"))
+
+        topo = ttk.Frame(container)
+        topo.grid(row=0, column=0, columnspan=2, sticky="ew")
+        topo.columnconfigure(0, weight=1)
+        topo.columnconfigure(1, weight=1)
+
+        card_vasco = ttk.Labelframe(topo, text="Momento do Vasco", padding=8)
+        card_vasco.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Label(card_vasco, text=self._formatar_resumo_comum_probabilidade(resumo_vasco), wraplength=420).pack(anchor="w")
+        ttk.Label(card_vasco, text=f"Sequência: {self._sequencia_probabilidade(partidas_vasco)}").pack(anchor="w", pady=(3, 0))
+
+        card_adv = ttk.Labelframe(topo, text=f"Momento do {nome_adv}", padding=8)
+        card_adv.grid(row=0, column=1, sticky="ew", padx=(6, 0))
+        if resumo_adv:
+            nivel = adversario_externo.get("nivel", "nível não informado")
+            ttk.Label(card_adv, text=self._formatar_resumo_comum_probabilidade(resumo_adv), wraplength=420).pack(anchor="w")
+            ttk.Label(card_adv, text=f"Sequência: {self._sequencia_probabilidade(partidas_adv)} | Nível: {nivel}").pack(anchor="w", pady=(3, 0))
+        else:
+            ttk.Label(
+                card_adv,
+                text="Importe um JSON do adversário para comparar forma recente, ataque, defesa e sequência.",
+                wraplength=420,
+            ).pack(anchor="w")
+
+        metricas = ttk.Labelframe(container, text="Comparativo numérico", padding=8)
+        metricas.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 8))
+        metricas.columnconfigure(0, weight=1)
+        cols = ("metrica", "vasco", "adversario")
+        tv_metricas = ttk.Treeview(metricas, columns=cols, show="headings", height=7)
+        tv_metricas.heading("metrica", text="Métrica")
+        tv_metricas.heading("vasco", text="Vasco")
+        tv_metricas.heading("adversario", text=nome_adv)
+        tv_metricas.column("metrica", width=180, anchor="w")
+        tv_metricas.column("vasco", width=180, anchor="center")
+        tv_metricas.column("adversario", width=180, anchor="center")
+        tv_metricas.pack(fill="x")
+
+        def valor(resumo, chave, tipo="num"):
+            if not resumo or not resumo.get("jogos"):
+                return "—"
+            if tipo == "pct":
+                return f"{resumo.get(chave, 0.0):.1f}%"
+            if tipo == "media":
+                return f"{resumo.get(chave, 0.0):.2f}"
+            if tipo == "saldo":
+                saldo = resumo["gols_pro"] - resumo["gols_contra"]
+                return f"{'+' if saldo > 0 else ''}{saldo}"
+            return str(resumo.get(chave, "—"))
+
+        linhas = [
+            ("Jogos considerados", valor(resumo_vasco, "jogos"), valor(resumo_adv, "jogos")),
+            ("V/E/D", f"{resumo_vasco['vitorias']}/{resumo_vasco['empates']}/{resumo_vasco['derrotas']}" if resumo_vasco else "—", f"{resumo_adv['vitorias']}/{resumo_adv['empates']}/{resumo_adv['derrotas']}" if resumo_adv else "—"),
+            ("Aproveitamento", valor(resumo_vasco, "aproveitamento", "pct"), valor(resumo_adv, "aproveitamento", "pct")),
+            ("Gols pró", valor(resumo_vasco, "gols_pro"), valor(resumo_adv, "gols_pro")),
+            ("Gols sofridos", valor(resumo_vasco, "gols_contra"), valor(resumo_adv, "gols_contra")),
+            ("Média gols pró", valor(resumo_vasco, "media_gols_pro", "media"), valor(resumo_adv, "media_gols_pro", "media")),
+            ("Média gols sofridos", valor(resumo_vasco, "media_gols_contra", "media"), valor(resumo_adv, "media_gols_contra", "media")),
+            ("Saldo", valor(resumo_vasco, "saldo", "saldo"), valor(resumo_adv, "saldo", "saldo")),
+        ]
+        for linha in linhas:
+            tv_metricas.insert("", "end", values=linha)
+
+        listas = ttk.Frame(container)
+        listas.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        listas.columnconfigure(0, weight=1)
+        listas.columnconfigure(1, weight=1)
+        listas.rowconfigure(0, weight=1)
+
+        wrap_vasco = ttk.Frame(listas)
+        wrap_vasco.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        wrap_vasco.rowconfigure(0, weight=1)
+        wrap_vasco.columnconfigure(0, weight=1)
+        self._render_tabela_jogos_momento_probabilidade(
+            wrap_vasco,
+            "Últimos jogos do Vasco usados no momento",
+            partidas_vasco,
+            self._formatar_partida_vasco_probabilidade,
+            "Sem jogos recentes do Vasco",
+        )
+
+        wrap_adv = ttk.Frame(listas)
+        wrap_adv.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        wrap_adv.rowconfigure(0, weight=1)
+        wrap_adv.columnconfigure(0, weight=1)
+        self._render_tabela_jogos_momento_probabilidade(
+            wrap_adv,
+            f"Últimos jogos do {nome_adv}",
+            partidas_adv,
+            lambda partida: self._formatar_partida_adversario_probabilidade(partida, nome_adv),
+            "Importe JSON do adversário para preencher",
+        )
+
+    def _abrir_modal_probabilidade_futuro(self, adversario_externo=None, carregar_salvo=True):
+        selecionado = self._dados_futuro_selecionado()
+        if not selecionado:
+            return
+        _futuros, idx, futuro = self._localizar_indice_futuro(selecionado)
+        if idx is None or futuro is None:
+            messagebox.showwarning("Não encontrado", "Não foi possível localizar o jogo futuro para análise.")
+            return
+
+        futuro = _normalizar_futuro_item(futuro) or futuro
+        adversario_modal = self._resolver_nome_clube_canonico(
+            _extrair_adversario_de_jogo(str(futuro.get("jogo", "") or "")).replace("Vasco", "").strip()
+        )
+        dados_salvos_aplicados = False
+        if adversario_externo is None and carregar_salvo:
+            dados_salvos = carregar_dados_externos_adversario_probabilidade(adversario_modal)
+            if dados_salvos:
+                try:
+                    adversario_externo = self._normalizar_adversario_externo_probabilidade(dados_salvos, adversario_modal)
+                    dados_salvos_aplicados = True
+                except Exception:
+                    adversario_externo = None
+
+        analise = self._calcular_probabilidade_futuro(futuro, adversario_externo=adversario_externo)
+        if analise.get("erro"):
+            messagebox.showwarning("Probabilidade indisponível", analise["erro"])
+            return
+
+        adversario = analise.get("adversario") or "Adversário"
+        probs = analise["probabilidades"]
+        top = tk.Toplevel(self.root)
+        top.title(f"Probabilidade - Vasco x {adversario}")
+        top.transient(self.root)
+        top.grab_set()
+        top.resizable(True, True)
+        top.minsize(980, 720)
+
+        container = ttk.Frame(top, padding=14)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+        container.rowconfigure(4, weight=1)
+
+        jogo_txt = str(futuro.get("jogo", "") or "").strip()
+        data_txt = str(futuro.get("data", "") or "").strip()
+        hora_txt = str(futuro.get("hora", "") or "").strip()
+        comp_txt = str(futuro.get("campeonato", "") or "").strip()
+        detalhe = data_txt
+        if hora_txt:
+            detalhe = f"{detalhe} às {hora_txt}" if detalhe else hora_txt
+        if comp_txt:
+            detalhe = f"{detalhe} | {comp_txt}" if detalhe else comp_txt
+        ttk.Label(container, text=jogo_txt or f"Vasco x {adversario}", font=("TkDefaultFont", 14, "bold")).grid(
+            row=0,
+            column=0,
+            sticky="w",
+        )
+        detalhe_wrap = ttk.Frame(container)
+        detalhe_wrap.grid(row=1, column=0, sticky="ew", pady=(2, 10))
+        detalhe_wrap.columnconfigure(0, weight=1)
+        ttk.Label(detalhe_wrap, text=detalhe or "Jogo futuro").grid(row=0, column=0, sticky="w")
+        if adversario_externo:
+            salvo = adversario_externo.get("dados_salvos") if isinstance(adversario_externo, dict) else None
+            origem_dados = "dados salvos" if dados_salvos_aplicados or salvo else "JSON colado"
+            atualizado_em = f" | atualizado em {salvo.get('atualizado_em')}" if isinstance(salvo, dict) and salvo.get("atualizado_em") else ""
+            ext_txt = (
+                f"Refinado com {origem_dados}: {adversario_externo.get('time', adversario)} | "
+                f"{adversario_externo.get('nivel', 'nível não informado')} | "
+                f"{len(adversario_externo.get('partidas', []))} jogos importados"
+                f"{atualizado_em}"
+            )
+            ttk.Label(detalhe_wrap, text=ext_txt).grid(row=0, column=1, sticky="e", padx=(12, 0))
+
+        probs_frame = ttk.Labelframe(container, text="Probabilidades estimadas", padding=10)
+        probs_frame.grid(row=2, column=0, sticky="ew")
+        probs_frame.columnconfigure(1, weight=1)
+        ordem = [
+            ("vitoria", "Vitória do Vasco"),
+            ("empate", "Empate"),
+            ("derrota", "Derrota do Vasco"),
+        ]
+        for row, (chave, label) in enumerate(ordem):
+            valor = probs.get(chave, 0.0)
+            ttk.Label(probs_frame, text=label, width=20).grid(row=row, column=0, sticky="w", pady=3)
+            barra = ttk.Progressbar(probs_frame, maximum=100, value=valor * 100)
+            barra.grid(row=row, column=1, sticky="ew", padx=(8, 8), pady=3)
+            ttk.Label(probs_frame, text=self._formatar_percentual_probabilidade(valor), width=8, anchor="e").grid(
+                row=row,
+                column=2,
+                sticky="e",
+                pady=3,
+            )
+
+        resumo = ttk.Frame(container)
+        resumo.grid(row=3, column=0, sticky="ew", pady=(10, 8))
+        resumo.columnconfigure(0, weight=1)
+        resumo.columnconfigure(1, weight=1)
+        resumo.columnconfigure(2, weight=1)
+
+        def _card_resumo(col, titulo, resumo_partidas):
+            texto = "Sem amostra"
+            if resumo_partidas and resumo_partidas.get("jogos", 0):
+                texto = (
+                    f"{resumo_partidas['jogos']} jogos | V/E/D "
+                    f"{self._formatar_ved_probabilidade(resumo_partidas)} | "
+                    f"gols {resumo_partidas['gols_vasco']} x {resumo_partidas['gols_adversario']}"
+                )
+            frame = ttk.Labelframe(resumo, text=titulo, padding=8)
+            frame.grid(row=0, column=col, sticky="ew", padx=(0 if col == 0 else 6, 0))
+            ttk.Label(frame, text=texto, wraplength=240).pack(anchor="w")
+
+        _card_resumo(0, "Momento recente", analise["resumo_recente"])
+        _card_resumo(1, f"Retrospecto vs {adversario}", analise["resumo_h2h"])
+        _card_resumo(2, "Mando", analise["resumo_mando"])
+        if analise.get("resumo_adversario"):
+            resumo_adv = analise["resumo_adversario"]
+            frame_adv = ttk.Labelframe(resumo, text="Momento do adversário importado", padding=8)
+            frame_adv.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0))
+            texto_adv = (
+                f"{resumo_adv['jogos']} jogos | V/E/D do adversário "
+                f"{resumo_adv['vitorias']}/{resumo_adv['empates']}/{resumo_adv['derrotas']} | "
+                f"gols {resumo_adv['gols_pro']} x {resumo_adv['gols_contra']} | "
+                f"aproveitamento {resumo_adv['aproveitamento']:.1f}%"
+            )
+            ttk.Label(frame_adv, text=texto_adv, wraplength=720).pack(anchor="w")
+
+        abas_detalhe = ttk.Notebook(container)
+        abas_detalhe.grid(row=4, column=0, sticky="nsew")
+
+        tab_fatores = ttk.Frame(abas_detalhe, padding=8)
+        tab_comparativo = ttk.Frame(abas_detalhe, padding=8)
+        abas_detalhe.add(tab_fatores, text="Fatores do modelo")
+        abas_detalhe.add(tab_comparativo, text="Comparativo de momento")
+
+        tab_fatores.rowconfigure(0, weight=1)
+        tab_fatores.columnconfigure(0, weight=1)
+        cols = ("fator", "peso", "jogos", "ved", "prob", "gols")
+        tv = ttk.Treeview(tab_fatores, columns=cols, show="headings", height=8)
+        cabecalhos = {
+            "fator": "Fator",
+            "peso": "Peso",
+            "jogos": "Jogos",
+            "ved": "V/E/D",
+            "prob": "Prob. V/E/D",
+            "gols": "Médias gols",
+        }
+        larguras = {"fator": 220, "peso": 70, "jogos": 70, "ved": 90, "prob": 160, "gols": 130}
+        for col in cols:
+            tv.heading(col, text=cabecalhos[col])
+            tv.column(col, width=larguras[col], anchor="w" if col == "fator" else "center")
+        tv.grid(row=0, column=0, sticky="nsew")
+        scroll = ttk.Scrollbar(tab_fatores, orient="vertical", command=tv.yview)
+        scroll.grid(row=0, column=1, sticky="ns")
+        tv.configure(yscrollcommand=scroll.set)
+
+        for componente in analise["componentes"]:
+            resumo_comp = componente.get("resumo")
+            dist = componente["distribuicao"]
+            if resumo_comp:
+                jogos_txt = str(resumo_comp["jogos"])
+                if componente.get("resumo_tipo") == "adversario":
+                    ved_txt = f"{resumo_comp['vitorias']}/{resumo_comp['empates']}/{resumo_comp['derrotas']}"
+                    gols_txt = f"{resumo_comp['media_gols_pro']:.2f} x {resumo_comp['media_gols_contra']:.2f}"
+                else:
+                    ved_txt = self._formatar_ved_probabilidade(resumo_comp)
+                    gols_txt = f"{resumo_comp['media_gols_vasco']:.2f} x {resumo_comp['media_gols_adversario']:.2f}"
+            else:
+                jogos_txt = "—"
+                ved_txt = "—"
+                gols = analise.get("gols_esperados") or {}
+                gols_txt = f"{gols.get('gols_vasco', 0):.2f} x {gols.get('gols_adversario', 0):.2f}"
+            prob_txt = (
+                f"{self._formatar_percentual_probabilidade(dist['vitoria'])} / "
+                f"{self._formatar_percentual_probabilidade(dist['empate'])} / "
+                f"{self._formatar_percentual_probabilidade(dist['derrota'])}"
+            )
+            tv.insert(
+                "",
+                "end",
+                values=(
+                    componente["nome"],
+                    f"{componente['peso']:.2f}",
+                    jogos_txt,
+                    ved_txt,
+                    prob_txt,
+                    gols_txt,
+                ),
+            )
+
+        self._render_comparativo_probabilidade(tab_comparativo, analise, adversario)
+
+        rodape = ttk.Frame(container)
+        rodape.grid(row=5, column=0, sticky="ew", pady=(10, 0))
+        rodape.columnconfigure(0, weight=1)
+        gols_esperados = analise.get("gols_esperados")
+        if gols_esperados:
+            gols_txt = (
+                f"Gols estimados: Vasco {gols_esperados['gols_vasco']:.2f} x "
+                f"{gols_esperados['gols_adversario']:.2f} {adversario}."
+            )
+        else:
+            gols_txt = "Gols estimados indisponíveis."
+        nota = (
+            f"{analise['confianca']} ({analise['indice_base'] * 100:.0f}%). {gols_txt} "
+            "Modelo heurístico, sem odds externas; use como leitura estatística e calibre com jogos antigos antes de confiar."
+        )
+        ttk.Label(rodape, text=nota, wraplength=720, justify="left").grid(row=0, column=0, sticky="w")
+
+        def importar_json_adversario():
+            popup = tk.Toplevel(top)
+            popup.title("Colar JSON do adversário")
+            popup.transient(top)
+            popup.grab_set()
+            popup.resizable(True, True)
+            popup.minsize(720, 520)
+
+            frame_json = ttk.Frame(popup, padding=12)
+            frame_json.pack(fill="both", expand=True)
+            frame_json.rowconfigure(1, weight=1)
+            frame_json.columnconfigure(0, weight=1)
+
+            ttk.Label(
+                frame_json,
+                text=(
+                    f"Cole o JSON com o momento atual do {adversario}. "
+                    "Ao aplicar, os dados salvos desse adversário serão substituídos."
+                ),
+            ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+            text_wrap = ttk.Frame(frame_json)
+            text_wrap.grid(row=1, column=0, sticky="nsew")
+            text_wrap.rowconfigure(0, weight=1)
+            text_wrap.columnconfigure(0, weight=1)
+            json_text = tk.Text(
+                text_wrap,
+                wrap="none",
+                bg=self.colors["entry_bg"],
+                fg=self.colors["entry_fg"],
+                insertbackground=self.colors["accent"],
+                undo=True,
+            )
+            json_text.grid(row=0, column=0, sticky="nsew")
+            sy = ttk.Scrollbar(text_wrap, orient="vertical", command=json_text.yview)
+            sy.grid(row=0, column=1, sticky="ns")
+            sx = ttk.Scrollbar(text_wrap, orient="horizontal", command=json_text.xview)
+            sx.grid(row=1, column=0, sticky="ew")
+            json_text.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+
+            botoes_json = ttk.Frame(frame_json)
+            botoes_json.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+            botoes_json.columnconfigure(0, weight=1)
+
+            def colar_clipboard():
+                try:
+                    texto_clip = self.root.clipboard_get()
+                except Exception:
+                    texto_clip = ""
+                if texto_clip:
+                    json_text.insert("insert", texto_clip)
+
+            def inserir_modelo():
+                if json_text.get("1.0", "end").strip():
+                    if not messagebox.askyesno(
+                        "Substituir conteúdo",
+                        "Substituir o JSON atual pelo modelo?",
+                        parent=popup,
+                    ):
+                        return
+                    json_text.delete("1.0", "end")
+                json_text.insert("1.0", self._modelo_json_adversario_probabilidade(adversario))
+
+            def aplicar_json():
+                raw = json_text.get("1.0", "end").strip()
+                if not raw:
+                    messagebox.showwarning("JSON obrigatório", "Cole o JSON do adversário antes de aplicar.", parent=popup)
+                    return
+                try:
+                    dados = json.loads(raw)
+                    externo = self._normalizar_adversario_externo_probabilidade(dados, adversario)
+                    salvar_dados_externos_adversario_probabilidade(adversario, dados)
+                    dados_salvos = carregar_dados_externos_adversario_probabilidade(adversario)
+                    if dados_salvos:
+                        externo = self._normalizar_adversario_externo_probabilidade(dados_salvos, adversario)
+                except Exception as exc:
+                    messagebox.showerror("Erro ao importar JSON", f"Não foi possível usar esse JSON.\n\n{exc}", parent=popup)
+                    return
+                popup.destroy()
+                top.destroy()
+                self._abrir_modal_probabilidade_futuro(adversario_externo=externo, carregar_salvo=False)
+
+            ttk.Button(botoes_json, text="Colar", command=colar_clipboard).pack(side="left")
+            ttk.Button(botoes_json, text="Inserir modelo", command=inserir_modelo).pack(side="left", padx=(8, 0))
+            ttk.Button(botoes_json, text="Cancelar", command=popup.destroy).pack(side="right")
+            ttk.Button(botoes_json, text="Aplicar JSON", command=aplicar_json).pack(side="right", padx=(0, 8))
+
+            popup.protocol("WM_DELETE_WINDOW", popup.destroy)
+            popup.update_idletasks()
+            self._centralizar_modal_no_app(popup)
+            popup.lift(top)
+            popup.focus_force()
+            json_text.focus_set()
+
+        botoes_modal = ttk.Frame(rodape)
+        botoes_modal.grid(row=0, column=1, sticky="e", padx=(10, 0))
+        ttk.Button(
+            botoes_modal,
+            text="Reimportar JSON do adversário" if adversario_externo else "Colar JSON do adversário",
+            command=importar_json_adversario,
+        ).pack(side="right")
+        ttk.Button(
+            botoes_modal,
+            text="Copiar prompt IA",
+            command=lambda: self._copiar_prompt_json_adversario_probabilidade(adversario, futuro),
+        ).pack(side="right", padx=(0, 8))
+        ttk.Button(
+            botoes_modal,
+            text="Copiar modelo JSON",
+            command=lambda: self._copiar_modelo_json_adversario_probabilidade(adversario),
+        ).pack(side="right", padx=(0, 8))
+        if adversario_externo:
+            ttk.Button(
+                botoes_modal,
+                text="Ignorar refinamento",
+                command=lambda: (top.destroy(), self._abrir_modal_probabilidade_futuro(carregar_salvo=False)),
+            ).pack(side="right", padx=(0, 8))
+        ttk.Button(botoes_modal, text="Fechar", command=top.destroy).pack(side="right", padx=(0, 8))
+
+        top.protocol("WM_DELETE_WINDOW", top.destroy)
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
+        top.lift(self.root)
+        top.focus_force()
+
     def _abrir_menu_contexto_futuros(self, event):
         iid = self.tv_futuros.identify_row(event.y)
         if not iid:
@@ -2861,6 +4239,8 @@ class App:
         self.tv_futuros.focus(iid)
 
         menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Ver probabilidade", command=self._abrir_modal_probabilidade_futuro)
+        menu.add_separator()
         menu.add_command(label="Editar jogo futuro", command=self._editar_jogo_futuro_selecionado)
         menu.add_command(label="Excluir jogo futuro", command=self._excluir_jogo_futuro_selecionado)
         try:

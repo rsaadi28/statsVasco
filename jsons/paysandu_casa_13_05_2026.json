@@ -1,0 +1,172 @@
+{
+  "data": "13/05/2026",
+  "adversario": "Paysandu-PA",
+  "competicao": "Copa do Brasil",
+  "local": "casa",
+  "estadio": "São Januário",
+  "horario": "19:00",
+  "tecnico": "Renato Gaúcho",
+  "capitao": "Thiago Mendes",
+  "posicao_tabela": null,
+  "placar": {
+    "vasco": 2,
+    "adversario": 2
+  },
+  "gols_vasco": [
+    {
+      "nome": "Johan Rojas",
+      "gols": 1,
+      "minutos": [35],
+      "periodos": ["1T"]
+    },
+    {
+      "nome": "Thiago Mendes",
+      "gols": 1,
+      "minutos": [41],
+      "periodos": ["1T"]
+    }
+  ],
+  "gols_adversario": [
+    {
+      "nome": "Thayllon",
+      "gols": 1,
+      "minutos": [47],
+      "periodos": ["1T"],
+      "clube": "Paysandu-PA"
+    },
+    {
+      "nome": "Saldivia",
+      "gols": 1,
+      "minutos": [1],
+      "periodos": ["2T"],
+      "clube": "Paysandu-PA"
+    }
+  ],
+  "cartoes_amarelos_vasco": [
+    {
+      "nome": "Lucas Freitas",
+      "cartoes": 1
+    },
+    {
+      "nome": "Nuno Moreira",
+      "cartoes": 1
+    }
+  ],
+  "cartoes_vermelhos_vasco": [
+    {
+      "nome": "Thiago Mendes",
+      "cartoes": 1
+    }
+  ],
+  "publico_pagante": 15775,
+  "publico_presente": 16653,
+  "renda": 1081866.00,
+  "arbitragem": {
+    "arbitro": "Braulio da Silva Machado",
+    "auxiliares": [
+      "Thiaggo Americano Labes",
+      "Henrique Neu Ribeiro"
+    ],
+    "var": "Rafael Traci"
+  },
+  "escalacao_partida": {
+    "titulares_por_posicao": {
+      "Goleiro": [
+        "Léo Jardim"
+      ],
+      "Lateral-Direito": [
+        "Paulo Henrique"
+      ],
+      "Zagueiro": [
+        "Saldivia",
+        "Lucas Freitas"
+      ],
+      "Lateral-Esquerdo": [
+        "Lucas Piton"
+      ],
+      "Volante": [
+        "Cauan Barros",
+        "Thiago Mendes"
+      ],
+      "Meio-Campista": [
+        "Johan Rojas",
+        "Marino"
+      ],
+      "Atacante": [
+        "David",
+        "Brenner"
+      ]
+    },
+    "reservas": [
+      "Daniel Fuzato",
+      "Puma Rodríguez",
+      "Tche Tche",
+      "Matheus França",
+      "Andrés Gómez",
+      "Nuno Moreira",
+      "Hugo Moura",
+      "Adson",
+      "Pablo",
+      "Walace Falcão",
+      "Claudio Spinelli",
+      "JP"
+    ],
+    "substituicoes": [
+      {
+        "jogador_saiu": "Paulo Henrique",
+        "jogador_entrou": "Puma Rodríguez",
+        "minuto": 5,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Marino",
+        "jogador_entrou": "Adson",
+        "minuto": 15,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "David",
+        "jogador_entrou": "Claudio Spinelli",
+        "minuto": 15,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Brenner",
+        "jogador_entrou": "Andrés Gómez",
+        "minuto": 15,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Johan Rojas",
+        "jogador_entrou": "Nuno Moreira",
+        "minuto": 25,
+        "periodo": "2T"
+      }
+    ],
+    "nao_relacionados": [
+      "Alison",
+      "Allan Vitor",
+      "Andrey Fernandes",
+      "Avellar",
+      "Breno Vereza",
+      "Bruno André",
+      "Carlos Cuesta",
+      "Gustavo Guimarães",
+      "João Vitor",
+      "Juninho",
+      "Lukas Zucarello",
+      "Phillipe Gabriel",
+      "Ramon Rique",
+      "Robert Renan",
+      "Samuel Jesus"
+    ],
+    "lesionados": [
+      "Jair",
+      "Mateus Carvalho",
+      "Cuiabano"
+    ],
+    "suspensos": [],
+    "servindo_selecao": []
+  },
+  "observacao": "Vasco empatou com o Paysandu em 2 a 2 em São Januário, pela volta da 5ª fase da Copa do Brasil 2026, e avançou às oitavas pelo agregado de 4 a 2. Gols oficiais na súmula CBF: Johan Rojas de pênalti aos 35'/1T, Thiago Mendes aos 41'/1T, Thayllon aos +2/1T e gol contra de Saldivia aos 1'/2T. NetVasco registra Rojas aos 34'/1T e Thayllon aos 47'/1T; foram usados os tempos da súmula CBF, convertendo o acréscimo de Thayllon para 47. Público pagante confirmado por imagem do boletim financeiro enviada pelo usuário: 15.775; público presente: 16.653; renda: R$ 1.081.866,00. Thiago Mendes era o capitão e foi expulso diretamente aos 44'/2T por cotovelada em Caio Mello, segundo súmula. Jair, Mateus Carvalho e Cuiabano estavam fora por lesão; não havia pendurados no Vasco. Avellar e Ramon Rique não enfrentaram o Paysandu por não estarem inscritos na Copa do Brasil. CBF registrou o reserva 98 como João Pedro Murilo de Paula Morais, normalizado para JP no banco local; registrou o reserva 11 como Carlos Andres Gomez Hinestroza, normalizado para Andrés Gómez; registrou o titular 88 como Barros, normalizado para Cauan Barros. Braulio da Silva Machado não foi encontrado na lista local de árbitros; cadastrar antes de importar se o importador não criar automaticamente. Súmula informa que nada houve de anormal e que foi respeitado 1 minuto de silêncio em homenagem póstuma a torcedores do Vasco."
+}

@@ -7,12 +7,13 @@ Sem dependências externas: usa apenas biblioteca padrão.
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 from collections import Counter
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 from storage_sqlite import (
     bootstrap_database,
     db_path_for,
@@ -27,6 +28,7 @@ from storage_sqlite import (
 )
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+WEB_ROOT = os.path.join(PROJECT_ROOT, "Acervo Vasco")
 ARQUIVO_JOGOS = os.path.join(PROJECT_ROOT, "jogos_vasco.json")
 ARQUIVO_FUTUROS = os.path.join(PROJECT_ROOT, "jogos_futuros.json")
 ARQUIVO_LISTAS = os.path.join(PROJECT_ROOT, "listas_auxiliares.json")
@@ -60,6 +62,10 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
     ("suspensos", "Suspensos"),
     ("servindo_selecao", "Servindo a seleção"),
 )
+
+mimetypes.add_type("text/babel; charset=utf-8", ".jsx")
+mimetypes.add_type("application/javascript; charset=utf-8", ".js")
+mimetypes.add_type("text/css; charset=utf-8", ".css")
 
 
 def carregar_jogos():
@@ -2956,6 +2962,9 @@ INDEX_HTML = """<!doctype html>
 class StatsVascoWebHandler(BaseHTTPRequestHandler):
     server_version = "StatsVascoWeb/0.1"
 
+    def _writes_enabled(self) -> bool:
+        return os.environ.get("STATSVASCO_WEB_ENABLE_WRITES", "").strip().casefold() in {"1", "true", "yes", "sim"}
+
     def _json_response(self, payload, status=HTTPStatus.OK):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -2966,6 +2975,18 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _bytes_response(self, body: bytes, content_type: str, status=HTTPStatus.OK, cache_control: str | None = None):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Cache-Control", cache_control or "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _text_response(self, text: str, status=HTTPStatus.OK):
+        return self._bytes_response(text.encode("utf-8"), "text/plain; charset=utf-8", status=status)
+
     def _html_response(self, html: str, status=HTTPStatus.OK):
         body = html.encode("utf-8")
         self.send_response(status)
@@ -2975,6 +2996,38 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _serve_static(self, request_path: str):
+        if not os.path.isdir(WEB_ROOT):
+            return self._html_response(INDEX_HTML)
+
+        raw_path = unquote(request_path or "/")
+        if raw_path == "/":
+            rel_path = "index.html"
+        else:
+            rel_path = raw_path.lstrip("/")
+
+        normalized = os.path.normpath(rel_path)
+        if normalized.startswith("..") or os.path.isabs(normalized):
+            return self._text_response("Caminho inválido.", status=HTTPStatus.BAD_REQUEST)
+
+        static_path = os.path.realpath(os.path.join(WEB_ROOT, normalized))
+        web_root_real = os.path.realpath(WEB_ROOT)
+        if static_path != web_root_real and not static_path.startswith(web_root_real + os.sep):
+            return self._text_response("Caminho inválido.", status=HTTPStatus.BAD_REQUEST)
+
+        if os.path.isdir(static_path):
+            static_path = os.path.join(static_path, "index.html")
+        if not os.path.isfile(static_path):
+            return self._text_response("Arquivo não encontrado.", status=HTTPStatus.NOT_FOUND)
+
+        content_type = mimetypes.guess_type(static_path)[0] or "application/octet-stream"
+        if content_type.startswith("text/") and "charset=" not in content_type:
+            content_type = f"{content_type}; charset=utf-8"
+        with open(static_path, "rb") as f:
+            body = f.read()
+        cache = "no-store, no-cache, must-revalidate, max-age=0" if static_path.endswith(".html") else "public, max-age=60"
+        return self._bytes_response(body, content_type, cache_control=cache)
 
     def _read_json_body(self):
         try:
@@ -2999,6 +3052,9 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         if path == "/":
+            return self._serve_static(path)
+
+        if path == "/legacy":
             return self._html_response(INDEX_HTML)
 
         if path == "/health":
@@ -3057,9 +3113,20 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
                 }
             )
 
+        if not path.startswith("/api/"):
+            return self._serve_static(path)
+
         return self._json_response({"erro": "Rota não encontrada"}, status=HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
+        if not self._writes_enabled():
+            return self._json_response(
+                {
+                    "erro": "API de escrita desativada neste servidor web.",
+                    "detalhe": "Use o app desktop ou defina STATSVASCO_WEB_ENABLE_WRITES=1 em desenvolvimento local.",
+                },
+                status=HTTPStatus.METHOD_NOT_ALLOWED,
+            )
         parsed = urlparse(self.path)
         if parsed.path == "/api/jogos":
             payload = self._read_json_body()
@@ -3073,6 +3140,14 @@ class StatsVascoWebHandler(BaseHTTPRequestHandler):
         return self._json_response({"erro": "Rota não encontrada"}, status=HTTPStatus.NOT_FOUND)
 
     def do_PUT(self):
+        if not self._writes_enabled():
+            return self._json_response(
+                {
+                    "erro": "API de escrita desativada neste servidor web.",
+                    "detalhe": "Use o app desktop ou defina STATSVASCO_WEB_ENABLE_WRITES=1 em desenvolvimento local.",
+                },
+                status=HTTPStatus.METHOD_NOT_ALLOWED,
+            )
         parsed = urlparse(self.path)
         if parsed.path.startswith("/api/jogos/"):
             try:
@@ -3097,7 +3172,7 @@ def main():
         port = 8000
 
     server = ThreadingHTTPServer((host, port), StatsVascoWebHandler)
-    print(f"StatsVasco Web (MVP) em http://{host}:{port}")
+    print(f"Acervo Vasco Web em http://{host}:{port}")
     print("Use Ctrl+C para parar.")
     try:
         server.serve_forever()

@@ -1,0 +1,155 @@
+{
+  "data": "10/05/2026",
+  "adversario": "Athletico-PR",
+  "competicao": "Campeonato Brasileiro Serie A",
+  "local": "casa",
+  "estadio": "São Januário",
+  "horario": "20:30",
+  "tecnico": "Renato Gaúcho",
+  "capitao": "Thiago Mendes",
+  "posicao_tabela": 8,
+  "placar": {
+    "vasco": 1,
+    "adversario": 0
+  },
+  "gols_vasco": [
+    {
+      "nome": "Thiago Mendes",
+      "gols": 1,
+      "minutos": [36],
+      "periodos": ["1T"]
+    }
+  ],
+  "gols_adversario": [],
+  "cartoes_amarelos_vasco": [
+    {
+      "nome": "Thiago Mendes",
+      "cartoes": 1
+    },
+    {
+      "nome": "Johan Rojas",
+      "cartoes": 1
+    },
+    {
+      "nome": "Robert Renan",
+      "cartoes": 1
+    },
+    {
+      "nome": "Andrés Gómez",
+      "cartoes": 1
+    }
+  ],
+  "cartoes_vermelhos_vasco": [],
+  "publico_pagante": 13315,
+  "publico_presente": 13917,
+  "renda": 898312.00,
+  "arbitragem": {
+    "arbitro": "Raphael Claus",
+    "auxiliares": [
+      "Danilo Ricardo Simon Manis",
+      "Nailton Junior de Sousa Oliveira"
+    ],
+    "var": "Wagner Reway"
+  },
+  "escalacao_partida": {
+    "titulares_por_posicao": {
+      "Goleiro": [
+        "Léo Jardim"
+      ],
+      "Lateral-Direito": [
+        "Puma Rodríguez"
+      ],
+      "Zagueiro": [
+        "Carlos Cuesta",
+        "Robert Renan"
+      ],
+      "Lateral-Esquerdo": [
+        "Lucas Piton"
+      ],
+      "Volante": [
+        "Hugo Moura",
+        "Thiago Mendes"
+      ],
+      "Meio-Campista": [
+        "Johan Rojas"
+      ],
+      "Atacante": [
+        "Adson",
+        "Andrés Gómez",
+        "Claudio Spinelli"
+      ]
+    },
+    "reservas": [
+      "Daniel Fuzato",
+      "Tche Tche",
+      "Saldivia",
+      "David",
+      "Matheus França",
+      "Nuno Moreira",
+      "Marino",
+      "Brenner",
+      "Lucas Freitas",
+      "Avellar",
+      "Ramon Rique",
+      "JP"
+    ],
+    "substituicoes": [
+      {
+        "jogador_saiu": "Johan Rojas",
+        "jogador_entrou": "Tche Tche",
+        "minuto": 22,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Claudio Spinelli",
+        "jogador_entrou": "Brenner",
+        "minuto": 31,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Adson",
+        "jogador_entrou": "Nuno Moreira",
+        "minuto": 31,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Lucas Piton",
+        "jogador_entrou": "Lucas Freitas",
+        "minuto": 45,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Andrés Gómez",
+        "jogador_entrou": "Ramon Rique",
+        "minuto": 45,
+        "periodo": "2T"
+      }
+    ],
+    "nao_relacionados": [
+      "Alison",
+      "Allan Vitor",
+      "Andrey Fernandes",
+      "Breno Vereza",
+      "Bruno André",
+      "Gustavo Guimarães",
+      "João Vitor",
+      "Juninho",
+      "Lukas Zucarello",
+      "Pablo",
+      "Phillipe Gabriel",
+      "Samuel Jesus",
+      "Walace Falcão"
+    ],
+    "lesionados": [
+      "Jair",
+      "Mateus Carvalho",
+      "Cuiabano"
+    ],
+    "suspensos": [
+      "Paulo Henrique",
+      "Cauan Barros"
+    ],
+    "servindo_selecao": []
+  },
+  "observacao": "Vasco venceu o Athletico-PR por 1 a 0 em São Januário pela 15ª rodada do Campeonato Brasileiro de 2026 e terminou a rodada na 8ª colocação, com 20 pontos. Gol de Thiago Mendes aos 36'/1T, com assistência de Puma Rodríguez segundo relato da NetVasco. A súmula registrou Thiago Mendes aos 36:00/1T e cartões amarelos para Thiago Mendes aos 7'/1T, Johan Rojas aos 17'/2T, Robert Renan aos 24'/2T e Andrés Gómez aos 44'/2T; não houve expulsões. Paulo Henrique e Cauan Barros estavam suspensos pelo terceiro cartão amarelo; Jair e Mateus Carvalho eram desfalques por lesão no joelho. Cuiabano não foi relacionado porque foi preservado enquanto se recuperava de edema na coxa esquerda. A súmula lista o reserva 82 como Riquelme Avellar; no banco local foi normalizado como Avellar. Raphael Claus, Danilo Ricardo Simon Manis e Wagner Reway não foram encontrados nas listas locais de árbitros/auxiliares/VAR; cadastrar antes de importar se o importador não criar automaticamente. Nada houve de anormal segundo a súmula; foi respeitado 1 minuto de silêncio em homenagens póstumas."
+}

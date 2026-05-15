@@ -26,6 +26,14 @@ Use múltiplas fontes: NetVasco, Vaskipédia, oGol/Zerozero/PlaymakerStats, Socc
 
 Se uma informação não for encontrada, deixe em branco e marque o status no CSV como não encontrado. Se houver conflito, marque como conflito e não gere SQL para aquele campo.
 
+Faça a missão em partes:
+- primeiro audite o núcleo da temporada inteira;
+- depois pesquise campos ricos em lotes pequenos de jogos consecutivos;
+- comece com 5 a 8 jogos por lote;
+- se as fontes estiverem limpas, avance para até 10 jogos por lote;
+- se a ficha estiver quebrada ou conflitante, reduza para 1 a 3 jogos;
+- para cada lote, traga para o banco tudo que estiver confirmado e deixe em branco o que não conseguir ler com segurança.
+
 Não altere PRD no primeiro momento. Gere:
 - script de auditoria da temporada;
 - relatório Markdown;
@@ -33,5 +41,5 @@ Não altere PRD no primeiro momento. Gere:
 - SQLs revisáveis de correção/enriquecimento;
 - SQL de jogadores históricos, se houver jogadores ausentes.
 
-Valide tudo em cópia temporária do banco e rode load_matches antes de qualquer aplicação em PRD.
+Valide cada lote em cópia temporária do banco e rode load_matches antes de qualquer aplicação em DEV/PRD. Depois de validado, aplique em DEV e PRD com backup antes de cada aplicação.
 ```

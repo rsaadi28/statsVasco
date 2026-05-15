@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sqlite3
+import unicodedata
 from datetime import datetime
 from typing import Any
 
@@ -83,6 +85,15 @@ def _json_load_file(path: str, default: Any):
         return json.loads(content) if content else default
     except Exception:
         return default
+
+
+def _lookup_key(value: str) -> str:
+    txt = re.sub(r"\s+", " ", str(value or "").strip())
+    txt = "".join(
+        ch for ch in unicodedata.normalize("NFKD", txt)
+        if not unicodedata.combining(ch)
+    )
+    return txt.casefold()
 
 
 def _normalize_listas(data: dict[str, Any] | None) -> dict[str, Any]:
@@ -270,11 +281,20 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (competition_id) REFERENCES competitions (id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS external_opponent_probability_data (
+            opponent_key TEXT PRIMARY KEY,
+            team_name TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(date_iso, id);
         CREATE INDEX IF NOT EXISTS idx_goals_match ON match_goals(match_id);
         CREATE INDEX IF NOT EXISTS idx_cards_match ON match_cards(match_id);
         CREATE INDEX IF NOT EXISTS idx_future_date ON future_matches(date_iso, id);
         CREATE INDEX IF NOT EXISTS idx_titles_year ON vasco_titles(year, id);
+        CREATE INDEX IF NOT EXISTS idx_external_opponent_probability_team
+            ON external_opponent_probability_data(team_name);
         """
     )
     current_squad_cols = {row["name"] for row in conn.execute("PRAGMA table_info(current_squad)").fetchall()}
@@ -1208,6 +1228,86 @@ def load_titles(db_path: str) -> list[dict[str, Any]]:
         for row in rows
         if row["campeonato"]
     ]
+
+
+def save_external_opponent_probability_data(
+    db_path: str,
+    opponent_name: str,
+    payload: dict[str, Any],
+) -> None:
+    if not isinstance(payload, dict):
+        raise ValueError("payload precisa ser um objeto JSON.")
+    team_name = str(
+        payload.get("time")
+        or payload.get("clube")
+        or payload.get("nome")
+        or payload.get("adversario")
+        or opponent_name
+        or ""
+    ).strip()
+    opponent_key = _lookup_key(opponent_name or team_name)
+    if not opponent_key:
+        raise ValueError("nome do adversário obrigatório.")
+    if not team_name:
+        team_name = str(opponent_name or "").strip()
+    payload_json = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    updated_at = datetime.now().isoformat(timespec="seconds")
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        _ensure_team(conn, team_name, "adversario")
+        conn.execute(
+            "DELETE FROM external_opponent_probability_data WHERE opponent_key = ?",
+            (opponent_key,),
+        )
+        conn.execute(
+            """
+            INSERT INTO external_opponent_probability_data(
+                opponent_key, team_name, payload_json, updated_at
+            ) VALUES (?, ?, ?, ?)
+            """,
+            (opponent_key, team_name, payload_json, updated_at),
+        )
+
+
+def load_external_opponent_probability_data(db_path: str, opponent_name: str) -> dict[str, Any] | None:
+    opponent_key = _lookup_key(opponent_name)
+    if not opponent_key:
+        return None
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        row = conn.execute(
+            """
+            SELECT team_name, payload_json, updated_at
+            FROM external_opponent_probability_data
+            WHERE opponent_key = ?
+            """,
+            (opponent_key,),
+        ).fetchone()
+    if row is None:
+        return None
+    try:
+        payload = json.loads(row["payload_json"])
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    payload["_dados_salvos"] = {
+        "time": row["team_name"],
+        "atualizado_em": row["updated_at"],
+    }
+    return payload
+
+
+def delete_external_opponent_probability_data(db_path: str, opponent_name: str) -> None:
+    opponent_key = _lookup_key(opponent_name)
+    if not opponent_key:
+        return
+    with _open(db_path) as conn:
+        _create_schema(conn)
+        conn.execute(
+            "DELETE FROM external_opponent_probability_data WHERE opponent_key = ?",
+            (opponent_key,),
+        )
 
 
 def backup_database_snapshot(data_dir: str, db_path: str) -> None:

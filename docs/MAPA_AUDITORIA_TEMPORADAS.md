@@ -164,6 +164,47 @@ Campos mínimos para novos jogadores históricos quando a fonte não trouxer mai
 
 Não usar ausência de fonte como motivo para bloquear a partida inteira: registra-se o jogo com o máximo confirmado e marca-se o restante como pendente.
 
+## Execução em lotes pequenos
+
+Depois da auditoria de núcleo da temporada inteira, os campos ricos devem ser pesquisados e aplicados em lotes pequenos de jogos consecutivos. A meta é avançar com segurança, não esperar que todos os campos de todos os jogos estejam completos.
+
+Tamanho recomendado:
+
+- Primeiro lote de um ano: 5 a 8 jogos consecutivos.
+- Se o padrão das fontes estiver limpo e a validação passar, próximos lotes: até 10 jogos.
+- Se houver HTML quebrado, ficha incompleta ou conflito de fonte, reduzir para 1 a 3 jogos.
+
+Para cada lote:
+
+1. Ler manualmente as fichas/fontes de cada jogo do lote.
+2. Registrar no CSV todos os campos encontrados e o status por bloco.
+3. Gerar SQL apenas para os dados confirmados.
+4. Não inventar dado ausente: se a fonte não trouxer banco, renda, auxiliar, capitão, minuto ou substituição, deixar em branco e marcar `não encontrado` ou `parcial`.
+5. Se uma ficha trouxer parte da escalação, salvar apenas o que for modelável sem distorcer o app. Exemplo: só gerar `lineup_json` completo quando houver 11 titulares confirmados; reservas e substituições podem ficar vazias se não encontrados.
+6. Validar o SQL do lote em cópia temporária do banco.
+7. Rodar novamente o script de auditoria para confirmar que o CSV e o relatório refletem o estado pós-lote.
+8. Rodar `load_matches` na cópia.
+9. Só depois aplicar o lote em DEV e PRD, com backup antes de cada aplicação.
+
+Estados recomendados no CSV para lotes:
+
+- `confirmado - aplicado`: dado confirmado e já aplicado no banco.
+- `confirmado - sql gerado`: dado confirmado, mas ainda não aplicado.
+- `parcial - aplicado`: parte confirmada foi aplicada e o restante ficou vazio.
+- `parcial - pendente`: parte confirmada foi registrada no CSV, mas ainda não virou SQL.
+- `não encontrado`: campo pesquisado e não localizado.
+- `conflito`: fontes discordam; registrar as fontes e não gerar SQL para esse campo.
+- `pendente - fonte indicada`: há link/fonte provável, mas o campo ainda não foi revisado.
+
+O relatório Markdown do ano deve ter uma seção por lote aplicado, com:
+
+- intervalo de jogos do lote;
+- SQLs aplicados;
+- cópia temporária validada;
+- backups de DEV e PRD;
+- resultado de `load_matches`;
+- cobertura final do recorte depois do lote.
+
 ## Fluxo para qualquer ano
 
 1. Copiar `scripts/audit_temporada_2000.py` para o novo ano.
@@ -185,17 +226,21 @@ python3 "scripts/audit_temporada_${ANO}.py" \
 ```
 
 5. Revisar o Markdown e o CSV.
-6. Aplicar SQL apenas em copia temporaria:
+6. Separar os SQLs em dois níveis:
+   - núcleo/global da temporada: correções de data, adversário, competição, mando, placar, gols, técnico e horários;
+   - lotes de campos ricos: estádio, arbitragem, público, renda, capitão, escalação, banco, substituições, cartões e minutos.
+7. Aplicar SQL apenas em copia temporaria:
 
 ```bash
 ANO=2001
 cp "$HOME/Library/Application Support/StatsVasco/stats_vasco.sqlite3" "/tmp/stats_vasco_${ANO}_audit.sqlite3"
 sqlite3 "/tmp/stats_vasco_${ANO}_audit.sqlite3" < "docs/sql_corrigir_temporada_${ANO}.sql"
 sqlite3 "/tmp/stats_vasco_${ANO}_audit.sqlite3" < "docs/sql_enriquecer_temporada_${ANO}_horarios_tecnicos.sql"
+sqlite3 "/tmp/stats_vasco_${ANO}_audit.sqlite3" < "docs/sql_enriquecer_temporada_${ANO}_lote_001.sql"
 python3 "scripts/audit_temporada_${ANO}.py" --db "/tmp/stats_vasco_${ANO}_audit.sqlite3"
 ```
 
-7. Validar leitura pelo app:
+8. Validar leitura pelo app:
 
 ```bash
 ANO=2001
@@ -208,11 +253,11 @@ print(len(matches))
 PY
 ```
 
-8. Conferir aba/relatórios de jogadores:
+9. Conferir aba/relatórios de jogadores:
    - ex-jogadores aparecem no histórico;
    - contagem de jogos não diminuiu indevidamente;
    - gols/cartões/substituições aparecem nos detalhes.
-9. Só depois repetir em DEV/PRD.
+10. Só depois repetir em DEV/PRD.
 
 ## Status da temporada 2000
 
