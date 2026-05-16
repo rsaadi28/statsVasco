@@ -405,9 +405,12 @@ def split_future_opponent(match_text: str) -> str:
     return right.strip() if "vasco" in left.casefold() else left.strip()
 
 
-def build_future(jogos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def build_future(jogos: list[dict[str, Any]], after_date: datetime | None = None) -> list[dict[str, Any]]:
     out = []
     for match in jogos:
+        match_date = parse_date(match.get("data"))
+        if after_date and match_date and match_date <= after_date:
+            continue
         adv = split_future_opponent(match.get("jogo", ""))
         out.append(
             {
@@ -766,13 +769,16 @@ def js_value(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2)
 
 
-def build_runtime(db_path: Path) -> str:
-    bootstrap_database(str(db_path))
-    jogos = load_matches(str(db_path))
-    futuros = load_future_matches(str(db_path))
-    current_squad = load_current_squad(str(db_path))
-    historic_players = load_historic_players(str(db_path))
-
+def build_runtime_from_state(
+    jogos: list[dict[str, Any]],
+    futuros: list[dict[str, Any]] | None = None,
+    current_squad: dict[str, Any] | None = None,
+    historic_players: dict[str, Any] | None = None,
+    source_label: str = "estado em memória",
+) -> str:
+    futuros = futuros or []
+    current_squad = current_squad or {"jogadores": [], "tecnico": ""}
+    historic_players = historic_players or {"jogadores": []}
     seasons, hints = build_seasons(jogos, current_squad)
     details = build_details(jogos)
     geral, artilheiros, carrascos = build_general(jogos)
@@ -789,22 +795,24 @@ def build_runtime(db_path: Path) -> str:
 
     latest_year = max((int(y) for y in seasons), default=None)
     latest_detail = None
+    latest_played_date = None
     if jogos:
         latest_match = max(enumerate(jogos, start=1), key=lambda im: (parse_date(im[1].get("data")) or datetime.min, im[0]))
         latest_detail = match_detail(latest_match[1], latest_match[0])
+        latest_played_date = parse_date(latest_match[1].get("data"))
 
     lines = [
         "// Acervo Vasco — dados gerados automaticamente.",
-        f"// Fonte: {db_path}",
+        f"// Fonte: {source_label}",
         f"// Gerado em: {datetime.now().isoformat(timespec='seconds')}",
         "window.ACERVO_RUNTIME_LOADED = true;",
         f"window.ACERVO_SEASONS = {js_value(seasons)};",
         f"window.ACERVO_YEAR_HINTS = {js_value(hints)};",
     ]
-    if latest_year and str(latest_year) in seasons:
+    if latest_year and latest_year != 2026 and str(latest_year) in seasons:
         lines.append(f"window.SEASON_{latest_year} = window.ACERVO_SEASONS[{json.dumps(str(latest_year))}];")
-        if latest_year == 2026:
-            lines.append("window.SEASON_2026 = window.ACERVO_SEASONS['2026'];")
+    if "2026" in seasons:
+        lines.append("window.SEASON_2026 = window.ACERVO_SEASONS['2026'];")
     lines.extend(
         [
             f"window.PARTIDAS_DETALHES = {js_value(details)};",
@@ -813,7 +821,7 @@ def build_runtime(db_path: Path) -> str:
             f"window.ARTILHEIROS_VASCO = {js_value(artilheiros)};",
             f"window.CARRASCOS = {js_value(carrascos)};",
             f"window.RETROSPECTOS = {js_value(build_retros(jogos))};",
-            f"window.JOGOS_FUTUROS = {js_value(build_future(futuros))};",
+            f"window.JOGOS_FUTUROS = {js_value(build_future(futuros, after_date=latest_played_date))};",
             f"window.ELENCO_DATA = {js_value(elenco_data)};",
             f"window.JOGADORES = {js_value(jogadores)};",
             f"window.EMPRESTADOS = {js_value(emprestados)};",
@@ -842,6 +850,21 @@ window.gameSeriesGeral = function() {
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def build_runtime(db_path: Path) -> str:
+    bootstrap_database(str(db_path))
+    jogos = load_matches(str(db_path))
+    futuros = load_future_matches(str(db_path))
+    current_squad = load_current_squad(str(db_path))
+    historic_players = load_historic_players(str(db_path))
+    return build_runtime_from_state(
+        jogos,
+        futuros,
+        current_squad,
+        historic_players,
+        source_label=str(db_path),
+    )
 
 
 def main() -> None:

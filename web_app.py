@@ -2142,7 +2142,7 @@ INDEX_HTML = """<!doctype html>
     const retroState = { adversario: "", partidas: [], sortCol: "data", sortReverse: true };
 
     function parseDataBR(txt) {
-      const m = String(txt || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      const m = String(txt || "").trim().match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);
       if (!m) return null;
       const d = Number(m[1]);
       const mo = Number(m[2]) - 1;
@@ -2152,7 +2152,7 @@ INDEX_HTML = """<!doctype html>
     }
 
     function parsePlacar(txt) {
-      const m = String(txt || "").trim().match(/^(\d+)\s*x\s*(\d+)$/i);
+      const m = String(txt || "").trim().match(/^(\\d+)\\s*x\\s*(\\d+)$/i);
       if (!m) return [0, 0];
       return [Number(m[1]), Number(m[2])];
     }

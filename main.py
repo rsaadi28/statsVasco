@@ -40,6 +40,7 @@ from storage_sqlite import (
     save_matches as db_save_matches,
     save_titles as db_save_titles,
 )
+from web_sync import schedule_sync_after_change
 
 # --- Matplotlib (gráficos) ---
 try:
@@ -345,11 +346,13 @@ def salvar_jogo(jogo):
 def salvar_lista_jogos(dados):
     db_save_matches(DB_PATH, dados)
     _cache_set("matches", dados if isinstance(dados, list) else [])
+    schedule_sync_after_change(DB_PATH, reason="matches-updated")
 
 
 def salvar_lista_futuros(dados):
     db_save_future_matches(DB_PATH, dados)
     _cache_set("future_matches", dados if isinstance(dados, list) else [])
+    schedule_sync_after_change(DB_PATH, reason="future-matches-updated")
 
 
 def carregar_estadio_adversario(nome_time: str) -> str:
@@ -583,6 +586,7 @@ def salvar_elenco_atual(dados):
     dados_limpos = {"jogadores": jogadores_limpos, "tecnico": tecnico}
     db_save_current_squad(DB_PATH, dados_limpos)
     _cache_set("current_squad", dados_limpos)
+    schedule_sync_after_change(DB_PATH, reason="current-squad-updated")
 
 
 def _normalizar_jogador_historico(item):
@@ -718,6 +722,7 @@ def salvar_jogadores_historico(dados):
     dados_limpos = {"jogadores": _ordenar_jogadores_historico(normalizados)}
     db_save_historic_players(DB_PATH, dados_limpos)
     _cache_set("historic_players", dados_limpos)
+    schedule_sync_after_change(DB_PATH, reason="historic-players-updated")
 
 
 def _chave_nome_jogador(nome):

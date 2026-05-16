@@ -1,0 +1,27 @@
+{
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*).jsx",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/babel; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/data-runtime.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}
