@@ -1,0 +1,182 @@
+{
+  "data": "20/05/2026",
+  "adversario": "Olimpia",
+  "competicao": "Copa Sul-Americana",
+  "local": "fora",
+  "estadio": "Defensores del Chaco",
+  "horario": "19:00",
+  "tecnico": "Marcelo Salles",
+  "capitao": "",
+  "posicao_tabela": null,
+  "placar": {
+    "vasco": 1,
+    "adversario": 3
+  },
+  "gols_vasco": [
+    {
+      "nome": "Carlos Cuesta",
+      "gols": 1,
+      "minutos": [48],
+      "periodos": ["1T"],
+      "assistencia": "Nuno Moreira"
+    }
+  ],
+  "gols_adversario": [
+    {
+      "nome": "Mateo Gamarra",
+      "gols": 1,
+      "minutos": [21],
+      "periodos": ["2T"],
+      "clube": "Olimpia"
+    },
+    {
+      "nome": "Hugo Sandoval",
+      "gols": 1,
+      "minutos": [39],
+      "periodos": ["2T"],
+      "clube": "Olimpia"
+    },
+    {
+      "nome": "Sebastián Ferreira",
+      "gols": 1,
+      "minutos": [49],
+      "periodos": ["2T"],
+      "clube": "Olimpia"
+    }
+  ],
+  "cartoes_amarelos_vasco": [
+    {
+      "nome": "Tche Tche",
+      "cartoes": 1
+    },
+    {
+      "nome": "Hugo Moura",
+      "cartoes": 1
+    },
+    {
+      "nome": "Léo Jardim",
+      "cartoes": 1
+    },
+    {
+      "nome": "Lucas Freitas",
+      "cartoes": 1
+    }
+  ],
+  "cartoes_vermelhos_vasco": [
+    {
+      "nome": "João Vitor",
+      "cartoes": 1
+    }
+  ],
+  "publico_pagante": null,
+  "publico_presente": null,
+  "renda": null,
+  "arbitragem": {
+    "arbitro": "Wilmar Roldán (COL)",
+    "auxiliares": [
+      "Alexander Guzman (COL)",
+      "Cristian Aguirre (COL)"
+    ],
+    "var": "David Rodríguez (COL)"
+  },
+  "escalacao_partida": {
+    "titulares_por_posicao": {
+      "Goleiro": [
+        "Léo Jardim"
+      ],
+      "Lateral-Direito": [
+        "João Vitor"
+      ],
+      "Zagueiro": [
+        "Carlos Cuesta",
+        "Lucas Freitas"
+      ],
+      "Lateral-Esquerdo": [
+        "Avellar"
+      ],
+      "Volante": [
+        "Hugo Moura",
+        "Tche Tche"
+      ],
+      "Meio-Campista": [
+        "Ramon Rique",
+        "Marino",
+        "Nuno Moreira"
+      ],
+      "Atacante": [
+        "David"
+      ]
+    },
+    "reservas": [
+      "Daniel Fuzato",
+      "Walace Falcão",
+      "Matheus França",
+      "Brenner",
+      "Alison",
+      "Bruno André",
+      "Lukas Zucarello",
+      "Gustavo Guimarães",
+      "JP",
+      "Samuel Jesus",
+      "Andrey Fernandes",
+      "Bruno Lopes"
+    ],
+    "substituicoes": [
+      {
+        "jogador_saiu": "David",
+        "jogador_entrou": "Brenner",
+        "minuto": 23,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Nuno Moreira",
+        "jogador_entrou": "Matheus França",
+        "minuto": 23,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Ramon Rique",
+        "jogador_entrou": "Walace Falcão",
+        "minuto": 23,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Marino",
+        "jogador_entrou": "JP",
+        "minuto": 32,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Avellar",
+        "jogador_entrou": "Samuel Jesus",
+        "minuto": 38,
+        "periodo": "2T"
+      }
+    ],
+    "nao_relacionados": [
+      "Adson",
+      "Allan Vitor",
+      "Andrés Gómez",
+      "Breno Vereza",
+      "Cauan Barros",
+      "Claudio Spinelli",
+      "Juninho",
+      "Lucas Piton",
+      "Pablo",
+      "Phillipe Gabriel",
+      "Puma Rodríguez",
+      "Robert Renan",
+      "Saldivia",
+      "Thiago Mendes"
+    ],
+    "lesionados": [
+      "Jair",
+      "Mateus Carvalho",
+      "Paulo Henrique",
+      "Cuiabano"
+    ],
+    "suspensos": [],
+    "servindo_selecao": []
+  },
+  "observacao": "Olimpia 3 x 1 Vasco, no Defensores del Chaco, pela 5ª rodada do Grupo G da Copa Sul-Americana 2026; o Vasco caiu para a 2ª colocação do grupo, com 7 pontos. O Vasco atuou com time misto/reserva: fontes pré-jogo informaram que a maioria dos titulares ficou no Rio com Renato Gaúcho, que cumpria o terceiro jogo de suspensão aplicada pela Conmebol por não viajar para a estreia contra o Barracas Central. Gols: Carlos Cuesta aos 48'/1T, de cabeça após escanteio de Nuno Moreira; Mateo Gamarra aos 21'/2T; Hugo Sandoval aos 39'/2T; Sebastián Ferreira aos 49'/2T. Público e renda não localizados em fonte confiável. Arbitragem e reclamações: Wilmar Roldán foi alvo de forte contestação vascaína. Bruno Lazaroni afirmou em coletiva que faltou critério e que a falta que originou o segundo gol do Olimpia não foi marcada para o Vasco durante a partida, dizendo que isso prejudicou a equipe; ele, porém, reconheceu como correta a expulsão de João Vitor. Lances de rigor/reclamação registrados por fontes de tempo real e ficha: aos 16'/1T, Léo Jardim demorou mais de 8 segundos para repor a bola e a arbitragem marcou escanteio para o Olimpia; Marcelo Salles foi expulso aos 47'/1T por reclamação; João Vitor foi expulso aos 26-27'/2T por entrada dura/solada em Franco Alfonso; Hugo Moura recebeu amarelo por reclamação aos 36'/2T; Léo Jardim recebeu amarelo aos 39'/2T; Lucas Freitas recebeu amarelo aos 46'/2T; Tche Tche também foi advertido. A jogada do segundo gol nasceu de falta assinalada contra Avellar em Bryan Bentaberry, lance que gerou reclamação por suposta diferença de critério. Também houve percepção de torcedores de perseguição/retaliação da arbitragem da Conmebol contra o Vasco por usar reservas na competição, inclusive por cartões mais rigorosos ao Vasco e por decisões pequenas como controle de reposição/bola parada; essa hipótese foi registrada como percepção/reclamação, sem comprovação documental encontrada. A ficha da NetVasco registrou apenas um amarelo para o Olimpia, Alex Franco, enquanto bases de estatística apontaram dois amarelos do Olimpia e quatro do Vasco. Reservas completos normalizados pela base local: Alison De Nardi Araujo como Alison; Bruno André Azevedo Ribeiro como Bruno André; Lukas Zuccarello como Lukas Zucarello; João Pedro como JP; Samuel como Samuel Jesus; Riquelme Avellar como Avellar; João Vitor Silva/Mutano como João Vitor; Barros/Cauan Barros e outros titulares poupados ficaram como não relacionados. Cristian Aguirre (COL), David Rodríguez (COL), Wilmar Roldán (COL), Defensores del Chaco e Bruno Lopes não estavam nas listas auxiliares locais antes da importação e devem ser cadastrados/foram preparados para cadastro."
+}

@@ -13,7 +13,7 @@ const SAMPLE_JOGO = {
   capitao: "Léo Jardim",
   placar: { vasco: 1, adversario: 1 },
   gols_vasco: [
-    { nome: "Brenner", minuto: 22, periodo: "1T" },
+    { nome: "Brenner", minuto: 22, periodo: "1T", assistencia: "Nuno Moreira" },
   ],
   gols_adversario: [
     { nome: "Pedro Sarabia", minuto: 71, periodo: "2T" },
@@ -272,13 +272,13 @@ function AdminPreview({ p }) {
           <h5>Gols do Vasco</h5>
           {(p.gols_vasco || []).length === 0
             ? <em>nenhum gol</em>
-            : <ul>{p.gols_vasco.map((g,i) => <li key={i}>{g.nome} <span className="min">{g.minuto}'/{g.periodo}{g.penalti ? " · pen" : ""}</span></li>)}</ul>}
+            : <ul>{p.gols_vasco.map((g,i) => <li key={i}>{g.nome} <span className="min">{g.minuto}'/{g.periodo}{g.penalti ? " · pen" : ""}{g.assistencia ? ` · ass. ${g.assistencia}` : ""}</span></li>)}</ul>}
         </div>
         <div>
           <h5>Gols do {p.adversario}</h5>
           {(p.gols_adversario || []).length === 0
             ? <em>nenhum gol</em>
-            : <ul>{p.gols_adversario.map((g,i) => <li key={i}>{g.nome}{g.contra ? " (contra)" : ""} <span className="min">{g.minuto}'/{g.periodo}</span></li>)}</ul>}
+            : <ul>{p.gols_adversario.map((g,i) => <li key={i}>{g.nome}{g.contra ? " (contra)" : ""} <span className="min">{g.minuto}'/{g.periodo}{g.assistencia ? ` · ass. ${g.assistencia}` : ""}</span></li>)}</ul>}
         </div>
         <div>
           <h5>Amarelos · {(p.cartoes_amarelos_vasco||[]).length}</h5>

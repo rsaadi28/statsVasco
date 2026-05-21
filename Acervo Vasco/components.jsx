@@ -109,25 +109,88 @@ function AproveitamentoChart({ data, width = 320, height = 56 }) {
 }
 
 // ============ V/E/D streak bars (sequência de resultados) ============
-function StreakBars({ results, width = 320, height = 56 }) {
+function formatMatchScore(jogo) {
+  if (!jogo || !Array.isArray(jogo.placar)) return "Placar não informado";
+  if (jogo.local === "fora") {
+    return `${jogo.adversario} ${jogo.placar[1]} × ${jogo.placar[0]} Vasco`;
+  }
+  return `Vasco ${jogo.placar[0]} × ${jogo.placar[1]} ${jogo.adversario}`;
+}
+
+function scorePair(jogo) {
+  if (Array.isArray(jogo?.placar)) return jogo.placar.map((n) => Number(n || 0));
+  if (jogo?.placar && typeof jogo.placar === "object") {
+    return [Number(jogo.placar.vasco || 0), Number(jogo.placar.adversario || 0)];
+  }
+  return null;
+}
+
+function streakBarHeight(result, game, height) {
+  const inner = Math.max(1, height - 8);
+  const pair = scorePair(game);
+  if (!pair) {
+    const fallback = result === "E" ? 0.32 : result === "D" ? 0.46 : 0.64;
+    return inner * fallback;
+  }
+  const [gp, gc] = pair;
+  if (result === "E") {
+    const drawGoals = Math.min(4, Math.max(0, gp));
+    return inner * (0.22 + drawGoals * 0.12);
+  }
+  const diff = Math.min(4, Math.max(1, Math.abs(gp - gc)));
+  return inner * (0.32 + diff * 0.16);
+}
+
+function StreakBars({ results, games = [], width = 320, height = 56 }) {
   // results: ["V","E","D",...]
   const n = results.length;
+  const [hover, setHover] = useState(null);
+  if (!n) return null;
   const pad = 2;
   const barW = (width - pad * (n + 1)) / n;
   const COLORS = { V: "#4d6b2a", E: "#b48415", D: "#a8341f" };
+  const RESULT_LABELS = { V: "Vitória", E: "Empate", D: "Derrota" };
+  const tooltipGame = hover ? games[hover.index] : null;
+  const tooltipHalf = 110;
+  const tooltipLeft = hover ? Math.max(tooltipHalf, Math.min(width - tooltipHalf, hover.left)) : 0;
   return (
-    <svg width={width} height={height} style={{ display: "block" }}>
-      {results.map((r, i) => (
-        <rect
-          key={i}
-          x={pad + i * (barW + pad)}
-          y={r === "V" ? 4 : r === "E" ? height / 2 - height / 8 : height - 4 - height * 0.6}
-          width={barW}
-          height={r === "V" ? height - 8 : r === "E" ? height / 4 : height * 0.6}
-          fill={COLORS[r]}
-        />
-      ))}
-    </svg>
+    <span className="streak-bars-wrap" style={{ width, height }}>
+      <svg width={width} height={height} className="streak-bars-svg" aria-label="Sequência de resultados">
+        {results.map((r, i) => {
+          const x = pad + i * (barW + pad);
+          const game = games[i];
+          const h = streakBarHeight(r, game, height);
+          const y = r === "E" ? (height - h) / 2 : height - 4 - h;
+          return (
+            <rect
+              key={i}
+              className="streak-bars-hit"
+              x={x}
+              y={y}
+              width={barW}
+              height={h}
+              fill={COLORS[r]}
+              onMouseEnter={() => game && setHover({ index: i, left: x + barW / 2 })}
+              onMouseMove={() => game && setHover({ index: i, left: x + barW / 2 })}
+              onMouseLeave={() => setHover(null)}
+            />
+          );
+        })}
+      </svg>
+      {tooltipGame && (
+        <span
+          className={"streak-tooltip " + tooltipGame.resultado}
+          style={{ left: tooltipLeft, bottom: height + 8 }}
+        >
+          <span className="streak-tooltip-kicker">
+            {tooltipGame.data} · {RESULT_LABELS[tooltipGame.resultado] || tooltipGame.resultado}
+          </span>
+          <span className="streak-tooltip-main">{tooltipGame.adversario}</span>
+          <span className="streak-tooltip-score">{formatMatchScore(tooltipGame)}</span>
+          <span className="streak-tooltip-comp">{tooltipGame.competicao}</span>
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -143,5 +206,6 @@ function MiniStreak({ results }) {
 Object.assign(window, {
   fmtN, fmtBRL,
   Monogram, clubInitials, clubBg,
+  formatMatchScore,
   Sparkline, AproveitamentoChart, StreakBars, MiniStreak,
 });

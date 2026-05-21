@@ -8,6 +8,30 @@ const COMP_TABS = [
   { id: "sulam",       label: "Sul-Americana",                  competicao: "Copa Sul-Americana" },
 ];
 
+function normalizeCompeticaoName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function competicaoKey(value) {
+  const norm = normalizeCompeticaoName(value);
+  if (!norm) return "";
+  if (norm.includes("campeonato brasileiro") && norm.includes("serie a")) return "brasileiro-a";
+  if (norm.includes("campeonato brasileiro") && norm.includes("serie b")) return "brasileiro-b";
+  if (norm.includes("campeonato carioca")) return "carioca";
+  if (norm.includes("copa do brasil")) return "copa-do-brasil";
+  if (norm.includes("sul americana")) return "sul-americana";
+  return norm;
+}
+
+function sameCompeticao(value, target) {
+  return !target || competicaoKey(value) === competicaoKey(target);
+}
+
 function Comparativo() {
   const [tab, setTab] = useState("totais");
   const [anoComp, setAnoComp] = useState(2025);
@@ -31,7 +55,7 @@ function Comparativo() {
 function buildSeries(season26, season25, competicao, anoComparacao) {
   // 2026 — pega do SEASON_2026.jogos (ordem cronológica) e normaliza o campo de resultado
   const jogos26 = season26.jogos
-    .filter(j => !competicao || j.competicao === competicao)
+    .filter(j => sameCompeticao(j.competicao, competicao))
     .map(j => ({
       placar: j.placar,
       res: j.resultado,
@@ -44,7 +68,7 @@ function buildSeries(season26, season25, competicao, anoComparacao) {
   let jogosPrev = [];
   if (anoComparacao === 2025 && season25?.jogos) {
     jogosPrev = season25.jogos
-      .filter(j => !competicao || j.competicao === competicao)
+      .filter(j => sameCompeticao(j.competicao, competicao))
       .map(j => ({
         placar: j.placar, res: j.res, rodada: j.rodada, posicao: j.posicao, competicao: j.competicao,
       }));

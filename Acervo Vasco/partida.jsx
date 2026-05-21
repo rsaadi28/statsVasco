@@ -24,10 +24,215 @@ function fmtMin(min, periodo) {
   return `${min}'/${periodo}`;
 }
 
+const TEAM_STAT_ORDER = [
+  "posse_bola",
+  "passes_certos",
+  "passes_errados",
+  "passes_tentados",
+  "precisao_passes",
+  "finalizacoes",
+  "finalizacoes_no_gol",
+  "finalizacoes_fora",
+  "finalizacoes_bloqueadas",
+  "escanteios",
+  "impedimentos",
+  "faltas_cometidas",
+  "faltas_recebidas",
+  "desarmes",
+  "interceptacoes",
+  "cruzamentos_certos",
+  "cruzamentos_errados",
+  "cruzamentos_tentados",
+  "lancamentos_certos",
+  "lancamentos_errados",
+  "lancamentos_tentados",
+  "xg",
+];
+
+const PLAYER_STAT_ORDER = [
+  "minutos",
+  "nota_sofascore",
+  "nota",
+  "passes_certos",
+  "passes_errados",
+  "passes_tentados",
+  "precisao_passes",
+  "finalizacoes",
+  "finalizacoes_no_gol",
+  "assistencias",
+  "chances_criadas",
+  "desarmes",
+  "interceptacoes",
+  "duelos_ganhos",
+  "duelos_aereos_ganhos",
+  "faltas_cometidas",
+  "faltas_recebidas",
+  "defesas",
+  "cruzamentos_certos",
+  "cruzamentos_errados",
+  "lancamentos_certos",
+  "lancamentos_errados",
+];
+
+const STAT_LABELS = {
+  assistencias: "Assistências",
+  chances_criadas: "Chances criadas",
+  cruzamentos_certos: "Cruzamentos certos",
+  cruzamentos_errados: "Cruzamentos errados",
+  cruzamentos_tentados: "Cruzamentos tentados",
+  defesas: "Defesas",
+  desarmes: "Desarmes",
+  duelos_aereos_ganhos: "Duelos aéreos ganhos",
+  duelos_ganhos: "Duelos ganhos",
+  escanteios: "Escanteios",
+  faltas_cometidas: "Faltas cometidas",
+  faltas_recebidas: "Faltas recebidas",
+  finalizacoes: "Finalizações",
+  finalizacoes_bloqueadas: "Finalizações bloqueadas",
+  finalizacoes_fora: "Finalizações fora",
+  finalizacoes_no_gol: "Finalizações no gol",
+  impedimentos: "Impedimentos",
+  interceptacoes: "Interceptações",
+  lancamentos_certos: "Lançamentos certos",
+  lancamentos_errados: "Lançamentos errados",
+  lancamentos_tentados: "Lançamentos tentados",
+  minutos: "Minutos",
+  nota: "Nota",
+  nota_sofascore: "Nota SofaScore",
+  passes_certos: "Passes certos",
+  passes_errados: "Passes errados",
+  passes_tentados: "Passes tentados",
+  posse_bola: "Posse de bola",
+  precisao_passes: "Precisão dos passes",
+  xg: "xG",
+};
+
+const PERCENT_STATS = new Set([
+  "posse_bola",
+  "precisao_cruzamentos",
+  "precisao_lancamentos",
+  "precisao_passes",
+]);
+
+function filledStat(v) {
+  return v !== null && v !== undefined && v !== "";
+}
+
+function statNameKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function samePlayerName(a, b) {
+  return statNameKey(a) === statNameKey(b) && statNameKey(a) !== "";
+}
+
+function statLabel(key) {
+  if (STAT_LABELS[key]) return STAT_LABELS[key];
+  return String(key || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function fmtStatValue(key, value) {
+  if (!filledStat(value)) return "—";
+  const n = Number(value);
+  if (Number.isFinite(n)) {
+    const formatted = n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+    return PERCENT_STATS.has(key) ? `${formatted}%` : formatted;
+  }
+  return String(value);
+}
+
+function orderedStatRows(stats, order) {
+  if (!stats || typeof stats !== "object") return [];
+  const used = new Set(["nome"]);
+  const rows = [];
+  order.forEach(key => {
+    if (!filledStat(stats[key])) return;
+    used.add(key);
+    rows.push({ key, label: statLabel(key), value: stats[key] });
+  });
+  Object.keys(stats)
+    .filter(key => !used.has(key) && filledStat(stats[key]))
+    .sort((a, b) => statLabel(a).localeCompare(statLabel(b), "pt-BR"))
+    .forEach(key => rows.push({ key, label: statLabel(key), value: stats[key] }));
+  return rows;
+}
+
+function playerStatsFor(p, name) {
+  const rows = Array.isArray(p?.estatisticas_jogadores_vasco)
+    ? p.estatisticas_jogadores_vasco
+    : [];
+  return rows.find(item => samePlayerName(item?.nome, name)) || null;
+}
+
+function allLineupPlayers(p) {
+  const out = [];
+  const seen = new Set();
+  const add = (name, role, detail) => {
+    const clean = String(name || "").trim();
+    const key = statNameKey(clean);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push({ name: clean, role, detail });
+  };
+  const tit = p?.escalacao?.titulares_por_posicao || {};
+  Object.entries(tit).forEach(([pos, names]) => {
+    (Array.isArray(names) ? names : []).forEach(name => add(name, "Titular", pos));
+  });
+  (p?.escalacao?.reservas || []).forEach(name => add(name, "Reserva", "Banco"));
+  return out;
+}
+
+function participationFor(p, name) {
+  const player = allLineupPlayers(p).find(item => samePlayerName(item.name, name));
+  const subs = p?.escalacao?.substituicoes || [];
+  const entrou = subs.find(s => samePlayerName(s.entra, name));
+  const saiu = subs.find(s => samePlayerName(s.sai, name));
+  if (!player) {
+    return { role: "Vasco", detail: "Relacionado no scout" };
+  }
+  if (player.role === "Titular" && saiu) {
+    return { role: "Titular", detail: `${player.detail} · saiu ${fmtMin(saiu.minuto, saiu.periodo)}` };
+  }
+  if (player.role === "Reserva" && entrou) {
+    return { role: "Reserva utilizado", detail: `entrou ${fmtMin(entrou.minuto, entrou.periodo)}` };
+  }
+  if (player.role === "Reserva") {
+    return { role: "Reserva", detail: "não utilizado" };
+  }
+  return player;
+}
+
+function playerEventRows(p, name) {
+  const goals = (p?.gols_vasco || []).filter(g => samePlayerName(g.nome, name)).length;
+  const assists = (p?.gols_vasco || []).filter(g => samePlayerName(g.assistencia, name)).length;
+  const yellows = (p?.cartoes_amarelos_vasco || []).filter(n => samePlayerName(n, name)).length;
+  const reds = (p?.cartoes_vermelhos_vasco || []).filter(c => samePlayerName(c?.nome, name)).length;
+  return [
+    ["Gols", goals],
+    ["Assistências", assists],
+    ["Amarelos", yellows],
+    ["Vermelhos", reds],
+  ].filter(([, value]) => value > 0);
+}
+
 function Partida({ partida, onBack, onOpenPlayer }) {
   const [tab, setTab] = useState("resumo");
+  const [matchPlayer, setMatchPlayer] = useState(null);
+  React.useEffect(() => setMatchPlayer(null), [partida?.id]);
+  const openMatchPlayer = (name) => {
+    const clean = String(name || "").trim();
+    if (clean && clean !== "—") setMatchPlayer(clean);
+  };
   return (
-    <PlayerOpenCtx.Provider value={onOpenPlayer}>
+    <PlayerOpenCtx.Provider value={openMatchPlayer}>
     <div className="main">
       <button className="detail-back" onClick={onBack}>
         <span className="arrow">‹</span> Voltar para temporada 2026
@@ -38,6 +243,7 @@ function Partida({ partida, onBack, onOpenPlayer }) {
           ["resumo","Resumo"],
           ["escalacao","Escalação"],
           ["eventos","Eventos"],
+          ["estatisticas","Estatísticas"],
           ["arbitragem","Arbitragem"],
           ["bilheteria","Bilheteria"],
         ].map(([k,l]) => (
@@ -47,8 +253,17 @@ function Partida({ partida, onBack, onOpenPlayer }) {
       {tab==="resumo"     && <TabResumo p={partida} />}
       {tab==="escalacao"  && <TabEscalacao p={partida} />}
       {tab==="eventos"    && <TabEventos p={partida} />}
+      {tab==="estatisticas" && <TabEstatisticas p={partida} />}
       {tab==="arbitragem" && <TabArbitragem p={partida} />}
       {tab==="bilheteria" && <TabBilheteria p={partida} />}
+      {matchPlayer && (
+        <PlayerMatchStatsModal
+          p={partida}
+          name={matchPlayer}
+          onClose={() => setMatchPlayer(null)}
+          onOpenPlayer={onOpenPlayer}
+        />
+      )}
     </div>
     </PlayerOpenCtx.Provider>
   );
@@ -83,7 +298,7 @@ function DetailHero({ p }) {
               {p.gols_vasco.map((g, i) => (
                 <div key={i}>
                   <span className="who"><Plink name={g.nome}/>{g.penalti ? " (pen)" : ""}</span>
-                  <span className="min">{fmtMin(g.minuto, g.periodo)}</span>
+                  <span className="min">{fmtMin(g.minuto, g.periodo)}{g.assistencia ? ` · ass. ${g.assistencia}` : ""}</span>
                 </div>
               ))}
             </div>
@@ -102,7 +317,7 @@ function DetailHero({ p }) {
               {p.gols_adversario.map((g, i) => (
                 <div key={i}>
                   <span className="min">{fmtMin(g.minuto, g.periodo)}</span>
-                  <span className="who">{g.nome}{g.contra ? " (contra)" : ""}</span>
+                  <span className="who">{g.nome}{g.contra ? " (contra)" : ""}{g.assistencia ? ` · ass. ${g.assistencia}` : ""}</span>
                 </div>
               ))}
             </div>
@@ -148,17 +363,38 @@ function TabResumo({ p }) {
 }
 
 // ============ Escalação ============
-// Posições no campo para 4-2-2-2 (Vasco atacando pra cima)
-// Eixo Y de baixo (0) pra cima (100); X de esquerda (0) à direita (100)
-const PITCH_POS_442 = {
-  Goleiro:           [[50, 90]],
-  "Lateral-Direito": [[85, 72]],
-  Zagueiro:          [[37, 76], [63, 76]],
-  "Lateral-Esquerdo":[[15, 72]],
-  Volante:           [[35, 54], [65, 54]],
-  "Meio-Campista":   [[28, 33], [72, 33]],
-  Atacante:          [[38, 14], [62, 14]],
+// Vasco atacando pra cima. Eixo Y de baixo (0) pra cima (100); X da esquerda à direita.
+const PITCH_POS_Y = {
+  Goleiro: 90,
+  "Lateral-Direito": 76,
+  Zagueiro: 76,
+  "Lateral-Esquerdo": 76,
+  Volante: 56,
+  "Meio-Campista": 36,
+  Atacante: 16,
 };
+
+function pitchLineXs(count, pos) {
+  if (pos === "Goleiro") return [50];
+  if (pos === "Lateral-Direito") return [85];
+  if (pos === "Lateral-Esquerdo") return [15];
+  if (count <= 1) return [50];
+  if (pos === "Zagueiro") {
+    if (count === 2) return [38, 62];
+    if (count === 3) return [28, 50, 72];
+  }
+  if (count === 2) return [36, 64];
+  if (pos === "Atacante" && count === 3) return [26, 74, 50];
+  if (count === 3) return [26, 50, 74];
+  if (count === 4) return [18, 39, 61, 82];
+  const step = 68 / Math.max(1, count - 1);
+  return Array.from({ length: count }, (_, i) => 16 + i * step);
+}
+
+function pitchCoordsFor(pos, count) {
+  const y = PITCH_POS_Y[pos] ?? 50;
+  return pitchLineXs(count, pos).map((x) => [x, y]);
+}
 
 function playerInitials(name) {
   const parts = name.split(/\s+/).filter(Boolean);
@@ -185,7 +421,7 @@ function LineupPitch({ p }) {
   const tit = p.escalacao.titulares_por_posicao;
   const placed = [];
   Object.entries(tit).forEach(([pos, players]) => {
-    const coords = PITCH_POS_442[pos] || [];
+    const coords = pitchCoordsFor(pos, players.length);
     players.forEach((name, i) => {
       const c = coords[i] || [50, 50];
       placed.push({ name, pos, x: c[0], y: c[1] /* GK em baixo, ataque em cima */ });
@@ -277,11 +513,13 @@ function TabEventos({ p }) {
   p.gols_vasco.forEach(g => events.push({
     side: "vasco", kind: g.penalti ? "pen" : "goal",
     name: g.nome, label: g.penalti ? "Gol (pênalti)" : "Gol",
+    detail: g.assistencia ? `assistência ${g.assistencia}` : "",
     minuto: g.minuto, periodo: g.periodo, abs: absMin(g.minuto, g.periodo),
   }));
   p.gols_adversario.forEach(g => events.push({
     side: "adv", kind: g.contra ? "og" : "goal",
     name: g.nome, label: g.contra ? "Gol contra · Saldivia" : "Gol",
+    detail: g.assistencia ? `assistência ${g.assistencia}` : "",
     minuto: g.minuto, periodo: g.periodo, abs: absMin(g.minuto, g.periodo),
   }));
   p.cartoes_amarelos_vasco.forEach(n => events.push({
@@ -349,7 +587,7 @@ function TabEventos({ p }) {
   );
 }
 
-function EventRow({ kind, name, label, minuto, periodo, empty }) {
+function EventRow({ kind, name, label, detail, minuto, periodo, empty }) {
   if (empty) return <div className="evt empty" />;
   if (kind === "halfTime") return <div className="evt" style={{minHeight:35, background:"var(--paper-deep)", fontFamily:"var(--ff-sans)", fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink)", fontWeight:600, padding:"8px 18px"}}>Intervalo</div>;
   if (kind === "indet") return <div className="evt" style={{minHeight:35, background:"var(--paper-deep)", fontFamily:"var(--ff-sans)", fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)", padding:"8px 18px"}}>Sem minuto registrado</div>;
@@ -360,8 +598,194 @@ function EventRow({ kind, name, label, minuto, periodo, empty }) {
       <span className={"icon " + kind}>{iconChar}</span>
       <span className="label">
         <strong style={{fontFamily:"var(--ff-serif)", fontWeight:700}}><Plink name={name}/></strong>
-        <small>{label}</small>
+        <small>{label}{detail ? ` · ${detail}` : ""}</small>
       </span>
+    </div>
+  );
+}
+
+// ============ Estatísticas ============
+function TabEstatisticas({ p }) {
+  const teamStats = p.estatisticas_vasco || {};
+  const teamRows = orderedStatRows(teamStats, TEAM_STAT_ORDER);
+  const hasTeamStats = teamRows.length > 0;
+  const kpis = [
+    "posse_bola",
+    "passes_certos",
+    "passes_errados",
+    "passes_tentados",
+    "precisao_passes",
+    "finalizacoes",
+  ].filter(key => filledStat(teamStats[key]));
+
+  return (
+    <div className="match-stats">
+      {kpis.length > 0 && (
+        <div className="stats-kpi-grid">
+          {kpis.map(key => (
+            <div key={key}>
+              <div className="kpi-label">{statLabel(key)}</div>
+              <div className="kpi-value">{fmtStatValue(key, teamStats[key])}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="match-stats-layout">
+        <section className="stats-section">
+          <h4>Vasco</h4>
+          {hasTeamStats ? (
+            <div className="stats-kv-grid">
+              {teamRows.map(row => (
+                <div className="stats-kv" key={row.key}>
+                  <span>{row.label}</span>
+                  <strong>{fmtStatValue(row.key, row.value)}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="stats-empty">Scout coletivo ainda não cadastrado para esta partida.</div>
+          )}
+        </section>
+
+        <section className="stats-section">
+          <h4>Jogadores do Vasco</h4>
+          <PlayerStatsTable p={p} />
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function PlayerStatsTable({ p }) {
+  const open = React.useContext(PlayerOpenCtx);
+  const rawRows = Array.isArray(p.estatisticas_jogadores_vasco) ? p.estatisticas_jogadores_vasco : [];
+  if (!rawRows.length) {
+    return <div className="stats-empty">Scout individual ainda não cadastrado para esta partida.</div>;
+  }
+
+  const order = new Map();
+  allLineupPlayers(p).forEach((item, idx) => order.set(statNameKey(item.name), idx));
+  const rows = [...rawRows].sort((a, b) => {
+    const oa = order.has(statNameKey(a.nome)) ? order.get(statNameKey(a.nome)) : 999;
+    const ob = order.has(statNameKey(b.nome)) ? order.get(statNameKey(b.nome)) : 999;
+    if (oa !== ob) return oa - ob;
+    return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
+  });
+
+  return (
+    <div className="stats-table-wrap">
+      <table className="stats-table">
+        <thead>
+          <tr>
+            <th>Jogador</th>
+            <th>Função</th>
+            <th>Min</th>
+            <th>Nota</th>
+            <th>Passes C/E/T</th>
+            <th>Prec.</th>
+            <th>Fin.</th>
+            <th>No gol</th>
+            <th>Desarmes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            const participation = participationFor(p, row.nome);
+            return (
+              <tr key={`${row.nome}-${i}`} className="has-detail" onClick={() => open && open(row.nome)}>
+                <td><Plink name={row.nome}/></td>
+                <td>{participation.role}</td>
+                <td>{fmtStatValue("minutos", row.minutos)}</td>
+                <td>{fmtStatValue("nota_sofascore", row.nota_sofascore ?? row.nota)}</td>
+                <td>
+                  {[
+                    fmtStatValue("passes_certos", row.passes_certos),
+                    fmtStatValue("passes_errados", row.passes_errados),
+                    fmtStatValue("passes_tentados", row.passes_tentados),
+                  ].join(" / ")}
+                </td>
+                <td>{fmtStatValue("precisao_passes", row.precisao_passes)}</td>
+                <td>{fmtStatValue("finalizacoes", row.finalizacoes)}</td>
+                <td>{fmtStatValue("finalizacoes_no_gol", row.finalizacoes_no_gol)}</td>
+                <td>{fmtStatValue("desarmes", row.desarmes)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PlayerMatchStatsModal({ p, name, onClose, onOpenPlayer }) {
+  const stats = playerStatsFor(p, name);
+  const participation = participationFor(p, name);
+  const rows = orderedStatRows(stats || {}, PLAYER_STAT_ORDER);
+  const eventRows = playerEventRows(p, name);
+
+  React.useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="match-player-modal" onClick={onClose}>
+      <div className="match-player-dialog" role="dialog" aria-modal="true" aria-label={`Números de ${name}`} onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+        <div className="modal-player-head">
+          <div>
+            <span className="modal-eyebrow">{participation.role}</span>
+            <h3>{name}</h3>
+            <p>{participation.detail}</p>
+          </div>
+          {filledStat(stats?.nota_sofascore ?? stats?.nota) && (
+            <div className="modal-rating">
+              <span>Nota</span>
+              <strong>{fmtStatValue("nota_sofascore", stats?.nota_sofascore ?? stats?.nota)}</strong>
+            </div>
+          )}
+        </div>
+
+        {eventRows.length > 0 && (
+          <div className="modal-event-grid">
+            {eventRows.map(([label, value]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {rows.length > 0 ? (
+          <div className="modal-stat-grid">
+            {rows.map(row => (
+              <div className="modal-stat" key={row.key}>
+                <span>{row.label}</span>
+                <strong>{fmtStatValue(row.key, row.value)}</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="stats-empty">Scout individual ainda não cadastrado para este jogador nesta partida.</div>
+        )}
+
+        {onOpenPlayer && (
+          <button
+            className="modal-profile-btn"
+            onClick={() => {
+              onClose();
+              onOpenPlayer(name);
+            }}
+          >
+            Ver perfil completo
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -373,9 +797,6 @@ function TabArbitragem({ p }) {
       <div className="arb-card">
         <h4>Árbitro principal</h4>
         <div className="nm">{p.arbitragem.arbitro}</div>
-        <div style={{fontFamily:"var(--ff-sans)", fontSize:10.5, color:"var(--ink-mute)", letterSpacing:"0.08em", marginTop:6}}>
-          Estreia no nosso banco · cadastrar antes de importar
-        </div>
       </div>
       <div className="arb-card">
         <h4>VAR</h4>

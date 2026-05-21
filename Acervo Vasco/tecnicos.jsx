@@ -92,7 +92,17 @@ function Tecnicos({ onOpenPlayer, onOpenMatch }) {
 function TecnicoDetalhe({ nome, onBack, onOpenPlayer, onOpenMatch }) {
   const tec = window.TECNICOS.find(t => t.nome === nome);
   const passagensData = window.PASSAGENS_TECNICOS?.[nome];
-  const [passagemSel, setPassagemSel] = useState(passagensData?.passagens?.[0]?.idx || 1);
+  const [passagemSel, setPassagemSel] = useState("todas");
+  const jogosFiltrados = useMemo(() => {
+    const jogos = passagensData?.jogos || [];
+    if (passagemSel === "todas") return jogos;
+    return jogos.filter(j => j.passagem === passagemSel);
+  }, [passagensData, passagemSel]);
+  const passagemLabel = passagemSel === "todas" ? "todas as passagens" : `${passagemSel}ª passagem`;
+  const resumoTotal = passagensData?.resumo || {
+    jogos: tec.jogos, v: tec.v, e: tec.e, d: tec.d, gp: tec.gp, gc: tec.gc,
+    saldo: tec.saldo, aprov: tec.aprov, artilheiro: tec.maior_goleador,
+  };
 
   return (
     <div className="main">
@@ -102,17 +112,19 @@ function TecnicoDetalhe({ nome, onBack, onOpenPlayer, onOpenMatch }) {
         <div className="hero-eyebrow">Acervo · Técnico</div>
         <h1 className="tec-name">{nome}</h1>
         <div className="tec-resumo">
-          <span><strong>{tec.jogos}</strong> jogos</span>
+          <span><strong>{resumoTotal.jogos}</strong> jogos somados</span>
           <span className="dot">·</span>
-          <span><strong style={{color:"var(--r-v)"}}>{tec.v}</strong> V</span>
+          <span><strong>{passagensData?.passagens?.length || 0}</strong> passagem{(passagensData?.passagens?.length || 0) === 1 ? "" : "ens"}</span>
           <span className="dot">·</span>
-          <span><strong style={{color:"var(--r-e)"}}>{tec.e}</strong> E</span>
+          <span><strong style={{color:"var(--r-v)"}}>{resumoTotal.v}</strong> V</span>
           <span className="dot">·</span>
-          <span><strong style={{color:"var(--r-d)"}}>{tec.d}</strong> D</span>
+          <span><strong style={{color:"var(--r-e)"}}>{resumoTotal.e}</strong> E</span>
           <span className="dot">·</span>
-          <span><strong>{tec.aprov.toFixed(1)}%</strong> aproveitamento</span>
+          <span><strong style={{color:"var(--r-d)"}}>{resumoTotal.d}</strong> D</span>
           <span className="dot">·</span>
-          <span>saldo <strong style={{color: tec.saldo>=0?"var(--r-v)":"var(--r-d)"}}>{tec.saldo>0?"+":""}{tec.saldo}</strong></span>
+          <span><strong>{resumoTotal.aprov.toFixed(1)}%</strong> aproveitamento</span>
+          <span className="dot">·</span>
+          <span>saldo <strong style={{color: resumoTotal.saldo>=0?"var(--r-v)":"var(--r-d)"}}>{resumoTotal.saldo>0?"+":""}{resumoTotal.saldo}</strong></span>
         </div>
       </section>
 
@@ -163,14 +175,28 @@ function TecnicoDetalhe({ nome, onBack, onOpenPlayer, onOpenMatch }) {
 
           {passagensData.jogos && (
             <>
+              <div className="toolbar" style={{marginTop:28, marginBottom:16}}>
+                <div className="chips">
+                  <button className={"chip" + (passagemSel === "todas" ? " active" : "")} onClick={()=>setPassagemSel("todas")}>
+                    Todas <span className="count">{passagensData.jogos.length}</span>
+                  </button>
+                  {passagensData.passagens.map(p => (
+                    <button key={p.idx} className={"chip" + (passagemSel === p.idx ? " active" : "")} onClick={()=>setPassagemSel(p.idx)}>
+                      {p.idx}ª passagem <span className="count">{p.jogos}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <h3 className="ea-section-title" style={{marginTop:32}}>
-                Jogos da <span className="ea-sel">{passagemSel}ª passagem</span>
-                <small>{passagensData.jogos.filter(j => j.passagem === passagemSel).length} registros</small>
+                Jogos de <span className="ea-sel">{passagemLabel}</span>
+                <small>{jogosFiltrados.length} registros</small>
               </h3>
               <div className="table-wrap">
                 <table className="tbl ea-tbl">
                   <thead>
                     <tr>
+                      <th style={{width:92}}>Passagem</th>
                       <th style={{width:90}}>Data</th>
                       <th style={{width:60}}>Local</th>
                       <th style={{width:170}}>Competição</th>
@@ -180,8 +206,9 @@ function TecnicoDetalhe({ nome, onBack, onOpenPlayer, onOpenMatch }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {passagensData.jogos.filter(j => j.passagem === passagemSel).map((j,i) => (
+                    {jogosFiltrados.map((j,i) => (
                       <tr key={i} className="has-detail" onClick={()=> onOpenMatch && onOpenMatch({ data: j.data, adversario: j.adv })}>
+                        <td><span className="pos-chip">{j.passagem}ª</span></td>
                         <td className="date">{j.data}</td>
                         <td className="locale">{j.local}</td>
                         <td className="competition">{j.competicao}</td>

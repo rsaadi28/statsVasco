@@ -12,13 +12,33 @@ O projeto web público deve ser somente leitura.
 - A function `/api/data-runtime` injeta a chave secreta do ambiente Vercel e busca `GET /data-runtime.js` no Railway.
 - O endpoint direto do Railway exige `ACERVO_DATA_TOKEN`.
 
-Enquanto `data-runtime.js` estiver vazio, o protótipo usa os dados mockados originais. Depois que o banco do app desktop for atualizado, rode:
+Enquanto `data-runtime.js` estiver vazio, o protótipo usa os dados mockados originais. Depois que o banco do app desktop for atualizado, rode o sync manual PRD -> web:
+
+```bash
+.venv/bin/python scripts/sync_prd_to_web.py
+```
+
+Esse comando lê o SQLite local de produção em `~/Library/Application Support/StatsVasco/stats_vasco.sqlite3` e envia o estado completo para `POST /admin/sync-state` na API Railway. O Postgres web passa a espelhar o banco local em jogos, jogos futuros, elenco atual e jogadores históricos.
+
+Para conferir antes sem alterar o web:
+
+```bash
+.venv/bin/python scripts/sync_prd_to_web.py --dry-run
+```
+
+Para fazer upsert apenas das partidas, sem trocar elenco/futuros/históricos:
+
+```bash
+.venv/bin/python scripts/sync_prd_to_web.py --mode matches
+```
+
+O fluxo antigo de seed pelo Railway CLI ainda existe para manutenção ou primeira carga:
 
 ```bash
 .venv/bin/python scripts/sync_desktop_to_web.py --seed-railway
 ```
 
-Esse comando copia o SQLite do desktop em `~/Library/Application Support/StatsVasco/stats_vasco.sqlite3` para o projeto de dev, aplica os ajustes conhecidos de calendario futuro, gera um dump em `dumps/` e alimenta o Postgres do Railway.
+Esse comando copia o SQLite do desktop para o projeto de dev, aplica os ajustes conhecidos de calendario futuro, gera um dump em `dumps/` e alimenta o Postgres do Railway via CLI.
 
 ## Sync automatico pelo desktop
 

@@ -7,7 +7,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any
+from typing import Any, Callable
 
 from storage_sqlite import (
     load_current_squad,
@@ -19,10 +19,40 @@ from storage_sqlite import (
 DEFAULT_API_URL = "https://acervo-api-production.up.railway.app"
 _timer_lock = threading.Lock()
 _pending_timer: threading.Timer | None = None
+_status_callback: Callable[[dict[str, Any]], None] | None = None
 
 
 def _truthy(value: Any) -> bool:
     return str(value or "").strip().casefold() in {"1", "true", "yes", "y", "sim", "s", "on"}
+
+
+def set_status_callback(callback: Callable[[dict[str, Any]], None] | None) -> None:
+    global _status_callback
+    _status_callback = callback
+
+
+def _log_path(db_path: str) -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(db_path)), "web_sync.log")
+
+
+def _write_log(db_path: str, message: str) -> None:
+    line = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {message}\n"
+    try:
+        with open(_log_path(db_path), "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+
+def _emit_status(db_path: str, payload: dict[str, Any]) -> None:
+    payload = dict(payload)
+    payload.setdefault("log_path", _log_path(db_path))
+    callback = _status_callback
+    if callback is not None:
+        try:
+            callback(payload)
+        except Exception:
+            pass
 
 
 def _read_settings(db_path: str) -> dict[str, str]:
@@ -108,13 +138,27 @@ def sync_state(db_path: str, *, reason: str = "desktop-change", timeout: int = 3
 def schedule_sync_after_change(db_path: str, *, reason: str, delay: float = 1.5) -> None:
     config = sync_config(db_path)
     if not config["enabled"]:
+        _emit_status(db_path, {"state": "disabled", "reason": reason})
         return
 
     def run() -> None:
+        _emit_status(db_path, {"state": "syncing", "reason": reason})
+        _write_log(db_path, f"iniciando reason={reason}")
         result = sync_state(db_path, reason=reason)
         if not result.get("ok"):
+            _write_log(db_path, f"falhou reason={reason} result={result}")
+            _emit_status(db_path, {"state": "error", "reason": reason, "result": result})
             print(f"[web-sync] falhou: {result}")
         else:
+            _write_log(
+                db_path,
+                "ok "
+                f"reason={reason} "
+                f"matches={result.get('matches')} "
+                f"future_matches={result.get('future_matches')} "
+                f"current_squad={result.get('current_squad')}",
+            )
+            _emit_status(db_path, {"state": "success", "reason": reason, "result": result})
             print(
                 "[web-sync] ok: "
                 f"{result.get('matches')} jogos, "
@@ -125,6 +169,8 @@ def schedule_sync_after_change(db_path: str, *, reason: str, delay: float = 1.5)
     with _timer_lock:
         if _pending_timer is not None:
             _pending_timer.cancel()
+        _emit_status(db_path, {"state": "queued", "reason": reason, "delay": delay})
+        _write_log(db_path, f"agendado reason={reason} delay={delay}")
         _pending_timer = threading.Timer(delay, run)
         _pending_timer.daemon = True
         _pending_timer.start()

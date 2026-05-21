@@ -1,0 +1,162 @@
+{
+  "data": "16/05/2026",
+  "adversario": "Internacional-RS",
+  "competicao": "Campeonato Brasileiro Serie A",
+  "local": "fora",
+  "estadio": "Beira-Rio",
+  "horario": "18:30",
+  "tecnico": "Renato Gaúcho",
+  "capitao": "",
+  "posicao_tabela": 11,
+  "placar": {
+    "vasco": 1,
+    "adversario": 4
+  },
+  "gols_vasco": [
+    {
+      "nome": "Andrés Gómez",
+      "gols": 1,
+      "minutos": [40],
+      "periodos": ["2T"]
+    }
+  ],
+  "gols_adversario": [
+    {
+      "nome": "Carbonero",
+      "gols": 2,
+      "minutos": [20, 26],
+      "periodos": ["1T", "2T"],
+      "clube": "Internacional-RS"
+    },
+    {
+      "nome": "Alerrandro",
+      "gols": 1,
+      "minutos": [24],
+      "periodos": ["1T"],
+      "clube": "Internacional-RS"
+    },
+    {
+      "nome": "Bernabei",
+      "gols": 1,
+      "minutos": [17],
+      "periodos": ["2T"],
+      "clube": "Internacional-RS"
+    }
+  ],
+  "cartoes_amarelos_vasco": [
+    {
+      "nome": "Nuno Moreira",
+      "cartoes": 1
+    },
+    {
+      "nome": "Andrés Gómez",
+      "cartoes": 1
+    }
+  ],
+  "cartoes_vermelhos_vasco": [
+    {
+      "nome": "Carlos Cuesta",
+      "cartoes": 1
+    }
+  ],
+  "publico_pagante": 18705,
+  "publico_presente": 21411,
+  "renda": 720927.50,
+  "arbitragem": {
+    "arbitro": "Ramon Abatti Abel",
+    "auxiliares": [
+      "Guilherme Dias Camilo",
+      "Alex dos Santos"
+    ],
+    "var": "Rodrigo Guarizo Ferreira do Amaral"
+  },
+  "escalacao_partida": {
+    "titulares_por_posicao": {
+      "Goleiro": [
+        "Léo Jardim"
+      ],
+      "Lateral-Direito": [
+        "Puma Rodríguez"
+      ],
+      "Zagueiro": [
+        "Carlos Cuesta",
+        "Robert Renan"
+      ],
+      "Lateral-Esquerdo": [
+        "Lucas Piton"
+      ],
+      "Volante": [
+        "Cauan Barros",
+        "Hugo Moura",
+        "Tche Tche"
+      ],
+      "Meio-Campista": [
+        "Nuno Moreira"
+      ],
+      "Atacante": [
+        "Andrés Gómez",
+        "Brenner"
+      ]
+    },
+    "reservas": [
+      "Daniel Fuzato",
+      "Saldivia",
+      "David",
+      "Matheus França",
+      "Marino",
+      "Pablo",
+      "Lucas Freitas",
+      "Walace Falcão",
+      "Avellar",
+      "Ramon Rique",
+      "JP"
+    ],
+    "substituicoes": [
+      {
+        "jogador_saiu": "Nuno Moreira",
+        "jogador_entrou": "David",
+        "minuto": 18,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Tche Tche",
+        "jogador_entrou": "Marino",
+        "minuto": 28,
+        "periodo": "2T"
+      },
+      {
+        "jogador_saiu": "Brenner",
+        "jogador_entrou": "Ramon Rique",
+        "minuto": 28,
+        "periodo": "2T"
+      }
+    ],
+    "nao_relacionados": [
+      "Adson",
+      "Alison",
+      "Allan Vitor",
+      "Andrey Fernandes",
+      "Breno Vereza",
+      "Bruno André",
+      "Claudio Spinelli",
+      "Gustavo Guimarães",
+      "João Vitor",
+      "Juninho",
+      "Lukas Zucarello",
+      "Phillipe Gabriel",
+      "Samuel Jesus"
+    ],
+    "lesionados": [
+      "Jair",
+      "Mateus Carvalho",
+      "Cuiabano",
+      "Paulo Henrique"
+    ],
+    "suspensos": [
+      "Thiago Mendes",
+      "Johan Rojas"
+    ],
+    "servindo_selecao": []
+  },
+  "observacao": "Internacional 4 x 1 Vasco, no Beira-Rio, pela 16ª rodada do Campeonato Brasileiro de 2026. A súmula CBF registra os gols em 20'/1T e 26'/2T para Carbonero, 24'/1T para Alerrandro, 17'/2T para Bernabei e 40'/2T para Andrés Gómez; a ficha da NetVasco/Jogada10 registra Carbonero aos 21'/1T, Alerrandro aos 24'/1T, Bernabei aos 16'/2T, Carbonero aos 26'/2T e Andrés Gómez aos 39'/2T. Foram usados os tempos oficiais da súmula CBF. Houve gol de Mercado anulado por impedimento após análise do VAR no início do jogo, registrado apenas nesta observação porque o importador não normaliza gols anulados. Carlos Cuesta foi expulso diretamente aos +1'/2T por jogo brusco grave em Allex, segundo a súmula. A ficha da NetVasco informa público total de 21.411 e renda de R$ 720.927,50; matéria específica da NetVasco com fonte Marcos Bertoncello/Rádio Gaúcha informa 18.705 pagantes. Thiago Mendes e Johan Rojas estavam suspensos; Jair, Mateus Carvalho, Cuiabano e Paulo Henrique estavam fora por lesão; Adson foi preservado para controle de carga; Claudio Spinelli foi liberado pelo nascimento da filha. CBF registrou Carlos Andres Gomez Hinestroza como Hinestroza, normalizado para Andrés Gómez; Riquelme Avellar foi normalizado para Avellar; João Pedro Murilo de Paula Morais foi normalizado para JP; Barros foi normalizado para Cauan Barros; Cuesta foi normalizado para Carlos Cuesta. Capitão do Vasco não identificado em fonte confiável; campo deixado em branco. A súmula informa 1 minuto de silêncio em homenagem póstuma a Paulo Roberto Faria de Lorenzi, pai do ex-técnico Lisca, atraso de 2 minutos no reinício por entrada atrasada das equipes e nada de anormal em observações eventuais. A ficha da NetVasco/Jogada10 trazia Braúlio da Silva como árbitro, mas a CBF confirma Ramon Abatti Abel; foi usada a arbitragem oficial da CBF. Guilherme Dias Camilo e Rodrigo Guarizo Ferreira do Amaral não foram encontrados nas listas locais de auxiliares/VAR; cadastrar antes de importar se o importador não criar automaticamente."
+}

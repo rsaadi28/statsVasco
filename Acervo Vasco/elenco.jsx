@@ -190,7 +190,7 @@ function ElencoCampo({ p }) {
   const tit = p.escalacao.titulares_por_posicao;
   const placed = [];
   Object.entries(tit).forEach(([pos, players]) => {
-    const coords = window.PITCH_POS_442_PUB?.[pos] || PITCH_POS_ELENCO[pos] || [];
+    const coords = pitchCoordsForElenco(pos, players.length);
     players.forEach((name, i) => {
       const c = coords[i] || [50, 50];
       placed.push({ name, pos, x: c[0], y: c[1], idx: i+1 });
@@ -210,7 +210,7 @@ function ElencoCampo({ p }) {
         <div style={{position:"absolute", left:"18%", right:"18%", bottom:0, height:"18%", border:"1px solid rgba(255,255,255,0.45)", borderBottom:0}}/>
         {/* linhas de posição */}
         {["ATA","MEI","VOL","DEF","GOL"].map((lab,i) => (
-          <div key={lab} className="pitch-row-label" style={{top: `${[14,33,50,76,90][i]}%`}}>{lab}</div>
+          <div key={lab} className="pitch-row-label" style={{top: `${[16,36,56,76,90][i]}%`}}>{lab}</div>
         ))}
         {placed.map((pl, i) => (
           <div key={i} className={`player-dot ${isGK(pl.pos)?"gk":""} ${isCaptain(pl.name)?"cap":""}`} style={{ left: `${pl.x}%`, top: `${pl.y}%` }}>
@@ -224,14 +224,36 @@ function ElencoCampo({ p }) {
 }
 
 // usa as mesmas coordenadas do partida.jsx (Goleiro embaixo, ataque em cima)
-const PITCH_POS_ELENCO = {
-  Goleiro:           [[50, 90]],
-  "Lateral-Direito": [[85, 76]],
-  Zagueiro:          [[37, 76], [63, 76]],
-  "Lateral-Esquerdo":[[15, 76]],
-  Volante:           [[35, 54], [65, 54]],
-  "Meio-Campista":   [[28, 33], [72, 33]],
-  Atacante:          [[38, 14], [62, 14]],
+const PITCH_POS_Y_ELENCO = {
+  Goleiro: 90,
+  "Lateral-Direito": 76,
+  Zagueiro: 76,
+  "Lateral-Esquerdo": 76,
+  Volante: 56,
+  "Meio-Campista": 36,
+  Atacante: 16,
 };
+
+function pitchLineXsElenco(count, pos) {
+  if (pos === "Goleiro") return [50];
+  if (pos === "Lateral-Direito") return [85];
+  if (pos === "Lateral-Esquerdo") return [15];
+  if (count <= 1) return [50];
+  if (pos === "Zagueiro") {
+    if (count === 2) return [38, 62];
+    if (count === 3) return [28, 50, 72];
+  }
+  if (count === 2) return [36, 64];
+  if (pos === "Atacante" && count === 3) return [26, 74, 50];
+  if (count === 3) return [26, 50, 74];
+  if (count === 4) return [18, 39, 61, 82];
+  const step = 68 / Math.max(1, count - 1);
+  return Array.from({ length: count }, (_, i) => 16 + i * step);
+}
+
+function pitchCoordsForElenco(pos, count) {
+  const y = PITCH_POS_Y_ELENCO[pos] ?? 50;
+  return pitchLineXsElenco(count, pos).map((x) => [x, y]);
+}
 
 window.ElencoAtual = ElencoAtual;

@@ -9,7 +9,7 @@ function Jogadores({ onOpenPlayer }) {
   const all = window.ELENCO_DATA;
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos"); // status
-  const [sort, setSort]   = useState("posicao"); // posicao | minutos | gols
+  const [sort, setSort]   = useState("posicao"); // posicao | minutos | gols | assistencias | participacoes
 
   const filtered = useMemo(() => {
     let out = all.filter(p => {
@@ -31,6 +31,10 @@ function Jogadores({ onOpenPlayer }) {
       out = [...out].sort((a,b) => (b.minutos || 0) - (a.minutos || 0));
     } else if (sort === "gols") {
       out = [...out].sort((a,b) => (b.gols || 0) - (a.gols || 0));
+    } else if (sort === "assistencias") {
+      out = [...out].sort((a,b) => (b.assistencias || 0) - (a.assistencias || 0));
+    } else if (sort === "participacoes") {
+      out = [...out].sort((a,b) => (b.participacoes_gol || 0) - (a.participacoes_gol || 0));
     }
     return out;
   }, [all, busca, filtro, sort]);
@@ -70,6 +74,8 @@ function Jogadores({ onOpenPlayer }) {
           <button className={sort==="posicao"?"active":""} onClick={()=>setSort("posicao")}>Posição</button>
           <button className={sort==="minutos"?"active":""} onClick={()=>setSort("minutos")}>Mais minutos</button>
           <button className={sort==="gols"?"active":""}    onClick={()=>setSort("gols")}>Mais gols</button>
+          <button className={sort==="assistencias"?"active":""} onClick={()=>setSort("assistencias")}>Mais assist.</button>
+          <button className={sort==="participacoes"?"active":""} onClick={()=>setSort("participacoes")}>G+A</button>
         </div>
       </div>
 
@@ -82,6 +88,8 @@ function Jogadores({ onOpenPlayer }) {
               <th style={{width:140}}>Status</th>
               <th style={{width:90}}>Minutos</th>
               <th style={{width:80}}>Gols</th>
+              <th style={{width:80}}>Assist.</th>
+              <th style={{width:80}}>G+A</th>
               <th style={{width:60}}>Capitão</th>
               <th style={{width:40}}></th>
             </tr>
@@ -104,6 +112,12 @@ function Jogadores({ onOpenPlayer }) {
                 </td>
                 <td style={{fontFamily:"var(--ff-display)", fontSize:18, color: (p.gols||0) > 0 ? "var(--ink)" : "var(--ink-faint)"}}>
                   {p.gols || 0}
+                </td>
+                <td style={{fontFamily:"var(--ff-display)", fontSize:18, color: (p.assistencias||0) > 0 ? "var(--ink)" : "var(--ink-faint)"}}>
+                  {p.assistencias || 0}
+                </td>
+                <td style={{fontFamily:"var(--ff-display)", fontSize:18, color: (p.participacoes_gol||0) > 0 ? "var(--ink)" : "var(--ink-faint)"}}>
+                  {p.participacoes_gol || ((p.gols || 0) + (p.assistencias || 0))}
                 </td>
                 <td>
                   {(p.foi_capitao || p.capitao_atual || p.capitao_partida) && (

@@ -33,6 +33,32 @@ function lastN(arr, n, idx) {
   return arr.slice(start, idx + 1);
 }
 
+function partidaDetalhada(jogo) {
+  const detalhes = window.PARTIDAS_DETALHES || {};
+  const idKey = jogo?.id != null ? String(jogo.id) : "";
+  const legacyKey = `${jogo?.data || ""}|${jogo?.adversario || ""}`;
+  return detalhes[idKey] || detalhes[legacyKey] || jogo;
+}
+
+function computeArtilheiros(jogos, season) {
+  const tieOrder = new Map((season.artilheiros || []).map((p, i) => [p.nome, i]));
+  const gols = new Map();
+  jogos.forEach((jogo) => {
+    const detalhe = partidaDetalhada(jogo);
+    (detalhe?.gols_vasco || []).forEach((gol) => {
+      const nome = String(gol?.nome || "").trim();
+      if (!nome || gol?.contra || /^gol contra$/i.test(nome)) return;
+      gols.set(nome, (gols.get(nome) || 0) + 1);
+    });
+  });
+  return Array.from(gols, ([nome, qtde]) => ({ nome, gols: qtde }))
+    .sort((a, b) =>
+      b.gols - a.gols ||
+      (tieOrder.get(a.nome) ?? 9999) - (tieOrder.get(b.nome) ?? 9999) ||
+      a.nome.localeCompare(b.nome, "pt-BR")
+    );
+}
+
 // ============ Temporadas Page ============
 function Temporadas({ season, onOpenMatch }) {
   const [recorte, setRecorte] = useState("todos"); // todos | casa | fora
@@ -83,11 +109,12 @@ function Temporadas({ season, onOpenMatch }) {
   }, [allJogos, recorte]);
 
   const comps = Object.keys(compCounts).sort();
+  const displayJogos = useMemo(() => [...filtered].reverse(), [filtered]);
 
   return (
     <div className="main">
       <Hero season={season} resumo={resumo} recorte={recorte} setRecorte={setRecorte} />
-      <SummaryRow resumo={resumo} saldoSeries={saldoSeries} aproveitamentoSeries={aproveitamentoSeries} allResults={allResults} season={season} />
+      <SummaryRow resumo={resumo} saldoSeries={saldoSeries} aproveitamentoSeries={aproveitamentoSeries} allResults={allResults} allJogos={filtered} season={season} />
       <Toolbar
         comps={comps}
         compCounts={compCounts}
@@ -97,9 +124,9 @@ function Temporadas({ season, onOpenMatch }) {
         total={filtered.length}
       />
       {view === "table"
-        ? <GamesTable jogos={filtered} allResults={allResults} onOpen={onOpenMatch} />
-        : <GamesCards jogos={filtered} onOpen={onOpenMatch} />}
-      <SidePanels season={season} aproveitamentoSeries={aproveitamentoSeries} />
+        ? <GamesTable jogos={displayJogos} chronologicalResults={allResults} chronologicalJogos={filtered} onOpen={onOpenMatch} />
+        : <GamesCards jogos={displayJogos} onOpen={onOpenMatch} />}
+      <SidePanels season={season} jogos={filtered} />
     </div>
   );
 }
@@ -134,7 +161,7 @@ function Hero({ season, resumo, recorte, setRecorte }) {
 }
 
 // ============ Summary Row ============
-function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, season }) {
+function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, allJogos, season }) {
   return (
     <section className="summary">
       <div>
@@ -145,7 +172,7 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, sea
           <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
         </div>
         <div className="spark">
-          <StreakBars results={allResults} width={420} height={32} />
+          <StreakBars results={allResults} games={allJogos} width={420} height={32} />
         </div>
         <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
       </div>
@@ -214,7 +241,12 @@ function Toolbar({ comps, compCounts, comp, setComp, view, setView, search, setS
 }
 
 // ============ Games Table ============
-function GamesTable({ jogos, allResults, onOpen }) {
+function GamesTable({ jogos, chronologicalResults, chronologicalJogos, onOpen }) {
+  const chronologicalIndex = useMemo(() => {
+    const map = new Map();
+    chronologicalJogos.forEach((j, idx) => map.set(j.id, idx));
+    return map;
+  }, [chronologicalJogos]);
   return (
     <div className="table-wrap">
       <table className="tbl">
@@ -232,9 +264,10 @@ function GamesTable({ jogos, allResults, onOpen }) {
           </tr>
         </thead>
         <tbody>
-          {jogos.map((j, idx) => {
-            // forma = últimos 5 resultados terminando neste jogo (no array filtrado)
-            const formaRes = lastN(allResults, 5, idx);
+          {jogos.map((j) => {
+            // forma = últimos 5 resultados terminando neste jogo, mantendo a ordem cronológica real.
+            const idx = chronologicalIndex.get(j.id) ?? 0;
+            const formaRes = lastN(chronologicalResults, 5, idx);
             const vasco = j.local === "casa";
             return (
               <tr key={j.id} className={"has-detail"} onClick={()=>onOpen(j)} title="ver detalhes da partida">
@@ -276,13 +309,13 @@ function GamesCards({ jogos, onOpen }) {
             <div className="card-mid">
               <div className="card-team">
                 <Monogram club={vasco_h ? "Vasco" : j.adversario} vasco={vasco_h} size="lg" />
-                <div className="name">{vasco_h ? "Vasco" : j.adversario}<small>{vasco_h ? "Casa" : "Visitante"}</small></div>
+                <div className="name">{vasco_h ? "Vasco" : j.adversario}</div>
               </div>
               <div className="card-score">
                 {vasco_h ? j.placar[0] : j.placar[1]}<span className="vs">×</span>{vasco_h ? j.placar[1] : j.placar[0]}
               </div>
               <div className="card-team" style={{justifyContent:"flex-end"}}>
-                <div className="name" style={{textAlign:"right"}}>{vasco_h ? j.adversario : "Vasco"}<small>{vasco_h ? "Visitante" : "Casa"}</small></div>
+                <div className="name" style={{textAlign:"right"}}>{vasco_h ? j.adversario : "Vasco"}</div>
                 <Monogram club={vasco_h ? j.adversario : "Vasco"} vasco={!vasco_h} size="lg" />
               </div>
             </div>
@@ -301,33 +334,38 @@ function GamesCards({ jogos, onOpen }) {
 }
 
 // ============ Side Panels (Artilheiros + Aproveitamento) ============
-function SidePanels({ season, aproveitamentoSeries }) {
-  const max = season.artilheiros[0].gols;
+function SidePanels({ season, jogos }) {
+  const artilheiros = useMemo(() => computeArtilheiros(jogos, season), [jogos, season]);
+  const painelAproveitamentoSeries = useMemo(() => computeRollingStats(jogos).aproveitamentoSeries, [jogos]);
+  const max = artilheiros[0]?.gols || 1;
+  const totalGols = artilheiros.reduce((a,p)=>a+p.gols,0);
   return (
     <div className="side-grid">
       <section className="panel">
         <h3 className="panel-title">
-          Artilheiros do ano
-          <small>{season.artilheiros.reduce((a,p)=>a+p.gols,0)} gols computados</small>
+          Artilheiros do recorte
+          <small>{totalGols} gols computados</small>
         </h3>
         <div className="artilharia">
-          {season.artilheiros.map((p, i) => (
-            <div className="art-row" key={p.nome}>
-              <span className="pos">{String(i+1).padStart(2,"0")}</span>
-              <span className="name">{p.nome}</span>
-              <span className="goals">{p.gols}</span>
-              <span className="bar"><i style={{width:`${(p.gols/max)*100}%`}}/></span>
-            </div>
-          ))}
+          {artilheiros.length
+            ? artilheiros.map((p, i) => (
+                <div className="art-row" key={p.nome}>
+                  <span className="pos">{String(i+1).padStart(2,"0")}</span>
+                  <span className="name">{p.nome}</span>
+                  <span className="goals">{p.gols}</span>
+                  <span className="bar"><i style={{width:`${(p.gols/max)*100}%`}}/></span>
+                </div>
+              ))
+            : <div className="art-empty">Nenhum gol do Vasco neste recorte.</div>}
         </div>
       </section>
       <section className="panel">
         <h3 className="panel-title">
           Aproveitamento
-          <small>ao longo do ano</small>
+          <small>ao longo do recorte</small>
         </h3>
         <div style={{padding:"6px 0"}}>
-          <AproveitamentoChart data={aproveitamentoSeries} width={360} height={140} />
+          <AproveitamentoChart data={painelAproveitamentoSeries} width={360} height={140} />
         </div>
         <div style={{display:"flex", justifyContent:"space-between", fontFamily:"var(--ff-mono)", fontSize:"10.5px", color:"var(--ink-mute)", marginTop:6}}>
           <span>1ª rodada</span>

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -70,6 +72,83 @@ def scoreline(match: dict[str, Any]) -> str:
     return f"Vasco {v} x {a} {adv}"
 
 
+def clean_official_name(name: Any) -> str:
+    clean = re.sub(r"\s+", " ", str(name or "").strip())
+    if not clean:
+        return ""
+    clean = re.sub(r"\s*\([A-Z]{2,4}\s*$", "", clean).strip()
+    clean = re.sub(r"\s*\([^)]+?\)\s*$", "", clean).strip()
+    return re.sub(r"\s+", " ", clean)
+
+
+def official_key(name: Any) -> str:
+    clean = clean_official_name(name)
+    no_accents = "".join(
+        ch for ch in unicodedata.normalize("NFKD", clean)
+        if not unicodedata.combining(ch)
+    )
+    no_accents = re.sub(r"[^\w\s]", " ", no_accents, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", no_accents).strip().casefold()
+
+
+OFFICIAL_CANONICAL = {
+    official_key("Bruno Arleu de Araujo"): "Bruno Arleu de Araújo",
+    official_key("Carlos Bentancur"): "Carlos Bentancur",
+    official_key("Jhon Ospina"): "Jhon Ospina",
+    official_key("Joao Vitor Gobi"): "João Vitor Gobi",
+    official_key("Rodrigo Jose Pereira de Lima"): "Rodrigo José Pereira de Lima",
+    official_key("Rodrigo José Pereira De Lima"): "Rodrigo José Pereira de Lima",
+    official_key("Savio Pereira Sampaio"): "Sávio Pereira Sampaio",
+    official_key("Wagner do Nascimento Magalhaes"): "Wagner do Nascimento Magalhães",
+    official_key("Alessandro Alvaro Rocha de Matos"): "Alessandro Álvaro Rocha de Matos",
+    official_key("Alexander Guzman"): "Alexander Guzman",
+    official_key("Andres Nievas"): "Andrés Nievas",
+    official_key("Bruno Muller"): "Bruno Müller",
+    official_key("David Fuentes"): "David Fuentes",
+    official_key("Jhon Gallego"): "Jhon Gallego",
+    official_key("Luanderson Lima Dos Santos"): "Luanderson Lima dos Santos",
+    official_key("Maira Mastella Moreira"): "Maíra Mastella Moreira",
+    official_key("Rodrigo Figueiredo Henrique Correa"): "Rodrigo Figueiredo Henrique Corrêa",
+    official_key("Thiago Henrique Neto Correa Farinha"): "Thiago Henrique Neto Corrêa Farinha",
+    official_key("Wallace Muller Barros Santos"): "Wallace Müller Barros Santos",
+    official_key("Claudio Rocha Filho"): "José Cláudio Rocha Filho",
+    official_key("Jose Claudio Rocha Filho"): "José Cláudio Rocha Filho",
+    official_key("Leonard Mosquera"): "Leonard Mosquera",
+    official_key("Marco Aurelio Augusto Fazekas Ferreira"): "Marco Aurélio Augusto Fazekas Ferreira",
+    official_key("Pablo Ramon Goncalves Pinheiro"): "Pablo Ramon Gonçalves Pinheiro",
+    official_key("Ricardo Garcia"): "Ricardo Garcia",
+    official_key("Rodrigo Carvalhaes de Miranda"): "Rodrigo Carvalhães de Miranda",
+}
+
+
+def normalize_official_name(name: Any) -> str:
+    clean = clean_official_name(name)
+    if not clean:
+        return ""
+    return OFFICIAL_CANONICAL.get(official_key(clean), clean)
+
+
+def normalize_arbitration(raw: Any) -> dict[str, Any]:
+    raw = raw if isinstance(raw, dict) else {}
+    auxiliaries = raw.get("auxiliares", [])
+    if not isinstance(auxiliaries, list):
+        auxiliaries = []
+    normalized_aux: list[str] = []
+    seen: set[str] = set()
+    for name in auxiliaries:
+        normalized = normalize_official_name(name)
+        key = official_key(normalized)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        normalized_aux.append(normalized)
+    return {
+        "arbitro": normalize_official_name(raw.get("arbitro")),
+        "auxiliares": normalized_aux,
+        "var": normalize_official_name(raw.get("var")),
+    }
+
+
 def pct_points(v: int, e: int, total: int) -> float:
     return round(((v * 3 + e) / (total * 3) * 100), 1) if total else 0.0
 
@@ -104,6 +183,15 @@ def expanded_goal_names(items: Any) -> list[str]:
     return names
 
 
+def assist_count(items: Any) -> Counter[str]:
+    out: Counter[str] = Counter()
+    for event in expanded_goal_events(items):
+        assist = str(event.get("assistencia") or "").strip()
+        if assist:
+            out[assist] += 1
+    return out
+
+
 def expanded_goal_events(items: Any) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     if not isinstance(items, list):
@@ -118,6 +206,14 @@ def expanded_goal_events(items: Any) -> list[dict[str, Any]]:
                 minutes = [item.get("minuto")] if item.get("minuto") is not None else []
             if not isinstance(periods, list):
                 periods = [item.get("periodo")] if item.get("periodo") else []
+            assists = item.get("assistencias")
+            if isinstance(assists, list):
+                assists = [str(name or "").strip() for name in assists]
+                while assists and not assists[-1]:
+                    assists.pop()
+            else:
+                assist = str(item.get("assistencia") or "").strip()
+                assists = [assist] if assist else []
             extra = {
                 "penalti": bool(item.get("penalti")),
                 "contra": bool(item.get("contra")) or "contra" in name.casefold(),
@@ -127,6 +223,7 @@ def expanded_goal_events(items: Any) -> list[dict[str, Any]]:
             count = 1
             minutes = []
             periods = []
+            assists = []
             extra = {"penalti": False, "contra": "contra" in name.casefold()}
         if not name:
             continue
@@ -136,6 +233,8 @@ def expanded_goal_events(items: Any) -> list[dict[str, Any]]:
                 "minuto": minutes[i] if i < len(minutes) else None,
                 "periodo": periods[i] if i < len(periods) else "",
             }
+            if i < len(assists) and assists[i]:
+                event["assistencia"] = assists[i]
             if extra["penalti"]:
                 event["penalti"] = True
             if extra["contra"]:
@@ -222,9 +321,127 @@ def participant_names(lineup: dict[str, Any]) -> tuple[set[str], set[str]]:
     return titulares, reservas_entraram
 
 
+def numeric_stat(value: Any) -> int | None:
+    try:
+        if value is None or value == "":
+            return None
+        return int(float(value))
+    except Exception:
+        return None
+
+
+def numeric_float(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(str(value).replace("%", "").replace(",", "."))
+    except Exception:
+        return None
+
+
+AVERAGE_SCOUT_KEYS = {
+    "nota",
+    "nota_sofascore",
+}
+PERCENT_SCOUT_KEYS = {
+    "posse_bola",
+    "precisao_cruzamentos",
+    "precisao_lancamentos",
+    "precisao_passes",
+}
+DERIVED_PERCENT_RATIOS = {
+    "precisao_passes": ("passes_certos", "passes_tentados"),
+    "precisao_cruzamentos": ("cruzamentos_certos", "cruzamentos_tentados"),
+    "precisao_lancamentos": ("lancamentos_certos", "lancamentos_tentados"),
+}
+
+
+def _add_player_scout(st: dict[str, Any], scout: dict[str, Any]) -> None:
+    if not scout:
+        return
+    st["jogos_com_scout"] = int(st.get("jogos_com_scout", 0) or 0) + 1
+    totals = st.setdefault("estatisticas_avancadas", {})
+    avg_sums = st.setdefault("_scout_avg_sums", {})
+    avg_counts = st.setdefault("_scout_avg_counts", {})
+    for key, value in scout.items():
+        if key in {"nome", "minutos"}:
+            continue
+        number = numeric_float(value)
+        if number is None:
+            continue
+        if key in AVERAGE_SCOUT_KEYS or key in PERCENT_SCOUT_KEYS:
+            avg_sums[key] = float(avg_sums.get(key, 0) or 0) + number
+            avg_counts[key] = int(avg_counts.get(key, 0) or 0) + 1
+            continue
+        totals[key] = float(totals.get(key, 0) or 0) + number
+
+
+def _clean_number(value: float) -> int | float:
+    return int(value) if float(value).is_integer() else round(float(value), 2)
+
+
+def finalize_player_scout(st: dict[str, Any]) -> dict[str, Any]:
+    totals = {
+        key: _clean_number(value)
+        for key, value in (st.get("estatisticas_avancadas") or {}).items()
+        if numeric_float(value) is not None
+    }
+    passes_certos = numeric_float(totals.get("passes_certos"))
+    passes_errados = numeric_float(totals.get("passes_errados"))
+    passes_tentados = numeric_float(totals.get("passes_tentados"))
+    if passes_tentados is None and passes_certos is not None and passes_errados is not None:
+        passes_tentados = passes_certos + passes_errados
+        totals["passes_tentados"] = _clean_number(passes_tentados)
+    for out_key, (made_key, attempted_key) in DERIVED_PERCENT_RATIOS.items():
+        made = numeric_float(totals.get(made_key))
+        attempted = numeric_float(totals.get(attempted_key))
+        if made is not None and attempted:
+            totals[out_key] = round((made / attempted) * 100, 1)
+
+    avg_sums = st.get("_scout_avg_sums") or {}
+    avg_counts = st.get("_scout_avg_counts") or {}
+    for key, total in avg_sums.items():
+        count = int(avg_counts.get(key, 0) or 0)
+        if count <= 0:
+            continue
+        average = round(float(total) / count, 2)
+        if key in PERCENT_SCOUT_KEYS:
+            totals.setdefault(key, average)
+        else:
+            totals[f"{key}_media"] = average
+
+    jogos_com_scout = int(st.get("jogos_com_scout", 0) or 0)
+    if jogos_com_scout:
+        totals["jogos_com_scout"] = jogos_com_scout
+    return totals
+
+
+def player_match_stats(match: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    raw = match.get("estatisticas_jogadores_vasco")
+    if isinstance(raw, dict):
+        items = [
+            {**stats, "nome": name}
+            for name, stats in raw.items()
+            if isinstance(stats, dict)
+        ]
+    elif isinstance(raw, list):
+        items = [item for item in raw if isinstance(item, dict)]
+    else:
+        items = []
+
+    out: dict[str, dict[str, Any]] = {}
+    for item in items:
+        name = str(item.get("nome") or "").strip()
+        if not name:
+            continue
+        stats = {key: value for key, value in item.items() if key != "nome"}
+        out[official_key(name)] = stats
+    return out
+
+
 def match_detail(match: dict[str, Any], fallback_id: int) -> dict[str, Any]:
     v, a = score_tuple(match)
-    arbitragem = match.get("arbitragem") if isinstance(match.get("arbitragem"), dict) else {}
+    arbitragem = normalize_arbitration(match.get("arbitragem"))
     lineup = normalize_lineup(match.get("escalacao_partida") or match.get("escalacao"))
     return {
         "id": match.get("db_match_id") or fallback_id,
@@ -246,6 +463,16 @@ def match_detail(match: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         "publico_pagante": match.get("publico_pagante") or 0,
         "publico_presente": match.get("publico_presente") or 0,
         "renda": match.get("renda") or 0,
+        "estatisticas_vasco": (
+            match.get("estatisticas_vasco")
+            if isinstance(match.get("estatisticas_vasco"), dict)
+            else {}
+        ),
+        "estatisticas_jogadores_vasco": (
+            match.get("estatisticas_jogadores_vasco")
+            if isinstance(match.get("estatisticas_jogadores_vasco"), list)
+            else []
+        ),
         "arbitragem": {
             "arbitro": arbitragem.get("arbitro") or "—",
             "auxiliares": arbitragem.get("auxiliares") if isinstance(arbitragem.get("auxiliares"), list) else [],
@@ -535,12 +762,156 @@ def build_group_tables(jogos: list[dict[str, Any]], key_func) -> tuple[list[dict
     return table, games_by_key
 
 
-def build_coaches(jogos: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def arbitration_game_row(match: dict[str, Any]) -> dict[str, Any]:
+    arbitration = normalize_arbitration(match.get("arbitragem"))
+    return {
+        "data": match.get("data") or "—",
+        "local": match.get("local") or "—",
+        "competicao": match.get("competicao") or "—",
+        "adv": match.get("adversario") or "Adversário",
+        "res": result_of(match),
+        "placar": scoreline(match),
+        "arbitro": arbitration.get("arbitro") or "—",
+        "auxiliares": arbitration.get("auxiliares") or [],
+        "var": arbitration.get("var") or "—",
+        "estadio": match.get("estadio") or "—",
+        "horario": match.get("horario") or "—",
+        "tecnico": match.get("tecnico") or "—",
+    }
+
+
+def arbitration_role_names(arbitration: dict[str, Any], role: str) -> list[str]:
+    if role == "arbitro":
+        names = [arbitration.get("arbitro", "")]
+    elif role == "auxiliar":
+        names = arbitration.get("auxiliares", [])
+        if not isinstance(names, list):
+            names = []
+    elif role == "var":
+        names = [arbitration.get("var", "")]
+    else:
+        names = []
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        normalized = normalize_official_name(name)
+        key = official_key(normalized)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(normalized)
+    return out
+
+
+def build_arbitration_role_table(
+    jogos: list[dict[str, Any]],
+    role: str,
+) -> tuple[list[dict[str, Any]], dict[str, list[dict[str, Any]]]]:
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for match in jogos:
+        arbitration = normalize_arbitration(match.get("arbitragem"))
+        for name in arbitration_role_names(arbitration, role):
+            grouped[name].append(match)
+
+    table = []
+    games_by_name = {}
+    for name, matches in grouped.items():
+        matches.sort(key=lambda m: parse_date(m.get("data")) or datetime.min)
+        resumo = aggregate_matches(matches)
+        games_by_name[name] = [arbitration_game_row(match) for match in reversed(matches)]
+        table.append(
+            {
+                "nome": name,
+                "jogos": resumo["jogos"],
+                "v": resumo["vitorias"],
+                "e": resumo["empates"],
+                "d": resumo["derrotas"],
+                "gp": resumo["gols_pro"],
+                "gc": resumo["gols_contra"],
+                "saldo": resumo["saldo"],
+                "primeiro": {"data": matches[0].get("data") or "—", "placar": scoreline(matches[0])},
+                "ultimo": {"data": matches[-1].get("data") or "—", "placar": scoreline(matches[-1])},
+            }
+        )
+    table.sort(key=lambda row: (-row["jogos"], row["nome"].casefold()))
+    return table, games_by_name
+
+
+def arbitration_combo_key(arbitration: dict[str, Any]) -> tuple[str, tuple[str, ...], str] | None:
+    arbitration = normalize_arbitration(arbitration)
+    referee = arbitration.get("arbitro", "")
+    auxiliaries = tuple(arbitration.get("auxiliares", []) or [])
+    var = arbitration.get("var", "")
+    if not referee and not auxiliaries and not var:
+        return None
+    return referee, auxiliaries, var
+
+
+def combo_id(combo: tuple[str, tuple[str, ...], str]) -> str:
+    referee, auxiliaries, var = combo
+    return json.dumps([referee, list(auxiliaries), var], ensure_ascii=False, separators=(",", ":"))
+
+
+def build_arbitration_combinations(
+    jogos: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, list[dict[str, Any]]]]:
+    grouped: dict[tuple[str, tuple[str, ...], str], list[dict[str, Any]]] = defaultdict(list)
+    for match in jogos:
+        combo = arbitration_combo_key(match.get("arbitragem") if isinstance(match.get("arbitragem"), dict) else {})
+        if combo:
+            grouped[combo].append(match)
+
+    table = []
+    games_by_combo = {}
+    for combo, matches in grouped.items():
+        matches.sort(key=lambda m: parse_date(m.get("data")) or datetime.min)
+        resumo = aggregate_matches(matches)
+        key = combo_id(combo)
+        referee, auxiliaries, var = combo
+        games_by_combo[key] = [arbitration_game_row(match) for match in reversed(matches)]
+        table.append(
+            {
+                "id": key,
+                "arbitro": referee,
+                "auxiliares": list(auxiliaries),
+                "var": var,
+                "jogos": resumo["jogos"],
+                "v": resumo["vitorias"],
+                "e": resumo["empates"],
+                "d": resumo["derrotas"],
+                "gp": resumo["gols_pro"],
+                "gc": resumo["gols_contra"],
+                "saldo": resumo["saldo"],
+                "primeiro": {"data": matches[0].get("data") or "—", "placar": scoreline(matches[0])},
+                "ultimo": {"data": matches[-1].get("data") or "—", "placar": scoreline(matches[-1])},
+            }
+        )
+    table.sort(key=lambda row: (-row["jogos"], str(row["arbitro"]).casefold(), str(row["var"]).casefold()))
+    return table, games_by_combo
+
+
+def build_coaches(jogos: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    passages_by_coach: dict[str, list[list[dict[str, Any]]]] = defaultdict(list)
+
+    current_coach = ""
+    current_passage: list[dict[str, Any]] = []
+    global_matches = sorted(
+        enumerate(jogos, start=1),
+        key=lambda im: (parse_date(im[1].get("data")) or datetime.min, im[0]),
+    )
+    for _, match in global_matches:
         coach = str(match.get("tecnico") or "").strip()
-        if coach:
-            grouped[coach].append(match)
+        if not coach:
+            continue
+        grouped[coach].append(match)
+        if coach != current_coach:
+            current_coach = coach
+            current_passage = []
+            passages_by_coach[coach].append(current_passage)
+        current_passage.append(match)
+
     table = []
     passages = {}
     for coach, matches in grouped.items():
@@ -567,36 +938,67 @@ def build_coaches(jogos: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], di
                 "maior_goleador": maior,
             }
         )
-        period = f"{matches[0].get('data', '')} – {matches[-1].get('data', '')}"
-        passages[coach] = {
-            "resumo": {"jogos": resumo["jogos"], "v": resumo["vitorias"], "e": resumo["empates"], "d": resumo["derrotas"]},
-            "passagens": [
+        passage_rows = []
+        game_rows = []
+        for idx, passage_matches in enumerate(passages_by_coach.get(coach, []), start=1):
+            passage_matches.sort(key=lambda m: parse_date(m.get("data")) or datetime.min)
+            passage_resumo = aggregate_matches(passage_matches)
+            passage_scorers = Counter()
+            for match in passage_matches:
+                passage_scorers.update(goal_count(match.get("gols_vasco")))
+            passage_top = passage_scorers.most_common(1)
+            passage_maior = (
+                {"nome": passage_top[0][0], "gols": passage_top[0][1]}
+                if passage_top
+                else {"nome": "—", "gols": 0}
+            )
+            first = passage_matches[0].get("data", "") if passage_matches else ""
+            last = passage_matches[-1].get("data", "") if passage_matches else ""
+            period = first if first == last else f"{first} – {last}"
+            passage_rows.append(
                 {
-                    "idx": 1,
-                    "jogos": resumo["jogos"],
-                    "v": resumo["vitorias"],
-                    "e": resumo["empates"],
-                    "d": resumo["derrotas"],
-                    "gp": resumo["gols_pro"],
-                    "gc": resumo["gols_contra"],
-                    "saldo": resumo["saldo"],
-                    "aprov": resumo["aproveitamento"],
-                    "artilheiro": maior or {"nome": "—", "gols": 0},
+                    "idx": idx,
+                    "jogos": passage_resumo["jogos"],
+                    "v": passage_resumo["vitorias"],
+                    "e": passage_resumo["empates"],
+                    "d": passage_resumo["derrotas"],
+                    "gp": passage_resumo["gols_pro"],
+                    "gc": passage_resumo["gols_contra"],
+                    "saldo": passage_resumo["saldo"],
+                    "aprov": passage_resumo["aproveitamento"],
+                    "artilheiro": passage_maior,
                     "periodo": period,
+                    "inicio": first or "—",
+                    "fim": last or "—",
                 }
-            ],
-            "jogos": [
-                {
-                    "data": m.get("data") or "—",
-                    "local": m.get("local") or "—",
-                    "competicao": m.get("competicao") or "—",
-                    "adv": m.get("adversario") or "Adversário",
-                    "res": result_of(m),
-                    "placar": scoreline(m),
-                    "passagem": 1,
-                }
-                for m in reversed(matches)
-            ],
+            )
+            for match in reversed(passage_matches):
+                game_rows.append(
+                    {
+                        "data": match.get("data") or "—",
+                        "local": match.get("local") or "—",
+                        "competicao": match.get("competicao") or "—",
+                        "adv": match.get("adversario") or "Adversário",
+                        "res": result_of(match),
+                        "placar": scoreline(match),
+                        "passagem": idx,
+                    }
+                )
+        game_rows.sort(key=lambda row: parse_date(row.get("data")) or datetime.min, reverse=True)
+        passages[coach] = {
+            "resumo": {
+                "jogos": resumo["jogos"],
+                "v": resumo["vitorias"],
+                "e": resumo["empates"],
+                "d": resumo["derrotas"],
+                "gp": resumo["gols_pro"],
+                "gc": resumo["gols_contra"],
+                "saldo": resumo["saldo"],
+                "aprov": resumo["aproveitamento"],
+                "artilheiro": maior or {"nome": "—", "gols": 0},
+            },
+            "passagens": passage_rows,
+            "jogos": game_rows,
         }
     table.sort(key=lambda row: (-row["jogos"], row["nome"].casefold()))
     return table, passages
@@ -610,6 +1012,7 @@ def player_presence(jogos: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             "jogos_titular": 0,
             "jogos_reserva": 0,
             "gols": 0,
+            "assistencias": 0,
             "amarelos": 0,
             "vermelhos": 0,
             "ved": {"v": 0, "e": 0, "d": 0},
@@ -620,33 +1023,57 @@ def player_presence(jogos: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         lineup = normalize_lineup(match.get("escalacao_partida") or match.get("escalacao"))
         titulares, reservas_entraram = participant_names(lineup)
         scorers = goal_count(match.get("gols_vasco"))
+        assists = assist_count(match.get("gols_vasco"))
         yellows = Counter(card_names(match.get("cartoes_amarelos_vasco")))
         reds = Counter(c["nome"] for c in red_cards(match.get("cartoes_vermelhos_vasco")))
+        individual_stats = player_match_stats(match)
         res = result_of(match)
-        for name in sorted(titulares | reservas_entraram | set(scorers)):
+        raw_individual_stats = match.get("estatisticas_jogadores_vasco")
+        if isinstance(raw_individual_stats, dict):
+            names_with_scout = {str(name) for name in raw_individual_stats.keys() if str(name).strip()}
+        elif isinstance(raw_individual_stats, list):
+            names_with_scout = {
+                item.get("nome", "")
+                for item in raw_individual_stats
+                if isinstance(item, dict) and item.get("nome")
+            }
+        else:
+            names_with_scout = set()
+        for name in sorted(titulares | reservas_entraram | set(scorers) | set(assists) | names_with_scout):
             st = stats[name]
             titular = name in titulares
-            participou = titular or name in reservas_entraram
+            scout = individual_stats.get(official_key(name), {})
+            if scout:
+                _add_player_scout(st, scout)
+            scout_minutes = numeric_stat(scout.get("minutos"))
+            minutos = scout_minutes if scout_minutes is not None else 90 if titular else 25 if name in reservas_entraram else 0
+            participou = titular or name in reservas_entraram or bool(scout)
             if participou:
                 st["jogos_participacao"] += 1
-                st["minutos"] += 90 if titular else 25
+                st["minutos"] += minutos
                 st["jogos_titular" if titular else "jogos_reserva"] += 1
                 st["ved"][res.lower()] += 1
             st["gols"] += scorers.get(name, 0)
+            st["assistencias"] += assists.get(name, 0)
             st["amarelos"] += yellows.get(name, 0)
             st["vermelhos"] += reds.get(name, 0)
             v, a = score_tuple(match)
             st["partidas"].append(
                 {
+                    "id": match.get("db_match_id") or match.get("id"),
                     "data": match.get("data") or "—",
+                    "competicao": match.get("competicao") or "—",
+                    "local": match.get("local") or "—",
                     "adv": match.get("adversario") or "Adversário",
                     "placar": f"{v}x{a}",
                     "res": res,
                     "titular": titular,
-                    "minutos": 90 if titular else 25 if name in reservas_entraram else 0,
+                    "minutos": minutos,
                     "gols": scorers.get(name, 0),
+                    "assistencias": assists.get(name, 0),
                     "amarelo": yellows.get(name, 0) > 0,
                     "vermelho": reds.get(name, 0) > 0,
+                    "estatisticas": scout,
                 }
             )
     return stats
@@ -700,11 +1127,21 @@ def build_players(
         games = int(st.get("jogos_participacao", 0) or 0)
         minutes = int(st.get("minutos", 0) or 0)
         goals = int(st.get("gols", 0) or 0)
+        assists = int(st.get("assistencias", 0) or 0)
         titular = int(st.get("jogos_titular", 0) or 0)
         reserva = int(st.get("jogos_reserva", 0) or 0)
         status = squad_status.get(name, "ex")
         pos = positions.get(name, "—")
-        elenco_rows.append({"nome": name, "posicao": pos, "status": status, "minutos": minutes, "numero": None, "gols": goals})
+        elenco_rows.append({
+            "nome": name,
+            "posicao": pos,
+            "status": status,
+            "minutos": minutes,
+            "numero": None,
+            "gols": goals,
+            "assistencias": assists,
+            "participacoes_gol": goals + assists,
+        })
         stats = {
             "jogos_participacao": games,
             "minutos": minutes,
@@ -717,8 +1154,11 @@ def build_players(
             "suspenso": 0,
             "selecao": 0,
             "gols": goals,
+            "assistencias": assists,
+            "participacoes_gol": goals + assists,
             "jogos_capitao": 0,
             "partidas_marcou": sum(1 for p in st.get("partidas", []) if p.get("gols")),
+            "partidas_assistencia": sum(1 for p in st.get("partidas", []) if p.get("assistencias")),
             "gols_titular": goals,
             "gols_banco": 0,
             "media_gols": round(goals / games, 2) if games else 0,
@@ -728,6 +1168,8 @@ def build_players(
             "suspensao_pendente": False,
             "media_min_entre_gols": round(minutes / goals) if goals else None,
             "ved": st.get("ved", {"v": 0, "e": 0, "d": 0}),
+            "jogos_com_scout": int(st.get("jogos_com_scout", 0) or 0),
+            "estatisticas_avancadas": finalize_player_scout(st),
         }
         jogadores[name] = {
             "nome": name,
@@ -784,12 +1226,10 @@ def build_runtime_from_state(
     geral, artilheiros, carrascos = build_general(jogos)
     yearly, yearly_totals, artilheiros_por_ano, artilheiros_geral = build_yearly(jogos)
     estadios, jogos_por_estadio = build_group_tables(jogos, lambda m: str(m.get("estadio") or "").strip())
-    arbitros, jogos_por_arbitro = build_group_tables(
-        jogos,
-        lambda m: str((m.get("arbitragem") or {}).get("arbitro") or "").strip()
-        if isinstance(m.get("arbitragem"), dict)
-        else "",
-    )
+    arbitros, jogos_por_arbitro = build_arbitration_role_table(jogos, "arbitro")
+    auxiliares_arbitragem, jogos_por_auxiliar = build_arbitration_role_table(jogos, "auxiliar")
+    vars_arbitragem, jogos_por_var = build_arbitration_role_table(jogos, "var")
+    combinacoes_arbitragem, jogos_por_combinacao_arbitragem = build_arbitration_combinations(jogos)
     tecnicos, passagens_tecnicos = build_coaches(jogos)
     elenco_data, jogadores, emprestados = build_players(jogos, current_squad, historic_players)
 
@@ -831,6 +1271,12 @@ def build_runtime_from_state(
             f"window.JOGOS_POR_ESTADIO = {js_value(jogos_por_estadio)};",
             f"window.ARBITROS = {js_value(arbitros)};",
             f"window.JOGOS_POR_ARBITRO = {js_value(jogos_por_arbitro)};",
+            f"window.AUXILIARES_ARBITRAGEM = {js_value(auxiliares_arbitragem)};",
+            f"window.JOGOS_POR_AUXILIAR = {js_value(jogos_por_auxiliar)};",
+            f"window.VARS_ARBITRAGEM = {js_value(vars_arbitragem)};",
+            f"window.JOGOS_POR_VAR = {js_value(jogos_por_var)};",
+            f"window.COMBINACOES_ARBITRAGEM = {js_value(combinacoes_arbitragem)};",
+            f"window.JOGOS_POR_COMBINACAO_ARBITRAGEM = {js_value(jogos_por_combinacao_arbitragem)};",
             f"window.YEARLY = {js_value(yearly)};",
             f"window.YEARLY_TOTAIS = {js_value(yearly_totals)};",
             f"window.ARTILHEIROS_POR_ANO = {js_value(artilheiros_por_ano)};",

@@ -108,3 +108,10 @@ window.JOGOS_POR_ARBITRO = {
   ],
   // demais árbitros — só 1 jogo cada, derivado de "primeiro" e "ultimo"
 };
+
+window.AUXILIARES_ARBITRAGEM = window.AUXILIARES_ARBITRAGEM || [];
+window.JOGOS_POR_AUXILIAR = window.JOGOS_POR_AUXILIAR || {};
+window.VARS_ARBITRAGEM = window.VARS_ARBITRAGEM || [];
+window.JOGOS_POR_VAR = window.JOGOS_POR_VAR || {};
+window.COMBINACOES_ARBITRAGEM = window.COMBINACOES_ARBITRAGEM || [];
+window.JOGOS_POR_COMBINACAO_ARBITRAGEM = window.JOGOS_POR_COMBINACAO_ARBITRAGEM || {};

@@ -138,7 +138,7 @@ function Estadios({ onOpenMatch }) {
 
 // ============ Árbitros ============
 function Arbitros({ onOpenMatch }) {
-  const all = window.ARBITROS;
+  const [tab, setTab] = useState("arbitro");
   const [busca, setBusca] = useState("");
   const [local, setLocal] = useState("todos");
   const [ano, setAno]     = useState("todos");
@@ -146,10 +146,29 @@ function Arbitros({ onOpenMatch }) {
   const [sort, setSort]   = useState({ k:"jogos", dir:"desc" });
   const [page, setPage]   = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [combPage, setCombPage] = useState(1);
   const detailRef = React.useRef(null);
+  const combinacoesPageSize = 50;
 
-  function selectArbitro(nome) {
-    setSel(nome);
+  const configs = useMemo(() => arbitragemConfigs(), []);
+  const cfg = configs[tab] || configs.arbitro;
+  const all = cfg.rows || [];
+
+  useEffect(() => {
+    setSel(null);
+    setPage(1);
+    setCombPage(1);
+    setLocal("todos");
+    setAno("todos");
+    setSort({ k:"jogos", dir:"desc" });
+  }, [tab]);
+
+  useEffect(() => {
+    setCombPage(1);
+  }, [busca, sort.k, sort.dir]);
+
+  function selectRegistro(row) {
+    setSel(cfg.key(row));
     setPage(1);
     requestAnimationFrame(() => {
       const el = detailRef.current;
@@ -159,35 +178,45 @@ function Arbitros({ onOpenMatch }) {
     });
   }
 
-  const filteredArbs = useMemo(() => {
-    let out = all.filter(a => !busca.trim() || a.nome.toLowerCase().includes(busca.trim().toLowerCase()));
+  const filteredRows = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    let out = all.filter(row => !termo || cfg.searchText(row).toLowerCase().includes(termo));
     out = [...out].sort((a,b) => {
-      const av = a[sort.k], bv = b[sort.k];
-      if (typeof av === "string") return sort.dir==="asc" ? av.localeCompare(bv,"pt-BR") : bv.localeCompare(av,"pt-BR");
+      const av = sortValueArbitragem(a, sort.k), bv = sortValueArbitragem(b, sort.k);
+      if (typeof av === "string" || typeof bv === "string") {
+        return sort.dir==="asc"
+          ? String(av).localeCompare(String(bv),"pt-BR")
+          : String(bv).localeCompare(String(av),"pt-BR");
+      }
       return sort.dir==="asc" ? av - bv : bv - av;
     });
     return out;
-  }, [all, busca, sort]);
+  }, [all, busca, sort, cfg]);
 
-  // resolve jogos do árbitro selecionado
+  const selectedRow = useMemo(() => {
+    if (!sel) return null;
+    return all.find(row => cfg.key(row) === sel) || null;
+  }, [all, cfg, sel]);
+
+  const totalCombinacoesPages = Math.max(1, Math.ceil(filteredRows.length / combinacoesPageSize));
+  const curCombinacoesPage = Math.min(combPage, totalCombinacoesPages);
+  const rowsTabela = tab === "combinacoes"
+    ? filteredRows.slice((curCombinacoesPage - 1) * combinacoesPageSize, curCombinacoesPage * combinacoesPageSize)
+    : filteredRows;
+
   const jogos = useMemo(() => {
     if (!sel) return [];
-    const lista = window.JOGOS_POR_ARBITRO?.[sel] || [];
+    const lista = cfg.games?.[sel] || [];
     if (lista.length > 0) return lista;
-    // monta a partir de primeiro/ultimo se necessário
-    const arb = all.find(a => a.nome === sel);
-    if (!arb) return [];
-    if (arb.primeiro.data === arb.ultimo.data) {
-      return [{ data: arb.primeiro.data, local: "—", competicao: "—", adv: extractAdv(arb.primeiro.placar), res: scoreRes(arb.primeiro.placar), placar: arb.primeiro.placar }];
+    if (!selectedRow?.primeiro || !selectedRow?.ultimo) return [];
+    if (selectedRow.primeiro.data === selectedRow.ultimo.data) {
+      return [fallbackGameFromMarker(selectedRow.primeiro)];
     }
-    return [
-      { data: arb.primeiro.data, local: "—", competicao: "—", adv: extractAdv(arb.primeiro.placar), res: scoreRes(arb.primeiro.placar), placar: arb.primeiro.placar },
-      { data: arb.ultimo.data,   local: "—", competicao: "—", adv: extractAdv(arb.ultimo.placar),   res: scoreRes(arb.ultimo.placar),   placar: arb.ultimo.placar },
-    ];
-  }, [sel, all]);
+    return [fallbackGameFromMarker(selectedRow.primeiro), fallbackGameFromMarker(selectedRow.ultimo)];
+  }, [cfg, sel, selectedRow]);
 
   const filteredJogos = jogos.filter(j => {
-    if (local !== "todos" && j.local !== local) return false;
+    if (local !== "todos" && String(j.local || "").toLowerCase() !== local) return false;
     if (ano !== "todos" && !j.data.endsWith(`/${ano}`)) return false;
     return true;
   });
@@ -195,12 +224,19 @@ function Arbitros({ onOpenMatch }) {
   const curPage = Math.min(page, totalPages);
   const pagedJogos = filteredJogos.slice((curPage-1)*pageSize, curPage*pageSize);
 
-  // anos disponíveis: todos do acervo (2000-2026), independentemente do árbitro
   const anosDisponiveis = useMemo(() => {
-    const out = [];
-    for (let y = 2026; y >= 2000; y--) out.push(String(y));
-    return out;
-  }, []);
+    const set = new Set();
+    Object.values(configs).forEach(c => {
+      Object.values(c.games || {}).flat().forEach(j => {
+        const ano = String(j.data || "").slice(-4);
+        if (/^\d{4}$/.test(ano)) set.add(ano);
+      });
+    });
+    if (!set.size) {
+      for (let y = 2026; y >= 2000; y--) set.add(String(y));
+    }
+    return Array.from(set).sort((a,b) => Number(b) - Number(a));
+  }, [configs]);
 
   function clickSort(k) {
     setSort(s => s.k === k ? { k, dir: s.dir==="asc"?"desc":"asc" } : { k, dir:"desc" });
@@ -210,61 +246,54 @@ function Arbitros({ onOpenMatch }) {
     <div className="main">
       <EAHero
         eyebrow="Acervo · Árbitros"
-        title="Árbitros"
-        sub="Lista de árbitros principais que já apitaram jogos do Vasco no acervo. Clique numa linha para ver todos os jogos apitados."
+        title="Arbitragem"
+        sub="Árbitros principais, auxiliares, VARs e combinações completas de arbitragem em jogos do Vasco."
         right={(
           <div className="ea-search">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="M14 14L11 11"/></svg>
-            <input placeholder="buscar árbitro…" value={busca} onChange={(e)=>setBusca(e.target.value)} />
+            <input placeholder={cfg.placeholder} value={busca} onChange={(e)=>setBusca(e.target.value)} />
           </div>
         )}
       />
 
+      <nav className="ea-tabs">
+        {Object.entries(configs).map(([key, item]) => (
+          <button key={key} className={tab===key?"active":""} onClick={()=>setTab(key)}>
+            {item.tab} <span>{item.rows.length}</span>
+          </button>
+        ))}
+      </nav>
+
       <div className="ea-grid">
         <div className="ea-master">
-          <h3 className="ea-section-title">Árbitros <small>{filteredArbs.length}</small></h3>
+          <h3 className="ea-section-title">{cfg.heading} <small>{filteredRows.length}</small></h3>
+          {tab === "combinacoes" && (
+            <PaginacaoLinhas
+              page={curCombinacoesPage}
+              totalPages={totalCombinacoesPages}
+              pageSize={combinacoesPageSize}
+              setPage={setCombPage}
+              total={filteredRows.length}
+            />
+          )}
           <div className="table-wrap">
             <table className="tbl ea-tbl arb-tbl">
-              <thead>
-                <tr>
-                  <SortTh k="nome"  cur={sort} onClick={clickSort}>Árbitro</SortTh>
-                  <SortTh k="jogos" cur={sort} onClick={clickSort} numeric>Jogos</SortTh>
-                  <th>Primeiro Jogo</th>
-                  <th>Último Jogo</th>
-                  <SortTh k="v" cur={sort} onClick={clickSort} numeric>V</SortTh>
-                  <SortTh k="e" cur={sort} onClick={clickSort} numeric>E</SortTh>
-                  <SortTh k="d" cur={sort} onClick={clickSort} numeric>D</SortTh>
-                  <SortTh k="gp" cur={sort} onClick={clickSort} numeric>GP</SortTh>
-                  <SortTh k="gc" cur={sort} onClick={clickSort} numeric>GC</SortTh>
-                  <th className="num">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredArbs.map(a => (
-                  <tr key={a.nome} className={"has-detail" + (sel===a.nome?" is-sel":"")} onClick={()=> selectArbitro(a.nome)}>
-                    <td className="opponent" style={{fontWeight:600, gap:8}}>{a.nome}</td>
-                    <td className="num">{a.jogos}</td>
-                    <td style={{fontFamily:"var(--ff-mono)", fontSize:11, color:"var(--ink-mute)"}}>{a.primeiro.data} <span style={{color:"var(--ink-faint)"}}>·</span> <span style={{color:"var(--ink-soft)"}}>{a.primeiro.placar}</span></td>
-                    <td style={{fontFamily:"var(--ff-mono)", fontSize:11, color:"var(--ink-mute)"}}>{a.ultimo.data} <span style={{color:"var(--ink-faint)"}}>·</span> <span style={{color:"var(--ink-soft)"}}>{a.ultimo.placar}</span></td>
-                    <td className="num c-v">{a.v}</td>
-                    <td className="num c-e">{a.e}</td>
-                    <td className="num c-d">{a.d}</td>
-                    <td className="num">{a.gp}</td>
-                    <td className="num">{a.gc}</td>
-                    <td className={"num " + (a.gp-a.gc>0?"c-v":(a.gp-a.gc<0?"c-d":""))}>{(a.gp-a.gc) > 0 ? "+" : ""}{a.gp-a.gc}</td>
-                  </tr>
-                ))}
-              </tbody>
+              {tab === "combinacoes"
+                ? <TabelaCombinacoes rows={rowsTabela} selected={sel} onSelect={selectRegistro} sort={sort} clickSort={clickSort} />
+                : <TabelaOficiais rows={rowsTabela} selected={sel} onSelect={selectRegistro} sort={sort} clickSort={clickSort} label={cfg.label} />}
             </table>
           </div>
         </div>
 
         <div className="ea-detail" ref={detailRef}>
           {!sel ? (
-            <div className="ea-empty">Selecione um árbitro acima para ver os jogos apitados.</div>
+            <div className="ea-empty">Selecione um registro acima para ver os jogos.</div>
           ) : (
             <>
-              <h3 className="ea-section-title">Jogos apitados por <span className="ea-sel">{sel}</span> <small>{filteredJogos.length} de {jogos.length}</small></h3>
+              <h3 className="ea-section-title">
+                {cfg.detailTitle(selectedRow)}
+                <small>{filteredJogos.length} de {jogos.length}</small>
+              </h3>
               <div className="arb-filtros">
                 <div className="arb-rad">
                   <span className="lbl">Local</span>
@@ -307,6 +336,9 @@ function Arbitros({ onOpenMatch }) {
                       <th style={{width:170}}>Competição</th>
                       <th>Adversário</th>
                       <th style={{width:220}}>Placar</th>
+                      <th style={{width:190}}>Árbitro</th>
+                      <th style={{width:280}}>Auxiliares</th>
+                      <th style={{width:180}}>VAR</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -321,6 +353,9 @@ function Arbitros({ onOpenMatch }) {
                           <span>{j.adv}</span>
                         </td>
                         <td style={{fontFamily:"var(--ff-serif)", fontSize:14}}>{j.placar}</td>
+                        <td className="official-cell">{displayOfficial(j.arbitro)}</td>
+                        <td className="official-cell">{displayOfficials(j.auxiliares)}</td>
+                        <td className="official-cell">{displayOfficial(j.var)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -332,6 +367,173 @@ function Arbitros({ onOpenMatch }) {
       </div>
     </div>
   );
+}
+
+function arbitragemConfigs() {
+  return {
+    arbitro: {
+      tab: "Árbitros",
+      heading: "Árbitros principais",
+      label: "Árbitro",
+      placeholder: "buscar árbitro…",
+      rows: window.ARBITROS || [],
+      games: window.JOGOS_POR_ARBITRO || {},
+      key: row => row?.nome || "",
+      searchText: row => row?.nome || "",
+      detailTitle: row => <>Jogos com <span className="ea-sel">{row?.nome || "—"}</span> como árbitro</>,
+    },
+    auxiliar: {
+      tab: "Auxiliares",
+      heading: "Auxiliares",
+      label: "Auxiliar",
+      placeholder: "buscar auxiliar…",
+      rows: window.AUXILIARES_ARBITRAGEM || [],
+      games: window.JOGOS_POR_AUXILIAR || {},
+      key: row => row?.nome || "",
+      searchText: row => row?.nome || "",
+      detailTitle: row => <>Jogos com <span className="ea-sel">{row?.nome || "—"}</span> como auxiliar</>,
+    },
+    var: {
+      tab: "VARs",
+      heading: "VARs",
+      label: "VAR",
+      placeholder: "buscar VAR…",
+      rows: window.VARS_ARBITRAGEM || [],
+      games: window.JOGOS_POR_VAR || {},
+      key: row => row?.nome || "",
+      searchText: row => row?.nome || "",
+      detailTitle: row => <>Jogos com <span className="ea-sel">{row?.nome || "—"}</span> no VAR</>,
+    },
+    combinacoes: {
+      tab: "Combinações",
+      heading: "Combinações de arbitragem",
+      label: "Combinação",
+      placeholder: "buscar árbitro, auxiliar ou VAR…",
+      rows: window.COMBINACOES_ARBITRAGEM || [],
+      games: window.JOGOS_POR_COMBINACAO_ARBITRAGEM || {},
+      key: row => row?.id || "",
+      searchText: row => [row?.arbitro, ...(row?.auxiliares || []), row?.var].filter(Boolean).join(" "),
+      detailTitle: row => <>Jogos desta <span className="ea-sel">combinação</span></>,
+    },
+  };
+}
+
+function TabelaOficiais({ rows, selected, onSelect, sort, clickSort, label }) {
+  return (
+    <>
+      <thead>
+        <tr>
+          <SortTh k="nome"  cur={sort} onClick={clickSort}>{label}</SortTh>
+          <SortTh k="jogos" cur={sort} onClick={clickSort} numeric>Jogos</SortTh>
+          <SortTh k="primeiro" cur={sort} onClick={clickSort}>Primeiro Jogo</SortTh>
+          <SortTh k="ultimo" cur={sort} onClick={clickSort}>Último Jogo</SortTh>
+          <SortTh k="v" cur={sort} onClick={clickSort} numeric>V</SortTh>
+          <SortTh k="e" cur={sort} onClick={clickSort} numeric>E</SortTh>
+          <SortTh k="d" cur={sort} onClick={clickSort} numeric>D</SortTh>
+          <SortTh k="gp" cur={sort} onClick={clickSort} numeric>GP</SortTh>
+          <SortTh k="gc" cur={sort} onClick={clickSort} numeric>GC</SortTh>
+          <SortTh k="saldo" cur={sort} onClick={clickSort} numeric>Saldo</SortTh>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr key={row.nome} className={"has-detail" + (selected===row.nome?" is-sel":"")} onClick={()=> onSelect(row)}>
+            <td className="opponent" style={{fontWeight:600, gap:8}}>{row.nome}</td>
+            <td className="num">{row.jogos}</td>
+            <td className="ea-match-marker">{row.primeiro?.data || "—"} <span>·</span> {row.primeiro?.placar || "—"}</td>
+            <td className="ea-match-marker">{row.ultimo?.data || "—"} <span>·</span> {row.ultimo?.placar || "—"}</td>
+            <td className="num c-v">{row.v}</td>
+            <td className="num c-e">{row.e}</td>
+            <td className="num c-d">{row.d}</td>
+            <td className="num">{row.gp}</td>
+            <td className="num">{row.gc}</td>
+            <td className={"num " + (Number(row.saldo ?? row.gp-row.gc)>0?"c-v":(Number(row.saldo ?? row.gp-row.gc)<0?"c-d":""))}>{fmtSaldo(row.saldo ?? row.gp-row.gc)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </>
+  );
+}
+
+function TabelaCombinacoes({ rows, selected, onSelect, sort, clickSort }) {
+  return (
+    <>
+      <thead>
+        <tr>
+          <SortTh k="arbitro" cur={sort} onClick={clickSort}>Árbitro</SortTh>
+          <SortTh k="auxiliares" cur={sort} onClick={clickSort}>Auxiliares</SortTh>
+          <SortTh k="var" cur={sort} onClick={clickSort}>VAR</SortTh>
+          <SortTh k="jogos" cur={sort} onClick={clickSort} numeric>Jogos</SortTh>
+          <SortTh k="primeiro" cur={sort} onClick={clickSort}>Primeiro Jogo</SortTh>
+          <SortTh k="ultimo" cur={sort} onClick={clickSort}>Último Jogo</SortTh>
+          <SortTh k="v" cur={sort} onClick={clickSort} numeric>V</SortTh>
+          <SortTh k="e" cur={sort} onClick={clickSort} numeric>E</SortTh>
+          <SortTh k="d" cur={sort} onClick={clickSort} numeric>D</SortTh>
+          <SortTh k="saldo" cur={sort} onClick={clickSort} numeric>Saldo</SortTh>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr key={row.id} className={"has-detail" + (selected===row.id?" is-sel":"")} onClick={()=> onSelect(row)}>
+            <td className="official-cell strong">{displayOfficial(row.arbitro)}</td>
+            <td className="official-cell">{displayOfficials(row.auxiliares)}</td>
+            <td className="official-cell">{displayOfficial(row.var)}</td>
+            <td className="num">{row.jogos}</td>
+            <td className="ea-match-marker">{row.primeiro?.data || "—"} <span>·</span> {row.primeiro?.placar || "—"}</td>
+            <td className="ea-match-marker">{row.ultimo?.data || "—"} <span>·</span> {row.ultimo?.placar || "—"}</td>
+            <td className="num c-v">{row.v}</td>
+            <td className="num c-e">{row.e}</td>
+            <td className="num c-d">{row.d}</td>
+            <td className={"num " + (Number(row.saldo ?? row.gp-row.gc)>0?"c-v":(Number(row.saldo ?? row.gp-row.gc)<0?"c-d":""))}>{fmtSaldo(row.saldo ?? row.gp-row.gc)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </>
+  );
+}
+
+function sortValueArbitragem(row, key) {
+  if (key === "primeiro" || key === "ultimo") return dateSortEA(row[key]?.data);
+  if (key === "auxiliares") return displayOfficials(row.auxiliares);
+  if (key === "saldo") return Number(row.saldo ?? row.gp - row.gc);
+  const value = row[key];
+  return typeof value === "number" ? value : String(value || "");
+}
+
+function dateSortEA(data) {
+  const parts = String(data || "").split("/");
+  if (parts.length !== 3) return 0;
+  return Number(`${parts[2]}${parts[1]}${parts[0]}`) || 0;
+}
+
+function fallbackGameFromMarker(marker) {
+  return {
+    data: marker?.data || "—",
+    local: "—",
+    competicao: "—",
+    adv: extractAdv(marker?.placar || ""),
+    res: scoreRes(marker?.placar || ""),
+    placar: marker?.placar || "—",
+    arbitro: "—",
+    auxiliares: [],
+    var: "—",
+  };
+}
+
+function displayOfficial(value) {
+  const txt = String(value || "").trim();
+  return txt && txt !== "—" ? txt : "—";
+}
+
+function displayOfficials(values) {
+  if (!Array.isArray(values)) return displayOfficial(values);
+  const names = values.map(displayOfficial).filter(v => v !== "—");
+  return names.length ? names.join(", ") : "—";
+}
+
+function fmtSaldo(value) {
+  const n = Number(value || 0);
+  return `${n > 0 ? "+" : ""}${n}`;
 }
 
 // ============ Helpers compartilhados ============
@@ -369,6 +571,24 @@ function Paginacao({ page, totalPages, pageSize, setPage, setPageSize, total }) 
           <button key={n} className={pageSize===n?"active":""} onClick={()=>{ setPageSize(n); setPage(1); }}>{n}</button>
         ))}
         <span className="ea-pag-info">{total} {total===1?"jogo":"jogos"}</span>
+      </div>
+      <div className="ea-pag-right">
+        <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1}>‹ anterior</button>
+        <span className="ea-pag-curr">página {page} <span style={{color:"var(--ink-faint)"}}>de</span> {totalPages}</span>
+        <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages}>próxima ›</button>
+      </div>
+    </div>
+  );
+}
+
+function PaginacaoLinhas({ page, totalPages, pageSize, setPage, total }) {
+  const ini = total ? (page - 1) * pageSize + 1 : 0;
+  const fim = Math.min(page * pageSize, total);
+  return (
+    <div className="ea-paginacao">
+      <div className="ea-pag-left">
+        <span className="ea-pag-info">linhas {ini}-{fim} de {total}</span>
+        <span className="ea-pag-info">{pageSize} por página</span>
       </div>
       <div className="ea-pag-right">
         <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1}>‹ anterior</button>

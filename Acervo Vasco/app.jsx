@@ -63,6 +63,14 @@ function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
+  function handleTabChange(tab) {
+    setActiveTab(tab);
+    setSelectedMatch(null);
+    setSelectedPlayer(null);
+    if (tab !== "Retrospecto") setRetroAdv(null);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
   function handleBack() {
     if (selectedPlayer) { setSelectedPlayer(null); return; }
     setSelectedMatch(null);
@@ -70,7 +78,7 @@ function App() {
 
   return (
     <div className="app">
-      <TopBar tabs={NAV_TABS} active={activeTab} onChange={setActiveTab} meta={topbarMeta} />
+      <TopBar tabs={NAV_TABS} active={activeTab} onChange={handleTabChange} meta={topbarMeta} />
       <div className={"page" + (activeTab === "Temporadas" && !selectedMatch && !selectedPlayer ? "" : " page-no-sidebar")}>
         {activeTab === "Temporadas" && !selectedMatch && !selectedPlayer && (
           <YearsSidebar year={year} setYear={(y)=>{ setYear(y); setSelectedMatch(null); }} />
@@ -219,6 +227,8 @@ function buildStubPartida(j) {
     gols_adversario: [],
     cartoes_amarelos_vasco: [],
     cartoes_vermelhos_vasco: [],
+    estatisticas_vasco: {},
+    estatisticas_jogadores_vasco: [],
     publico_pagante: j?.publico || 0,
     publico_presente: j?.publico ? Math.round(j.publico * 1.05) : 0,
     renda: (j?.publico || 0) * 65,

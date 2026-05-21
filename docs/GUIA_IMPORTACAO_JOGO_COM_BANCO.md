@@ -12,7 +12,7 @@ Buscar e inserir o ultimo jogo ja realizado do Vasco no sistema garantindo:
 - Nenhum nome "novo" desnecessariamente criado quando existe equivalente no banco.
 - Sem criar duplicata de competencia/tecnico/jogo.
 - Aplicacao correta primeiro em DEV e depois em PRD.
-- Coleta da fonte principal com o maximo de dados possiveis: data, horario, estadio, tecnico, arbitragem, gols, cartoes, substituicoes, escalação, placar, renda e publico quando aplicavel.
+- Coleta da fonte principal com o maximo de dados possiveis: data, horario, estadio, tecnico, arbitragem, gols, cartoes, substituicoes, escalação, placar, renda, publico e estatisticas avancadas do Vasco e dos jogadores do Vasco quando aplicavel.
 
 ## 2) Onde o app grava e consulta
 
@@ -38,7 +38,7 @@ Buscar e inserir o ultimo jogo ja realizado do Vasco no sistema garantindo:
 
 1. Identificar o ultimo jogo ja realizado do Vasco.
 2. Abrir a materia da NetVasco da rodada e usar essa materia como fonte principal.
-3. Abrir tambem a materia de `desfalques e pendurados` da NetVasco da mesma rodada, quando existir.
+3. Abrir tambem a materia pre-jogo de desfalques da NetVasco da mesma rodada, quando existir.
 4. Coletar os dados brutos da fonte (noticia, relato tecnico, ficha de jogo).
 5. Confirmar se a materia traz:
    - data
@@ -54,21 +54,29 @@ Buscar e inserir o ultimo jogo ja realizado do Vasco no sistema garantindo:
    - substituicoes
    - escalação
    - renda e publico, se o jogo for em casa
-6. Coletar da materia de `desfalques e pendurados`:
+   - estatisticas coletivas do Vasco, como posse de bola, passes certos, passes errados, passes tentados/totais e finalizacoes
+   - estatisticas individuais dos jogadores do Vasco, quando houver scout confiavel
+6. Se a NetVasco nao trouxer estatisticas detalhadas, pesquisar no Google e em sites especializados:
+   - usar consultas como `"Vasco x Adversario estatisticas SofaScore dd/mm/aaaa"`, `"Adversario x Vasco player stats FotMob"`, `"Vasco Adversario match stats 365Scores"`, `"Vasco Adversario estatisticas Footstats"`, `"Vasco Adversario ESPN Gamecast"`, `"Vasco Adversario CONMEBOL stats"` ou `"CBF Vasco Adversario estatisticas"`.
+   - priorizar SofaScore, FotMob, Footstats, 365Scores, ESPN Gamecast, Flashscore, AiScore, WhoScored, FBref/Opta quando disponivel, CBF/CONMEBOL e fontes equivalentes com scout rastreavel.
+   - extrair apenas estatisticas do Vasco e dos jogadores do Vasco; nao salvar numeros do adversario.
+   - nao inventar scout ausente; se a pesquisa real nao encontrar estatisticas avancadas confiaveis, seguir sem esses campos e registrar a pendencia na resposta/observacao tecnica da importacao.
+7. Coletar da materia pre-jogo de desfalques:
    - jogadores suspensos para a partida
    - jogadores lesionados ou fora por motivo medico
    - retornos de suspensao, quando a materia indicar
-7. Se a materia nao trouxer a lista completa de reservas, **nao inventar** os nomes que faltam:
+   - nao registrar pendurados nem tentar prever suspensoes por acumulacao de cartoes
+8. Se a materia nao trouxer a lista completa de reservas, **nao inventar** os nomes que faltam:
    - pedir ao usuario a foto da escalação completa para anexar
    - usar a foto para completar banco e reservas
-8. Se o jogo for em casa e a materia nao trouxer `publico_pagante`, `publico_presente` ou `renda`, pedir esses dados ao usuario antes de finalizar.
-9. Resolver nomes contra o banco antes de salvar.
-10. Montar payload no formato aceito pelo app.
-11. Conferir duplicata.
-12. Inserir em DEV.
-13. Validar.
-14. Repetir em PRD.
-15. Atualizar lista de arbitros, auxiliares ou VAR, se houver nome novo faltante no cadastro.
+9. Se o jogo for em casa e a materia nao trouxer `publico_pagante`, `publico_presente` ou `renda`, pedir esses dados ao usuario antes de finalizar.
+10. Resolver nomes contra o banco antes de salvar.
+11. Montar payload no formato aceito pelo app.
+12. Conferir duplicata.
+13. Inserir em DEV.
+14. Validar.
+15. Repetir em PRD.
+16. Atualizar lista de arbitros, auxiliares ou VAR, se houver nome novo faltante no cadastro.
 
 ## 4) Campos obrigatorios do payload de partida
 
@@ -112,6 +120,27 @@ Exemplo estrutural:
   },
   "gols_adversario": [],
   "gols_vasco": [],
+  "estatisticas_vasco": {
+    "posse_bola": null,
+    "passes_certos": null,
+    "passes_errados": null,
+    "passes_tentados": null,
+    "precisao_passes": null,
+    "finalizacoes": null,
+    "finalizacoes_no_gol": null
+  },
+  "estatisticas_jogadores_vasco": [
+    {
+      "nome": "Nome do jogador do Vasco",
+      "minutos": null,
+      "passes_certos": null,
+      "passes_errados": null,
+      "passes_tentados": null,
+      "finalizacoes": null,
+      "desarmes": null,
+      "nota_sofascore": null
+    }
+  ],
   "anulados_vasco": [],
   "anulados_adversario": [],
   "cartoes_amarelos_vasco": [],
@@ -125,11 +154,19 @@ Regras de normalizacao:
 - Titulares devem somar 11 e ter 1 goleiro.
 - Reservas deve ter pelo menos 4.
 - Periodo aceito no sistema para gols: `1T`, `2T`, `1P`, `2P`.
+- Para gols nos acrescimos, informe o minuto corrido dentro do periodo: `47`/`1T` para 45+2, `49`/`2T` para 90+4.
+- Assistencia em gol e opcional. Para um gol unico, use `"assistencia": "Nome do jogador"`. Para varios gols no mesmo item, use `"assistencias": ["Nome 1", "Nome 2"]` na mesma ordem de `minutos` e `periodos`.
+- A assistencia nao pode ser do proprio autor do gol.
 - Periodo aceito para substituicao: `1T`, `INT`, `2T`, `1P`, `INTP`, `2P`.
 - Em substituicao no intervalo (`INT` ou `INTP`) pode usar minuto `0`.
 - Quando `local = "casa"`, preencher `publico_pagante`, `publico_presente` e `renda` com os valores informados pela noticia.
 - Quando `local = "fora"`, nao exigir `publico_pagante`, `publico_presente` ou `renda`.
-- `suspensos`: preencher com os jogadores suspensos para aquela partida com base na materia de `desfalques e pendurados`.
+- `estatisticas_vasco` deve conter apenas numeros coletivos do Vasco; nao incluir estatisticas do adversario.
+- `estatisticas_jogadores_vasco` deve conter apenas jogadores do Vasco, sempre com `nome`.
+- Em estatisticas, percentuais vao de 0 a 100; `passes_tentados`, `passes_errados` e `precisao_passes` podem ser calculados automaticamente quando os campos de passes suficientes existirem.
+- O importador aceita aliases comuns de estatisticas (`passes`, `passes_totais`, `chutes`, `chutes_no_gol`, `posse`, `xg`, `nota`), mas o payload deve preferir chaves canonicas: `passes_tentados`, `finalizacoes`, `finalizacoes_no_gol`, `posse_bola`, `nota_sofascore` quando for nota do SofaScore.
+- Para estatisticas individuais, nao preencher zeros para jogadores sem scout confirmado; inclua apenas quem tiver dados reais na fonte.
+- `suspensos`: preencher somente com os jogadores suspensos para aquela partida, conforme fonte pre-jogo.
 - `lesionados`: preencher com os desfalques por lesao quando a fonte pre-jogo trouxer essa informacao.
 - Se a materia disser que um jogador `retorna de suspensao`, nao marcar esse jogador em `suspensos` para essa partida.
 - `titulares` e `reservas` devem conter apenas jogadores que estejam efetivamente nos relacionados do jogo.
@@ -257,11 +294,12 @@ INSERT OR IGNORE INTO list_entries(list_type, value) VALUES ('vars', 'Nome');
     {
       "nome": "Matheus Bidu",
       "gols": 1,
-      "minutos": [37],
-      "periodo": "1T",
-      "periodos": ["1T"],
-      "clube": "Corinthians"
-    }
+	      "minutos": [37],
+	      "periodo": "1T",
+	      "periodos": ["1T"],
+	      "assistencia": "",
+	      "clube": "Corinthians"
+	    }
   ],
   "cartoes_amarelos_vasco": [
     { "nome": "Tche Tche", "cartoes": 1, "clube": "Vasco" },
@@ -279,7 +317,7 @@ INSERT OR IGNORE INTO list_entries(list_type, value) VALUES ('vars', 'Nome');
 - Nao inventar reservas ausentes quando a materia trouxer apenas os jogadores que entraram.
 - Se faltar banco completo, pedir ao usuario a foto da escalação antes de fechar.
 - Se faltar renda ou publico em jogo em casa, pedir ao usuario antes de fechar.
-- Sempre consultar a materia de `desfalques e pendurados` antes de fechar para registrar `suspensos` e `lesionados`.
+- Sempre consultar a materia pre-jogo de desfalques antes de fechar para registrar `suspensos` e `lesionados`.
 - Se houver conflito entre a ficha do jogo e a materia pre-jogo sobre suspensao, priorizar a materia pre-jogo e registrar a duvida em `observacao`.
 - Se um jogador sumir de `titulares` e `reservas` de uma partida para outra, nao deixar o status indefinido:
   - se a fonte indicar `lesionado`, `suspenso` ou `servindo_selecao`, usar esse status
@@ -298,13 +336,16 @@ INSERT OR IGNORE INTO list_entries(list_type, value) VALUES ('vars', 'Nome');
 - [ ] arbitragem padronizada
 - [ ] escalação com 11 titulares e 1 goleiro
 - [ ] reservas >= 4
-- [ ] suspensos pesquisados na materia de `desfalques e pendurados`
+- [ ] suspensos confirmados na fonte pre-jogo
 - [ ] lesionados/desfalques pesquisados na materia pre-jogo
 - [ ] se a materia nao trouxer todos os reservas, pedir foto da escalação completa
 - [ ] `titulares` e `reservas` contem apenas jogadores realmente relacionados para o jogo
 - [ ] jogador que saiu dos relacionados e nao ganhou outro motivo especifico foi movido para `nao_relacionados`
 - [ ] se `local = casa`, publico presente/pagante e renda coletados na materia e incluidos
 - [ ] se `local = fora`, nao exigir publico/renda
+- [ ] estatisticas coletivas do Vasco pesquisadas em fonte especializada ou pendencia registrada
+- [ ] estatisticas individuais dos jogadores do Vasco pesquisadas em fonte especializada ou pendencia registrada
+- [ ] estatisticas avancadas nao incluem dados do adversario
 - [ ] cartões, gols e substituicoes revisados
 - [ ] conferencia de duplicidade no mesmo dia vs mesmo adversario
 - [ ] salvar em DEV
@@ -325,10 +366,36 @@ Sempre usar a matéria da NetVasco da rodada como fonte principal do jogo, porqu
 
 Complemento recomendado:
 
-- buscar tambem a materia `desfalques e pendurados` da mesma rodada para descobrir:
+- buscar tambem a materia pre-jogo de desfalques da mesma rodada para descobrir:
   - quem estava suspenso para a partida
   - quem estava fora por lesao
   - quem retornava de suspensao
+  - ignorar pendurados e qualquer projecao de suspensao futura
+
+## 13.1) Fontes de estatisticas avancadas
+
+Quando a NetVasco nao trouxer scout completo, pesquisar em Google e sites especializados antes de fechar o payload. Consultas uteis:
+
+```text
+"Vasco x Adversario estatisticas SofaScore dd/mm/aaaa"
+"Adversario x Vasco player stats FotMob"
+"Vasco Adversario match stats 365Scores"
+"Vasco Adversario estatisticas Footstats"
+"Vasco Adversario ESPN Gamecast"
+"Vasco Adversario CONMEBOL stats"
+"CBF Vasco Adversario estatisticas"
+```
+
+Fontes recomendadas: SofaScore, FotMob, Footstats, 365Scores, ESPN Gamecast, Flashscore, AiScore, WhoScored, FBref/Opta quando disponivel, CBF/CONMEBOL e outras bases equivalentes com scout de partida.
+
+Regras de uso:
+
+- extrair apenas os numeros do Vasco para `estatisticas_vasco`;
+- extrair apenas jogadores do Vasco para `estatisticas_jogadores_vasco`;
+- se a fonte mostrar comparativo lado a lado, descartar os numeros do adversario;
+- se a pagina for dinamica, usar os dados visiveis na interface, print ou transcricao manual e registrar a fonte usada;
+- nao bloquear a importacao apenas por falta de scout avancado depois de pesquisa real, mas registrar a pendencia na resposta final;
+- nao preencher jogador sem dado individual confirmado com zero.
 
 ## 14) Regras de parada obrigatoria
 

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from collections import defaultdict, Counter
+import copy
 import json
 import math
 import os
@@ -40,7 +41,7 @@ from storage_sqlite import (
     save_matches as db_save_matches,
     save_titles as db_save_titles,
 )
-from web_sync import schedule_sync_after_change
+from web_sync import schedule_sync_after_change, set_status_callback, sync_config
 
 # --- Matplotlib (gráficos) ---
 try:
@@ -216,12 +217,140 @@ CATEGORIAS_ESCALACAO_EXTRAS = (
     ("suspensos", "Suspensos"),
     ("servindo_selecao", "Servindo a seleção"),
 )
+ESTATISTICAS_VASCO_ALIASES = {
+    "assistencias": "assistencias",
+    "chutes": "finalizacoes",
+    "chutes_bloqueados": "finalizacoes_bloqueadas",
+    "chutes_fora": "finalizacoes_fora",
+    "chutes_no_gol": "finalizacoes_no_gol",
+    "cruzamentos_certos": "cruzamentos_certos",
+    "cruzamentos_errados": "cruzamentos_errados",
+    "cruzamentos_tentados": "cruzamentos_tentados",
+    "desarmes": "desarmes",
+    "duelos_aereos_ganhos": "duelos_aereos_ganhos",
+    "duelos_ganhos": "duelos_ganhos",
+    "escanteios": "escanteios",
+    "faltas_cometidas": "faltas_cometidas",
+    "faltas_recebidas": "faltas_recebidas",
+    "finalizacoes": "finalizacoes",
+    "finalizacoes_bloqueadas": "finalizacoes_bloqueadas",
+    "finalizacoes_fora": "finalizacoes_fora",
+    "finalizacoes_no_gol": "finalizacoes_no_gol",
+    "impedimentos": "impedimentos",
+    "interceptacoes": "interceptacoes",
+    "lancamentos_certos": "lancamentos_certos",
+    "lancamentos_errados": "lancamentos_errados",
+    "lancamentos_tentados": "lancamentos_tentados",
+    "nota": "nota",
+    "nota_sofascore": "nota_sofascore",
+    "passes": "passes_tentados",
+    "passes_certo": "passes_certos",
+    "passes_certos": "passes_certos",
+    "passes_completos": "passes_certos",
+    "passes_errado": "passes_errados",
+    "passes_errados": "passes_errados",
+    "passes_incompletos": "passes_errados",
+    "passes_precisao": "precisao_passes",
+    "passes_precisao_pct": "precisao_passes",
+    "passes_totais": "passes_tentados",
+    "passes_total": "passes_tentados",
+    "passes_tentados": "passes_tentados",
+    "posse": "posse_bola",
+    "posse_bola": "posse_bola",
+    "posse_bola_pct": "posse_bola",
+    "posse_de_bola": "posse_bola",
+    "posse_de_bola_pct": "posse_bola",
+    "precisao_passe": "precisao_passes",
+    "precisao_de_passes": "precisao_passes",
+    "precisao_de_passes_pct": "precisao_passes",
+    "precisao_passes": "precisao_passes",
+    "precisao_passes_pct": "precisao_passes",
+    "sofridas": "faltas_recebidas",
+    "xg": "xg",
+}
+ESTATISTICAS_PERCENTUAIS = {
+    "posse_bola",
+    "precisao_cruzamentos",
+    "precisao_lancamentos",
+    "precisao_passes",
+}
 ELENCO_POSICAO_PLACEHOLDER = "Selecione..."
 ELENCO_CONDICAO_PLACEHOLDER = "Selecione..."
 
 def _gerar_backup_jsons_inicio():
     """Gera backup snapshot do banco SQLite ao abrir o app."""
     backup_database_snapshot(DATA_DIR, DB_PATH)
+
+
+def _limpar_nome_arbitragem_bruto(nome: str) -> str:
+    nome_limpo = re.sub(r"\s+", " ", str(nome or "").strip())
+    if not nome_limpo:
+        return ""
+    nome_limpo = re.sub(r"\s*\([A-Z]{2,4}\s*$", "", nome_limpo).strip()
+    nome_limpo = re.sub(r"\s*\([^)]+?\)\s*$", "", nome_limpo).strip()
+    return re.sub(r"\s+", " ", nome_limpo)
+
+
+def _chave_nome_arbitragem(nome: str) -> str:
+    nome_limpo = _limpar_nome_arbitragem_bruto(nome)
+    nome_sem_acentos = "".join(
+        ch for ch in unicodedata.normalize("NFKD", nome_limpo)
+        if not unicodedata.combining(ch)
+    )
+    nome_sem_acentos = re.sub(r"[^\w\s]", " ", nome_sem_acentos, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", nome_sem_acentos).strip().casefold()
+
+
+_NOMES_ARBITRAGEM_CANONICOS = {
+    _chave_nome_arbitragem("Bruno Arleu de Araujo"): "Bruno Arleu de Araújo",
+    _chave_nome_arbitragem("Carlos Bentancur"): "Carlos Bentancur",
+    _chave_nome_arbitragem("Jhon Ospina"): "Jhon Ospina",
+    _chave_nome_arbitragem("Joao Vitor Gobi"): "João Vitor Gobi",
+    _chave_nome_arbitragem("Rodrigo Jose Pereira de Lima"): "Rodrigo José Pereira de Lima",
+    _chave_nome_arbitragem("Rodrigo José Pereira De Lima"): "Rodrigo José Pereira de Lima",
+    _chave_nome_arbitragem("Savio Pereira Sampaio"): "Sávio Pereira Sampaio",
+    _chave_nome_arbitragem("Wagner do Nascimento Magalhaes"): "Wagner do Nascimento Magalhães",
+    _chave_nome_arbitragem("Alessandro Alvaro Rocha de Matos"): "Alessandro Álvaro Rocha de Matos",
+    _chave_nome_arbitragem("Alexander Guzman"): "Alexander Guzman",
+    _chave_nome_arbitragem("Andres Nievas"): "Andrés Nievas",
+    _chave_nome_arbitragem("Bruno Muller"): "Bruno Müller",
+    _chave_nome_arbitragem("David Fuentes"): "David Fuentes",
+    _chave_nome_arbitragem("Jhon Gallego"): "Jhon Gallego",
+    _chave_nome_arbitragem("Luanderson Lima Dos Santos"): "Luanderson Lima dos Santos",
+    _chave_nome_arbitragem("Maira Mastella Moreira"): "Maíra Mastella Moreira",
+    _chave_nome_arbitragem("Rodrigo Figueiredo Henrique Correa"): "Rodrigo Figueiredo Henrique Corrêa",
+    _chave_nome_arbitragem("Thiago Henrique Neto Correa Farinha"): "Thiago Henrique Neto Corrêa Farinha",
+    _chave_nome_arbitragem("Wallace Muller Barros Santos"): "Wallace Müller Barros Santos",
+    _chave_nome_arbitragem("Claudio Rocha Filho"): "José Cláudio Rocha Filho",
+    _chave_nome_arbitragem("Jose Claudio Rocha Filho"): "José Cláudio Rocha Filho",
+    _chave_nome_arbitragem("Leonard Mosquera"): "Leonard Mosquera",
+    _chave_nome_arbitragem("Marco Aurelio Augusto Fazekas Ferreira"): "Marco Aurélio Augusto Fazekas Ferreira",
+    _chave_nome_arbitragem("Pablo Ramon Goncalves Pinheiro"): "Pablo Ramon Gonçalves Pinheiro",
+    _chave_nome_arbitragem("Ricardo Garcia"): "Ricardo Garcia",
+    _chave_nome_arbitragem("Rodrigo Carvalhaes de Miranda"): "Rodrigo Carvalhães de Miranda",
+}
+
+
+def _normalizar_nome_arbitragem(nome: str) -> str:
+    nome_limpo = _limpar_nome_arbitragem_bruto(nome)
+    if not nome_limpo:
+        return ""
+    return _NOMES_ARBITRAGEM_CANONICOS.get(_chave_nome_arbitragem(nome_limpo), nome_limpo)
+
+
+def _normalizar_lista_arbitragem_nomes(nomes) -> list:
+    normalizados = []
+    vistos = set()
+    for nome in nomes or []:
+        nome_limpo = _normalizar_nome_arbitragem(nome)
+        if not nome_limpo:
+            continue
+        chave = _chave_nome_arbitragem(nome_limpo)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        normalizados.append(nome_limpo)
+    return sorted(normalizados, key=lambda s: s.casefold())
 
 
 def _ordenar_listas(dados: dict) -> dict:
@@ -247,6 +376,8 @@ def _ordenar_listas(dados: dict) -> dict:
                     lista,
                     key=lambda s: (0 if str(s).casefold() == "são januário".casefold() else 1, str(s).casefold()),
                 )
+            elif k in {"arbitros", "auxiliares", "vars"}:
+                dados[k] = _normalizar_lista_arbitragem_nomes(lista)
             else:
                 dados[k] = sorted(lista, key=lambda s: s.casefold())
     return dados
@@ -265,8 +396,9 @@ def carregar_listas():
         return _DATA_CACHE["listas"]
 
     dados = db_load_listas(DB_PATH)
-    alterou = False
+    dados_original = copy.deepcopy(dados)
     dados = _ordenar_listas(dados)
+    alterou = dados != dados_original
     if not dados.get("tecnicos"):
         dados["tecnicos"] = ["Fernando Diniz"]
         alterou = True
@@ -316,14 +448,16 @@ def carregar_listas():
         ("vars", vars_jogos),
     ):
         if nomes:
-            base = list(dados.get(chave_lista, []))
-            base_cf = {str(nome).casefold() for nome in base}
+            base = _normalizar_lista_arbitragem_nomes(dados.get(chave_lista, []))
+            base_chaves = {_chave_nome_arbitragem(nome) for nome in base}
             for nome in sorted(nomes, key=str.casefold):
-                if nome.casefold() not in base_cf:
-                    base.append(nome)
-                    base_cf.add(nome.casefold())
+                nome_limpo = _normalizar_nome_arbitragem(nome)
+                chave_nome = _chave_nome_arbitragem(nome_limpo)
+                if nome_limpo and chave_nome not in base_chaves:
+                    base.append(nome_limpo)
+                    base_chaves.add(chave_nome)
                     alterou = True
-            dados[chave_lista] = sorted(base, key=lambda s: s.casefold())
+            dados[chave_lista] = _normalizar_lista_arbitragem_nomes(base)
 
     if alterou:
         db_save_listas(DB_PATH, dados)
@@ -780,18 +914,18 @@ def _normalizar_nome_tecnico(nome: str) -> str:
 def _normalizar_arbitragem(dados):
     if not isinstance(dados, dict):
         dados = {}
-    arbitro = str(dados.get("arbitro", "") or "").strip()
-    var = str(dados.get("var", "") or "").strip()
+    arbitro = _normalizar_nome_arbitragem(dados.get("arbitro", ""))
+    var = _normalizar_nome_arbitragem(dados.get("var", ""))
     auxiliares_brutos = dados.get("auxiliares", [])
     if not isinstance(auxiliares_brutos, list):
         auxiliares_brutos = []
     auxiliares = []
     vistos = set()
     for nome in auxiliares_brutos:
-        nome_limpo = str(nome or "").strip()
+        nome_limpo = _normalizar_nome_arbitragem(nome)
         if not nome_limpo:
             continue
-        chave = nome_limpo.casefold()
+        chave = _chave_nome_arbitragem(nome_limpo)
         if chave in vistos:
             continue
         vistos.add(chave)
@@ -1061,6 +1195,17 @@ def _limite_minuto_por_periodo(periodo: str) -> int:
     return 15 if periodo_norm in {"1P", "2P"} else 45
 
 
+def _limite_minuto_evento_por_periodo(periodo: str) -> int:
+    periodo_norm = _normalizar_periodo_partida(periodo, substituicao=False)
+    limites = {
+        "1T": 60,
+        "2T": 60,
+        "1P": 30,
+        "2P": 30,
+    }
+    return limites.get(periodo_norm, 0)
+
+
 def _minuto_absoluto_substituicao(minuto: int | None, periodo: str) -> int | None:
     if minuto is None:
         return None
@@ -1096,8 +1241,25 @@ def _minuto_absoluto_evento(minuto: int | None, periodo: str) -> int | None:
     minuto_ok = _normalizar_minuto_partida(minuto)
     periodo_norm = _normalizar_periodo_partida(periodo, substituicao=False)
     if periodo_norm:
-        return _minuto_absoluto_substituicao(minuto_ok, periodo_norm)
+        offsets = {
+            "1T": 0,
+            "2T": 45,
+            "1P": 90,
+            "2P": 105,
+        }
+        limite = _limite_minuto_evento_por_periodo(periodo_norm)
+        if minuto_ok is None or minuto_ok > limite:
+            return None
+        return offsets.get(periodo_norm, 0) + minuto_ok
     return minuto_ok
+
+
+def _chave_ordenacao_tempo_evento(minuto: int | None, periodo: str) -> int:
+    minuto_abs = _minuto_absoluto_evento(minuto, periodo)
+    if minuto_abs is not None:
+        return minuto_abs
+    minuto_ok = _normalizar_minuto_partida(minuto)
+    return minuto_ok if minuto_ok is not None else 999
 
 
 def _normalizar_substituicao_partida(item):
@@ -1173,18 +1335,27 @@ def _expandir_eventos_gol(dados):
                 periodo_unico = str(item.get("periodo", "")).strip()
                 if periodo_unico:
                     periodos = [periodo_unico]
+            assistencias_raw = item.get("assistencias")
+            if isinstance(assistencias_raw, list):
+                assistencias = [str(nome or "").strip() for nome in assistencias_raw]
+                while assistencias and not assistencias[-1]:
+                    assistencias.pop()
+            else:
+                assistencia_unica = str(item.get("assistencia", "") or "").strip()
+                assistencias = [assistencia_unica] if assistencia_unica else []
             for idx in range(qtd):
                 eventos.append({
                     "nome": nome,
                     "clube": clube,
                     "minuto": minutos[idx] if idx < len(minutos) else None,
                     "periodo": periodos[idx] if idx < len(periodos) else "",
+                    "assistencia": assistencias[idx] if idx < len(assistencias) else "",
                     "saiu_do_banco": saiu_do_banco,
                 })
         else:
             nome = str(item or "").strip()
             if nome:
-                eventos.append({"nome": nome, "clube": "", "minuto": None, "periodo": "", "saiu_do_banco": False})
+                eventos.append({"nome": nome, "clube": "", "minuto": None, "periodo": "", "assistencia": "", "saiu_do_banco": False})
     return [evento for evento in eventos if str(evento.get("nome", "")).strip()]
 
 
@@ -1204,6 +1375,7 @@ def _agrupar_eventos_gol(eventos):
                 "gols": 0,
                 "minutos": [],
                 "periodos": [],
+                "assistencias": [],
                 "saiu_do_banco": saiu_do_banco,
             }
             if clube:
@@ -1212,26 +1384,42 @@ def _agrupar_eventos_gol(eventos):
         agrupado[chave]["gols"] += 1
         minuto = _normalizar_minuto_partida(evento.get("minuto"))
         periodo = str(evento.get("periodo", "")).strip()
+        assistencia = str(evento.get("assistencia", "") or "").strip()
         if minuto is not None:
             agrupado[chave]["minutos"].append(minuto)
             agrupado[chave]["periodos"].append(periodo)
+        agrupado[chave]["assistencias"].append(assistencia)
 
     saida = []
     for chave in ordem:
         item = agrupado[chave]
+        assistencias = list(item.get("assistencias", []))
         momentos = sorted(
-            zip(item["minutos"], item["periodos"]),
+            zip(item["minutos"], item["periodos"], assistencias),
             key=lambda par: (
-                _minuto_absoluto_substituicao(par[0], par[1]) if par[1] else par[0],
+                _chave_ordenacao_tempo_evento(par[0], par[1]),
                 par[0],
                 par[1],
             ),
         )
-        item["minutos"] = [minuto for minuto, _periodo in momentos]
-        item["periodos"] = [periodo for _minuto, periodo in momentos]
+        if momentos:
+            item["minutos"] = [minuto for minuto, _periodo, _assistencia in momentos]
+            item["periodos"] = [periodo for _minuto, periodo, _assistencia in momentos]
+            item["assistencias"] = [assistencia for _minuto, _periodo, assistencia in momentos]
         if not item["minutos"]:
             item.pop("minutos", None)
             item.pop("periodos", None)
+        assistencias = [str(assistencia or "").strip() for assistencia in item.get("assistencias", [])]
+        while assistencias and not assistencias[-1]:
+            assistencias.pop()
+        item["assistencias"] = assistencias
+        if any(item["assistencias"]):
+            if len(item["assistencias"]) == 1 and item["assistencias"][0]:
+                item["assistencia"] = item["assistencias"][0]
+            else:
+                item.pop("assistencia", None)
+        else:
+            item.pop("assistencias", None)
         saida.append(item)
     return saida
 
@@ -1278,9 +1466,11 @@ def _formatar_evento_gol(evento):
     minuto = _normalizar_minuto_partida(evento.get("minuto"))
     periodo = str(evento.get("periodo", "")).strip()
     prefixo = "🪑 " if bool(evento.get("saiu_do_banco", False)) else ""
+    assistencia = str(evento.get("assistencia", "") or "").strip()
+    sufixo = f" · ass. {assistencia}" if assistencia else ""
     if minuto is not None:
-        return f"{prefixo}{nome} - {_formatar_minuto_periodo(minuto, periodo)}"
-    return f"{prefixo}{nome}"
+        return f"{prefixo}{nome} - {_formatar_minuto_periodo(minuto, periodo)}{sufixo}"
+    return f"{prefixo}{nome}{sufixo}"
 
 
 def _formatar_evento_cartao(evento):
@@ -1300,16 +1490,17 @@ JOGADORES_HIST_RANKING_OPCOES = [
     "Jogos como suspenso",
     "Jogos servindo a seleção",
     "Gols pelo Vasco",
+    "Assistências",
+    "Participações em gol",
     "Jogos como capitão",
     "Partidas em que marcou",
+    "Partidas com assistência",
     "Gols como titular",
     "Gols saindo do banco",
     "Média de minutos jogados",
     "Média de gols por jogo",
     "Cartões amarelos",
     "Cartões vermelhos",
-    "Amarelos acumulados atuais",
-    "Suspensão pendente",
     "Média de minutos entre gols",
 ]
 
@@ -1667,6 +1858,19 @@ class App:
 
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True)
+        self.web_sync_status_var = tk.StringVar(
+            value="Web: sincronização automática ativa"
+            if sync_config(DB_PATH)["enabled"]
+            else "Web: sincronização automática desativada"
+        )
+        self.web_sync_status_label = ttk.Label(
+            root,
+            textvariable=self.web_sync_status_var,
+            anchor="w",
+            padding=(8, 4),
+        )
+        self.web_sync_status_label.pack(fill="x", side="bottom")
+        set_status_callback(self._receber_status_sync_web)
 
         self.frame_futuros = ttk.Frame(self.notebook, padding=10)
         self.frame_retro = ttk.Frame(self.notebook, padding=10)
@@ -1715,6 +1919,30 @@ class App:
         }
         self.notebook.bind("<<NotebookTabChanged>>", self._on_notebook_tab_changed, add="+")
         self.notebook.select(self.frame_registro)
+
+    def _receber_status_sync_web(self, payload):
+        def apply():
+            state = str(payload.get("state") or "")
+            result = payload.get("result") if isinstance(payload.get("result"), dict) else {}
+            if state == "queued":
+                self.web_sync_status_var.set("Web: sincronização agendada...")
+            elif state == "syncing":
+                self.web_sync_status_var.set("Web: sincronizando com Railway...")
+            elif state == "success":
+                matches = result.get("matches", "—")
+                futuros = result.get("future_matches", "—")
+                agora = datetime.now().strftime("%H:%M:%S")
+                self.web_sync_status_var.set(f"Web: sincronizado às {agora} ({matches} jogos, {futuros} futuros)")
+            elif state == "error":
+                erro = result.get("error") or result.get("status") or "erro desconhecido"
+                self.web_sync_status_var.set(f"Web: falha ao sincronizar ({erro})")
+            elif state == "disabled":
+                self.web_sync_status_var.set("Web: sincronização automática desativada")
+
+        try:
+            self.root.after(0, apply)
+        except Exception:
+            pass
 
     # --------------------- Jogos Futuros ---------------------
     def _criar_aba_futuros(self, frame):
@@ -5194,9 +5422,6 @@ class App:
             if str(evento.get("nome", "")).strip()
         ]
 
-    def _aplicar_suspensoes_pendentes_no_elenco(self, jogos=None):
-        return
-
     def _atualizar_condicoes_elenco_por_escalacao(self, escalacao_partida):
         if not isinstance(escalacao_partida, dict):
             return
@@ -5794,16 +6019,17 @@ class App:
             "Jogos como suspenso": int(stats.get("jogos_suspenso", 0) or 0),
             "Jogos servindo a seleção": int(stats.get("jogos_servindo_selecao", 0) or 0),
             "Gols pelo Vasco": int(stats.get("gols", 0) or 0),
+            "Assistências": int(stats.get("assistencias", 0) or 0),
+            "Participações em gol": int(stats.get("participacoes_gol", 0) or 0),
             "Jogos como capitão": int(stats.get("jogos_como_capitao", 0) or 0),
             "Partidas em que marcou": int(stats.get("partidas_com_gol", 0) or 0),
+            "Partidas com assistência": int(stats.get("partidas_com_assistencia", 0) or 0),
             "Gols como titular": int(stats.get("gols_titular", 0) or 0),
             "Gols saindo do banco": int(stats.get("gols_banco", 0) or 0),
             "Média de minutos jogados": float(stats.get("media_minutos_jogados", 0.0) or 0.0),
             "Média de gols por jogo": float(stats.get("media_gols", 0.0) or 0.0),
             "Cartões amarelos": int(stats.get("cartoes_amarelos", 0) or 0),
             "Cartões vermelhos": int(stats.get("cartoes_vermelhos", 0) or 0),
-            "Amarelos acumulados atuais": int(stats.get("amarelos_acumulados", 0) or 0),
-            "Suspensão pendente": int(stats.get("suspensoes_pendentes", 0) or 0),
             "Média de minutos entre gols": float(stats.get("media_minutos_entre_gols", 0.0) or 0.0),
         }
         return mapa.get(ranking, 0)
@@ -5870,12 +6096,14 @@ class App:
         data_estreia = data_entrada or data_registro
 
         detalhes = {
+            "nome": nome,
             "geral": [
                 ("Data de estreia no Vasco", data_estreia or "—"),
                 ("Data de saída", data_saida or "Ainda no elenco"),
                 ("Passagens pelo Vasco", len(passagens) if passagens else 1 if (data_entrada or data_saida) else 0),
             ],
             "passagens": [],
+            "jogos": self._coletar_jogos_presentes_jogador(nome, jogos),
         }
         estatisticas_passagens = []
         for indice, passagem in enumerate(passagens, start=1):
@@ -5921,6 +6149,195 @@ class App:
             return None
         return valor if valor >= 0 else None
 
+    def _estatisticas_importadas_jogador_no_jogo(self, nome, jogo):
+        alvo = _chave_nome_jogador(nome)
+        for chave in (
+            "estatisticas_jogadores_vasco",
+            "stats_jogadores_vasco",
+            "estatisticas_individuais_vasco",
+            "estatisticas_individuais_jogadores_vasco",
+        ):
+            bruto = jogo.get(chave)
+            if isinstance(bruto, dict):
+                for nome_stats, stats in bruto.items():
+                    if not isinstance(stats, dict):
+                        continue
+                    if _chave_nome_jogador(nome_stats) == alvo:
+                        return {"nome": str(nome_stats).strip(), **stats}
+            elif isinstance(bruto, list):
+                for stats in bruto:
+                    if not isinstance(stats, dict):
+                        continue
+                    if _chave_nome_jogador(stats.get("nome", "")) == alvo:
+                        return dict(stats)
+        return {}
+
+    def _info_participacao_jogador_no_jogo(self, nome, jogo):
+        alvo = _chave_nome_jogador(nome)
+        if not alvo or not isinstance(jogo, dict):
+            return None
+        esc_raw = jogo.get("escalacao_partida", jogo.get("escalacao"))
+        if not isinstance(esc_raw, dict):
+            return None
+        esc = self._normalizar_escalacao_partida(esc_raw)
+        duracao_partida = _duracao_partida_jogo(jogo, esc)
+        substituicoes = [
+            sub
+            for sub in (
+                _normalizar_substituicao_partida(item)
+                for item in esc.get("substituicoes", [])
+            )
+            if sub
+        ]
+
+        em_titular = False
+        posicao_titular = ""
+        for pos in POSICOES_ELENCO:
+            for nm in esc.get("titulares_por_posicao", {}).get(pos, []):
+                if _chave_nome_jogador(nm) == alvo:
+                    em_titular = True
+                    posicao_titular = pos
+                    break
+            if em_titular:
+                break
+
+        em_reserva = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("reservas", []))
+        if not em_titular and not em_reserva:
+            return None
+
+        sub_entrada = next(
+            (sub for sub in substituicoes if _chave_nome_jogador(sub.get("jogador_entrou", "")) == alvo),
+            None,
+        )
+        sub_saida = next(
+            (sub for sub in substituicoes if _chave_nome_jogador(sub.get("jogador_saiu", "")) == alvo),
+            None,
+        )
+
+        if em_titular:
+            condicao = "Titular"
+            situacao = "Titular"
+            entrada_txt = "Desde o início"
+            if sub_saida:
+                saida_txt = _formatar_minuto_periodo(sub_saida.get("minuto"), sub_saida.get("periodo"))
+                minutos_jogados = min(duracao_partida, int(sub_saida.get("minuto_absoluto", duracao_partida) or duracao_partida))
+            else:
+                saida_txt = "Fim de jogo"
+                minutos_jogados = duracao_partida
+        else:
+            condicao = "Reserva"
+            posicao_titular = ""
+            if sub_entrada:
+                situacao = "Reserva (entrou)"
+                entrada_txt = _formatar_minuto_periodo(sub_entrada.get("minuto"), sub_entrada.get("periodo"))
+                saida_txt = "Fim de jogo"
+                minutos_jogados = max(0, duracao_partida - int(sub_entrada.get("minuto_absoluto", duracao_partida) or duracao_partida))
+            else:
+                situacao = "Reserva (não entrou)"
+                entrada_txt = "Não entrou"
+                saida_txt = "—"
+                minutos_jogados = 0
+
+        gols_eventos = [
+            evento for evento in _expandir_eventos_gol(jogo.get("gols_vasco", []))
+            if _chave_nome_jogador(evento.get("nome", "")) == alvo
+        ]
+        assistencias_eventos = [
+            evento for evento in _expandir_eventos_gol(jogo.get("gols_vasco", []))
+            if _chave_nome_jogador(evento.get("assistencia", "")) == alvo
+        ]
+        gols_anulados = jogo.get("gols_anulados", {}) if isinstance(jogo.get("gols_anulados"), dict) else {}
+        gols_anulados_eventos = [
+            evento for evento in _expandir_eventos_gol(gols_anulados.get("vasco", []))
+            if _chave_nome_jogador(evento.get("nome", "")) == alvo
+        ]
+        gols_momentos = [
+            _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo"))
+            for evento in gols_eventos
+            if evento.get("minuto") is not None
+        ]
+        gols_anulados_momentos = [
+            _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo"))
+            for evento in gols_anulados_eventos
+            if evento.get("minuto") is not None
+        ]
+        assistencias_desc = []
+        for evento in assistencias_eventos:
+            marcador = str(evento.get("nome", "")).strip() or "Gol do Vasco"
+            minuto = _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo")) if evento.get("minuto") is not None else ""
+            assistencias_desc.append(f"{marcador} ({minuto})" if minuto else marcador)
+
+        cartoes_amarelos = sum(
+            1 for evento in _expandir_eventos_cartao(jogo.get("cartoes_amarelos_vasco", []))
+            if _chave_nome_jogador(evento.get("nome", "")) == alvo
+        )
+        cartoes_vermelhos = sum(
+            1 for evento in _expandir_eventos_cartao(jogo.get("cartoes_vermelhos_vasco", []))
+            if _chave_nome_jogador(evento.get("nome", "")) == alvo
+        )
+
+        return {
+            "condicao": condicao,
+            "situacao": situacao,
+            "posicao": posicao_titular,
+            "minutos": max(0, int(minutos_jogados or 0)),
+            "entrada": entrada_txt,
+            "saida": saida_txt,
+            "sub_entrada": sub_entrada,
+            "sub_saida": sub_saida,
+            "gols": len(gols_eventos),
+            "gols_momentos": gols_momentos,
+            "gols_anulados": len(gols_anulados_eventos),
+            "gols_anulados_momentos": gols_anulados_momentos,
+            "assistencias": len(assistencias_eventos),
+            "assistencias_desc": assistencias_desc,
+            "cartoes_amarelos": cartoes_amarelos,
+            "cartoes_vermelhos": cartoes_vermelhos,
+            "capitao": _chave_nome_jogador(jogo.get("capitao", "")) == alvo,
+            "estatisticas_importadas": self._estatisticas_importadas_jogador_no_jogo(nome, jogo),
+        }
+
+    def _coletar_jogos_presentes_jogador(self, nome, jogos=None, data_entrada="", data_saida=""):
+        if jogos is None:
+            jogos = carregar_dados_jogos()
+        data_entrada_dt = _parse_data_ptbr_safe(data_entrada) if data_entrada else None
+        data_saida_dt = _parse_data_ptbr_safe(data_saida) if data_saida else None
+        linhas = []
+        for idx_global, jogo in enumerate(jogos if isinstance(jogos, list) else []):
+            if not isinstance(jogo, dict):
+                continue
+            data_txt = str(jogo.get("data", "")).strip()
+            data_dt = _parse_data_ptbr_safe(data_txt)
+            if data_entrada_dt and data_dt and data_dt < data_entrada_dt:
+                continue
+            if data_saida_dt and data_dt and data_dt > data_saida_dt:
+                continue
+            info = self._info_participacao_jogador_no_jogo(nome, jogo)
+            if not info:
+                continue
+            linhas.append({
+                "idx": idx_global,
+                "raw": jogo,
+                "data_ord": data_dt or datetime.min,
+                "data": data_txt,
+                "local": "Fora" if str(jogo.get("local", "")).strip().casefold() == "fora" else "Casa",
+                "competicao": str(jogo.get("competicao", "") or "").strip(),
+                "adversario": str(jogo.get("adversario", "") or "").strip(),
+                "placar": self._placar_detalhe_partida(jogo),
+                "resultado": self._resultado_detalhe_partida(jogo),
+                "tecnico": str(jogo.get("tecnico", "") or "").strip(),
+                "condicao": info.get("condicao", ""),
+                "situacao": info.get("situacao", ""),
+                "minutos": info.get("minutos", 0),
+                "gols": info.get("gols", 0),
+                "assistencias": info.get("assistencias", 0),
+            })
+        return sorted(
+            linhas,
+            key=lambda item: (item.get("data_ord") or datetime.min, int(item.get("idx", 0) or 0)),
+            reverse=True,
+        )
+
     def _coletar_estatisticas_jogador_periodo(self, nome, jogos, data_entrada="", data_saida="", jogador_historico=None):
         alvo = _chave_nome_jogador(nome)
         if jogador_historico is None:
@@ -5948,20 +6365,21 @@ class App:
         jogos_suspenso = 0
         jogos_servindo_selecao = 0
         gols = 0
+        assistencias = 0
         partidas_com_gol = 0
+        partidas_com_assistencia = 0
         gols_banco = 0
         gols_titular = 0
         jogos_como_capitao = 0
         vitorias = empates = derrotas = 0
         cartoes_amarelos = 0
         cartoes_vermelhos = 0
-        amarelos_acumulados = 0
-        suspensoes_pendentes = 0
         marcacoes_gol = []
 
         for indice_jogo, jogo in enumerate(jogos_filtrados):
             participou = False
             gol_no_jogo = 0
+            assistencia_no_jogo = 0
             gol_banco_jogo = 0
             esc = jogo.get("escalacao_partida", jogo.get("escalacao"))
             em_titulares = False
@@ -6002,8 +6420,6 @@ class App:
                 em_lesionados = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("lesionados", []))
                 em_suspensos = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("suspensos", []))
                 em_servindo_selecao = any(_chave_nome_jogador(nm) == alvo for nm in esc.get("servindo_selecao", []))
-                if em_suspensos and suspensoes_pendentes > 0:
-                    suspensoes_pendentes -= 1
 
             for g in jogo.get("gols_vasco", []):
                 if isinstance(g, dict):
@@ -6048,11 +6464,6 @@ class App:
             )
             cartoes_amarelos += amarelos_jogo
             cartoes_vermelhos += vermelhos_jogo
-            amarelos_acumulados += amarelos_jogo
-            while amarelos_acumulados >= 3:
-                amarelos_acumulados -= 3
-                suspensoes_pendentes += 1
-            suspensoes_pendentes += vermelhos_jogo
 
             if gol_no_jogo > 0:
                 participou = True
@@ -6060,6 +6471,15 @@ class App:
                 partidas_com_gol += 1
                 gols_banco += gol_banco_jogo
                 gols_titular += max(0, gol_no_jogo - gol_banco_jogo)
+
+            for evento_gol in _expandir_eventos_gol(jogo.get("gols_vasco", [])):
+                assistencia = str(evento_gol.get("assistencia", "") or "").strip()
+                if assistencia and _chave_nome_jogador(assistencia) == alvo:
+                    assistencia_no_jogo += 1
+            if assistencia_no_jogo > 0:
+                participou = True
+                assistencias += assistencia_no_jogo
+                partidas_com_assistencia += 1
 
             if _chave_nome_jogador(jogo.get("capitao", "")) == alvo:
                 jogos_como_capitao += 1
@@ -6145,16 +6565,17 @@ class App:
             "jogos_suspenso": jogos_suspenso,
             "jogos_servindo_selecao": jogos_servindo_selecao,
             "gols": gols,
+            "assistencias": assistencias,
+            "participacoes_gol": gols + assistencias,
             "jogos_como_capitao": jogos_como_capitao,
             "partidas_com_gol": partidas_com_gol,
+            "partidas_com_assistencia": partidas_com_assistencia,
             "gols_titular": gols_titular,
             "gols_banco": gols_banco,
             "media_minutos_jogados": media_minutos_jogados,
             "media_gols": media_gols,
             "cartoes_amarelos": cartoes_amarelos,
             "cartoes_vermelhos": cartoes_vermelhos,
-            "amarelos_acumulados": amarelos_acumulados,
-            "suspensoes_pendentes": suspensoes_pendentes,
             "media_minutos_entre_gols": media_minutos_entre_gols,
             "participacao_ved": f"{vitorias}/{empates}/{derrotas}",
         }
@@ -6188,15 +6609,16 @@ class App:
             ("Jogos como suspenso", stats.get("jogos_suspenso", 0)),
             ("Jogos servindo a seleção", stats.get("jogos_servindo_selecao", 0)),
             ("Gols pelo Vasco", stats.get("gols", 0)),
+            ("Assistências", stats.get("assistencias", 0)),
+            ("Participações em gol", stats.get("participacoes_gol", 0)),
             ("Jogos como capitão", stats.get("jogos_como_capitao", 0)),
             ("Partidas em que marcou", stats.get("partidas_com_gol", 0)),
+            ("Partidas com assistência", stats.get("partidas_com_assistencia", 0)),
             ("Gols como titular", stats.get("gols_titular", 0)),
             ("Gols saindo do banco", stats.get("gols_banco", 0)),
             ("Média de gols por jogo", media_gols),
             ("Cartões amarelos", stats.get("cartoes_amarelos", 0)),
             ("Cartões vermelhos", stats.get("cartoes_vermelhos", 0)),
-            ("Amarelos acumulados atuais", stats.get("amarelos_acumulados", 0)),
-            ("Suspensão pendente", "Sim" if int(stats.get("suspensoes_pendentes", 0) or 0) > 0 else "Não"),
             (
                 "Média de minutos entre gols",
                 stats.get("media_minutos_entre_gols")
@@ -6219,16 +6641,17 @@ class App:
             "jogos_suspenso": 0,
             "jogos_servindo_selecao": 0,
             "gols": 0,
+            "assistencias": 0,
+            "participacoes_gol": 0,
             "jogos_como_capitao": 0,
             "partidas_com_gol": 0,
+            "partidas_com_assistencia": 0,
             "gols_titular": 0,
             "gols_banco": 0,
             "media_minutos_jogados": 0.0,
             "media_gols": 0.0,
             "cartoes_amarelos": 0,
             "cartoes_vermelhos": 0,
-            "amarelos_acumulados": 0,
-            "suspensoes_pendentes": 0,
             "media_minutos_entre_gols": None,
             "participacao_ved": "0/0/0",
         }
@@ -6247,8 +6670,11 @@ class App:
                 "jogos_suspenso",
                 "jogos_servindo_selecao",
                 "gols",
+                "assistencias",
+                "participacoes_gol",
                 "jogos_como_capitao",
                 "partidas_com_gol",
+                "partidas_com_assistencia",
                 "gols_titular",
                 "gols_banco",
                 "cartoes_amarelos",
@@ -6258,8 +6684,6 @@ class App:
             totais["minutos_jogados_desconhecido"] = bool(
                 totais["minutos_jogados_desconhecido"] or item.get("minutos_jogados_desconhecido")
             )
-            totais["amarelos_acumulados"] = int(item.get("amarelos_acumulados", 0) or 0)
-            totais["suspensoes_pendentes"] = int(item.get("suspensoes_pendentes", 0) or 0)
             ved = str(item.get("participacao_ved", "0/0/0"))
             try:
                 vit, emp, der = [int(p or 0) for p in ved.split("/", 2)]
@@ -6297,18 +6721,447 @@ class App:
         tv.configure(yscrollcommand=sy.set)
         return frame, tv
 
+    def _criar_tree_jogos_jogador_historico(self, parent):
+        frame = ttk.Frame(parent, padding=(0, 4, 0, 0))
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+        cols = (
+            "data",
+            "local",
+            "competicao",
+            "adversario",
+            "placar",
+            "resultado",
+            "tecnico",
+            "condicao",
+            "minutos",
+            "gols",
+            "assistencias",
+        )
+        tv = ttk.Treeview(
+            frame,
+            columns=cols,
+            show="headings",
+            height=16,
+        )
+        headings = {
+            "data": "Data",
+            "local": "Local",
+            "competicao": "Competição",
+            "adversario": "Adversário",
+            "placar": "Placar",
+            "resultado": "Resultado",
+            "tecnico": "Técnico",
+            "condicao": "Condição",
+            "minutos": "Min.",
+            "gols": "Gols",
+            "assistencias": "Ass.",
+        }
+        widths = {
+            "data": 90,
+            "local": 70,
+            "competicao": 150,
+            "adversario": 150,
+            "placar": 220,
+            "resultado": 110,
+            "tecnico": 140,
+            "condicao": 95,
+            "minutos": 60,
+            "gols": 55,
+            "assistencias": 55,
+        }
+        for col in cols:
+            tv.heading(col, text=headings[col])
+            anchor = "e" if col in {"minutos", "gols", "assistencias"} else "w"
+            tv.column(col, width=widths[col], anchor=anchor, stretch=True)
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.grid(row=0, column=0, sticky="nsew")
+        sy = ttk.Scrollbar(frame, orient="vertical", command=tv.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        sx = ttk.Scrollbar(frame, orient="horizontal", command=tv.xview)
+        sx.grid(row=1, column=0, sticky="ew")
+        tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+        return frame, tv
+
+    def _on_jogos_jogador_double_click(self, event):
+        tree = event.widget
+        iid = tree.identify_row(event.y)
+        if not iid:
+            return
+        mapping = getattr(tree, "_item_to_idx", {})
+        jogo_idx = mapping.get(iid)
+        if jogo_idx is None:
+            return
+        nome = str(getattr(tree, "_jogador_nome", "") or "").strip()
+        if not nome:
+            return
+        tree.selection_set(iid)
+        self._abrir_aba_detalhe_jogo_jogador(nome, jogo_idx)
+
+    def _formatar_nome_estatistica_jogador(self, chave):
+        labels = {
+            "assistencias": "Assistências",
+            "cruzamentos_certos": "Cruzamentos certos",
+            "cruzamentos_errados": "Cruzamentos errados",
+            "cruzamentos_tentados": "Cruzamentos tentados",
+            "desarmes": "Desarmes",
+            "duelos_aereos_ganhos": "Duelos aéreos ganhos",
+            "duelos_ganhos": "Duelos ganhos",
+            "escanteios": "Escanteios",
+            "faltas_cometidas": "Faltas cometidas",
+            "faltas_recebidas": "Faltas recebidas",
+            "finalizacoes": "Finalizações",
+            "finalizacoes_bloqueadas": "Finalizações bloqueadas",
+            "finalizacoes_fora": "Finalizações fora",
+            "finalizacoes_no_gol": "Finalizações no gol",
+            "impedimentos": "Impedimentos",
+            "interceptacoes": "Interceptações",
+            "lancamentos_certos": "Lançamentos certos",
+            "lancamentos_errados": "Lançamentos errados",
+            "lancamentos_tentados": "Lançamentos tentados",
+            "minutos": "Minutos",
+            "nota": "Nota",
+            "nota_sofascore": "Nota SofaScore",
+            "passes_certos": "Passes certos",
+            "passes_errados": "Passes errados",
+            "passes_tentados": "Passes tentados",
+            "posse_bola": "Posse de bola",
+            "precisao_cruzamentos": "Precisão de cruzamentos",
+            "precisao_lancamentos": "Precisão de lançamentos",
+            "precisao_passes": "Precisão de passes",
+            "xg": "xG",
+        }
+        chave_txt = str(chave or "").strip()
+        if chave_txt in labels:
+            return labels[chave_txt]
+        texto = chave_txt.replace("_", " ").strip()
+        return texto[:1].upper() + texto[1:] if texto else "Estatística"
+
+    def _formatar_valor_estatistica_jogador(self, chave, valor):
+        if valor in (None, ""):
+            return "—"
+        if isinstance(valor, float) and valor.is_integer():
+            valor = int(valor)
+        texto = self._texto_detalhe_partida(valor)
+        if chave in ESTATISTICAS_PERCENTUAIS and texto != "—" and not str(texto).strip().endswith("%"):
+            texto = f"{texto}%"
+        return texto
+
+    def _valor_numerico_estatistica(self, valor):
+        if valor in (None, "") or isinstance(valor, bool):
+            return None
+        if isinstance(valor, (int, float)):
+            if isinstance(valor, float) and not math.isfinite(valor):
+                return None
+            return float(valor)
+        if not isinstance(valor, str):
+            return None
+        texto = str(valor).strip()
+        if not texto:
+            return None
+        texto = texto.replace("%", "").strip()
+        texto = re.sub(r"[^0-9,\.\-]", "", texto)
+        if not texto or texto in {"-", ".", ","}:
+            return None
+        if "," in texto and "." in texto:
+            texto = texto.replace(".", "").replace(",", ".")
+        elif "," in texto:
+            texto = texto.replace(",", ".")
+        try:
+            numero = float(texto)
+        except Exception:
+            return None
+        return numero if math.isfinite(numero) else None
+
+    def _estatistica_agregada_por_media(self, chave):
+        chave = str(chave or "").strip()
+        return chave in ESTATISTICAS_PERCENTUAIS or chave in {"nota", "nota_sofascore"}
+
+    def _formatar_valor_estatistica_agregada(self, chave, valor):
+        if valor is None:
+            return "—"
+        if isinstance(valor, float):
+            valor = round(valor, 2)
+            if valor.is_integer():
+                valor = int(valor)
+        return self._formatar_valor_estatistica_jogador(chave, valor)
+
+    def _agregar_estatisticas_vasco_jogos(self, jogos):
+        estatisticas_time = defaultdict(lambda: {"total": 0.0, "qtd": 0})
+        estatisticas_jogadores = defaultdict(lambda: defaultdict(lambda: {"total": 0.0, "qtd": 0}))
+        jogos_com_scout_time = 0
+        jogos_com_scout_jogadores = 0
+
+        for jogo in jogos:
+            if not isinstance(jogo, dict):
+                continue
+            stats_time = jogo.get("estatisticas_vasco")
+            if isinstance(stats_time, dict) and stats_time:
+                tem_scout_numerico = False
+                for chave, valor in stats_time.items():
+                    numero = self._valor_numerico_estatistica(valor)
+                    if numero is None:
+                        continue
+                    bucket = estatisticas_time[str(chave)]
+                    bucket["total"] += numero
+                    bucket["qtd"] += 1
+                    tem_scout_numerico = True
+                if tem_scout_numerico:
+                    jogos_com_scout_time += 1
+
+            stats_jogadores = jogo.get("estatisticas_jogadores_vasco")
+            if isinstance(stats_jogadores, list) and stats_jogadores:
+                tem_scout_jogador = False
+                for item in stats_jogadores:
+                    if not isinstance(item, dict):
+                        continue
+                    nome = str(item.get("nome", "") or "").strip()
+                    if not nome:
+                        continue
+                    for chave, valor in item.items():
+                        if str(chave).strip() == "nome":
+                            continue
+                        numero = self._valor_numerico_estatistica(valor)
+                        if numero is None:
+                            continue
+                        bucket = estatisticas_jogadores[nome][str(chave)]
+                        bucket["total"] += numero
+                        bucket["qtd"] += 1
+                        tem_scout_jogador = True
+                if tem_scout_jogador:
+                    jogos_com_scout_jogadores += 1
+
+        chaves_time = self._ordenar_chaves_estatisticas_jogador({chave: True for chave in estatisticas_time.keys()})
+        linhas_time = []
+        for chave in chaves_time:
+            bucket = estatisticas_time[chave]
+            qtd = bucket["qtd"]
+            total = bucket["total"]
+            media = total / qtd if qtd else None
+            total_fmt = "—" if self._estatistica_agregada_por_media(chave) else self._formatar_valor_estatistica_agregada(chave, total)
+            linhas_time.append({
+                "chave": chave,
+                "estatistica": self._formatar_nome_estatistica_jogador(chave),
+                "total": total_fmt,
+                "media": self._formatar_valor_estatistica_agregada(chave, media),
+                "jogos": qtd,
+            })
+
+        linhas_jogadores = []
+        for nome in sorted(estatisticas_jogadores.keys(), key=lambda s: s.casefold()):
+            chaves = self._ordenar_chaves_estatisticas_jogador({chave: True for chave in estatisticas_jogadores[nome].keys()})
+            for chave in chaves:
+                bucket = estatisticas_jogadores[nome][chave]
+                qtd = bucket["qtd"]
+                total = bucket["total"]
+                media = total / qtd if qtd else None
+                total_fmt = "—" if self._estatistica_agregada_por_media(chave) else self._formatar_valor_estatistica_agregada(chave, total)
+                linhas_jogadores.append({
+                    "jogador": nome,
+                    "chave": chave,
+                    "estatistica": self._formatar_nome_estatistica_jogador(chave),
+                    "total": total_fmt,
+                    "media": self._formatar_valor_estatistica_agregada(chave, media),
+                    "jogos": qtd,
+                })
+
+        def media_time(chave):
+            bucket = estatisticas_time.get(chave)
+            if not bucket or not bucket["qtd"]:
+                return None
+            return bucket["total"] / bucket["qtd"]
+
+        def total_time(chave):
+            bucket = estatisticas_time.get(chave)
+            return bucket["total"] if bucket and bucket["qtd"] else None
+
+        resumo = {
+            "jogos": len(jogos),
+            "jogos_com_scout_time": jogos_com_scout_time,
+            "jogos_com_scout_jogadores": jogos_com_scout_jogadores,
+            "posse_media": media_time("posse_bola"),
+            "finalizacoes_total": total_time("finalizacoes"),
+            "finalizacoes_no_gol_total": total_time("finalizacoes_no_gol"),
+            "escanteios_total": total_time("escanteios"),
+        }
+        return linhas_time, linhas_jogadores, resumo
+
+    def _ordenar_chaves_estatisticas_jogador(self, stats):
+        ordem = [
+            "minutos",
+            "nota",
+            "nota_sofascore",
+            "gols",
+            "assistencias",
+            "xg",
+            "finalizacoes",
+            "finalizacoes_no_gol",
+            "finalizacoes_fora",
+            "finalizacoes_bloqueadas",
+            "passes_certos",
+            "passes_errados",
+            "passes_tentados",
+            "precisao_passes",
+            "cruzamentos_certos",
+            "cruzamentos_errados",
+            "cruzamentos_tentados",
+            "lancamentos_certos",
+            "lancamentos_errados",
+            "lancamentos_tentados",
+            "desarmes",
+            "interceptacoes",
+            "duelos_ganhos",
+            "duelos_aereos_ganhos",
+            "faltas_cometidas",
+            "faltas_recebidas",
+            "impedimentos",
+        ]
+        ordem_map = {chave: idx for idx, chave in enumerate(ordem)}
+        return sorted(
+            [chave for chave in stats.keys() if str(chave).strip() != "nome"],
+            key=lambda chave: (ordem_map.get(chave, 999), self._formatar_nome_estatistica_jogador(chave).casefold()),
+        )
+
+    def _linhas_detalhe_jogo_jogador(self, nome, jogo, info):
+        arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+        linhas = [
+            ("Partida", "Dados da partida"),
+            ("Data", jogo.get("data", "")),
+            ("Competição", jogo.get("competicao", "")),
+            ("Adversário", jogo.get("adversario", "")),
+            ("Local", "Fora" if str(jogo.get("local", "")).casefold() == "fora" else "Casa"),
+            ("Placar", self._placar_detalhe_partida(jogo)),
+            ("Resultado", self._resultado_detalhe_partida(jogo)),
+            ("Estádio", jogo.get("estadio", "")),
+            ("Horário", jogo.get("horario", "")),
+            ("Técnico", jogo.get("tecnico", "")),
+            ("Capitão da partida", jogo.get("capitao", "")),
+            ("Posição na tabela", jogo.get("posicao_tabela", "")),
+            ("Público pagante", _formatar_publico(jogo.get("publico_pagante"))),
+            ("Público presente", _formatar_publico(jogo.get("publico_presente"))),
+            ("Renda", _formatar_renda_brl(jogo.get("renda"))),
+            ("Árbitro", arbitragem.get("arbitro", "")),
+            ("Auxiliares", arbitragem.get("auxiliares", [])),
+            ("VAR", arbitragem.get("var", "")),
+            ("ID da partida no banco", jogo.get("db_match_id", "")),
+            ("Participação do jogador", "Escalação e minutos"),
+            ("Jogador", nome),
+            ("Condição no jogo", info.get("condicao", "")),
+            ("Situação", info.get("situacao", "")),
+            ("Posição", info.get("posicao", "") or "—"),
+            ("Minutos jogados", info.get("minutos", 0)),
+            ("Entrada", info.get("entrada", "")),
+            ("Saída", info.get("saida", "")),
+            ("Foi capitão", "Sim" if info.get("capitao") else "Não"),
+            ("Eventos do jogador", "Gols, assistências e cartões"),
+            ("Gols", info.get("gols", 0)),
+            ("Minutos dos gols", info.get("gols_momentos", [])),
+            ("Gols anulados", info.get("gols_anulados", 0)),
+            ("Minutos dos gols anulados", info.get("gols_anulados_momentos", [])),
+            ("Assistências", info.get("assistencias", 0)),
+            ("Jogadas assistidas", info.get("assistencias_desc", [])),
+            ("Cartões amarelos", info.get("cartoes_amarelos", 0)),
+            ("Cartões vermelhos", info.get("cartoes_vermelhos", 0)),
+        ]
+
+        stats = info.get("estatisticas_importadas", {})
+        linhas.append(("Estatísticas importadas", "Stats individuais do jogo"))
+        if isinstance(stats, dict) and any(str(chave).strip() != "nome" for chave in stats.keys()):
+            for chave in self._ordenar_chaves_estatisticas_jogador(stats):
+                linhas.append((
+                    self._formatar_nome_estatistica_jogador(chave),
+                    self._formatar_valor_estatistica_jogador(chave, stats.get(chave)),
+                ))
+        else:
+            linhas.append(("Stats individuais", "Sem dados importados para este jogador."))
+
+        observacao = str(jogo.get("observacao", "") or "").strip()
+        if observacao:
+            linhas.append(("Observação da partida", observacao))
+        return linhas
+
+    def _abrir_aba_detalhe_jogo_jogador(self, nome, jogo_idx):
+        if not hasattr(self, "detalhes_jogador_notebook"):
+            return
+        jogos = carregar_dados_jogos()
+        if not (0 <= int(jogo_idx) < len(jogos)):
+            messagebox.showerror("Jogadores", "Não foi possível carregar o jogo selecionado.")
+            return
+        jogo = jogos[int(jogo_idx)]
+        info = self._info_participacao_jogador_no_jogo(nome, jogo)
+        if not info:
+            messagebox.showinfo("Jogadores", "O jogador não aparece como titular ou reserva nesse jogo.")
+            return
+
+        if not hasattr(self, "_detalhes_jogador_jogo_tabs"):
+            self._detalhes_jogador_jogo_tabs = {}
+        tab_key = f"jogo_{jogo_idx}"
+        frame_existente = self._detalhes_jogador_jogo_tabs.get(tab_key)
+        if frame_existente is not None and frame_existente.winfo_exists():
+            self.detalhes_jogador_notebook.select(frame_existente)
+            return
+
+        frame = ttk.Frame(self.detalhes_jogador_notebook, padding=8)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        titulo = f"{self._placar_detalhe_partida(jogo)} - {info.get('situacao', info.get('condicao', ''))}"
+        ttk.Label(frame, text=titulo, font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 6))
+        wrap, tv = self._criar_tree_detalhes_jogador_historico(frame)
+        wrap.grid(row=1, column=0, sticky="nsew")
+        for i, (campo, valor) in enumerate(self._linhas_detalhe_jogo_jogador(nome, jogo, info), start=1):
+            tv.insert("", "end", values=(campo, self._texto_detalhe_partida(valor)), tags=("odd",) if i % 2 else ())
+
+        data_txt = str(jogo.get("data", "") or "").strip() or "Jogo"
+        adversario = str(jogo.get("adversario", "") or "").strip()
+        tab_text = f"{data_txt[:5]} {adversario[:10]}".strip()
+        self.detalhes_jogador_notebook.add(frame, text=tab_text or "Jogo")
+        self._detalhes_jogador_jogo_tabs[tab_key] = frame
+        self.detalhes_jogador_notebook.select(frame)
+
     def _render_detalhes_jogador_historico(self, detalhes):
         if not hasattr(self, "detalhes_jogador_notebook"):
             return
         for tab_id in self.detalhes_jogador_notebook.tabs():
             self.detalhes_jogador_notebook.forget(tab_id)
         self._detalhes_jogador_abas = {}
+        self._detalhes_jogador_jogo_tabs = {}
 
         frame_geral, tv_geral = self._criar_tree_detalhes_jogador_historico(self.detalhes_jogador_notebook)
         self.detalhes_jogador_notebook.add(frame_geral, text="Geral")
         self._detalhes_jogador_abas["geral"] = tv_geral
         for i, (metrica, valor) in enumerate(detalhes.get("geral", []), start=1):
             tv_geral.insert("", "end", values=(metrica, valor), tags=("odd",) if i % 2 else ())
+
+        frame_jogos, tv_jogos = self._criar_tree_jogos_jogador_historico(self.detalhes_jogador_notebook)
+        self.detalhes_jogador_notebook.add(frame_jogos, text="Jogos")
+        self._detalhes_jogador_abas["jogos"] = tv_jogos
+        tv_jogos._item_to_idx = {}
+        tv_jogos._jogador_nome = str(detalhes.get("nome", "") or "").strip()
+        jogos_jogador = detalhes.get("jogos", [])
+        if jogos_jogador:
+            for i, row in enumerate(jogos_jogador, start=1):
+                iid = tv_jogos.insert(
+                    "",
+                    "end",
+                    values=(
+                        row.get("data", ""),
+                        row.get("local", ""),
+                        row.get("competicao", ""),
+                        row.get("adversario", ""),
+                        row.get("placar", ""),
+                        self._formatar_resultado_com_bolinha(row.get("resultado", "")),
+                        row.get("tecnico", ""),
+                        row.get("condicao", ""),
+                        row.get("minutos", 0),
+                        row.get("gols", 0),
+                        row.get("assistencias", 0),
+                    ),
+                    tags=("odd",) if i % 2 else (),
+                )
+                tv_jogos._item_to_idx[iid] = row.get("idx")
+        else:
+            tv_jogos.insert("", "end", values=("—", "—", "Sem jogos com escalação registrada", "—", "—", "—", "—", "—", "—", "—", "—"))
+        tv_jogos.bind("<Double-1>", self._on_jogos_jogador_double_click)
 
         for passagem in detalhes.get("passagens", []):
             frame_passagem, tv_passagem = self._criar_tree_detalhes_jogador_historico(self.detalhes_jogador_notebook)
@@ -6878,12 +7731,13 @@ class App:
 
         preview_wrap = ttk.Frame(escalacao_card)
         preview_wrap.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
-        preview_wrap.columnconfigure(0, weight=1)
-        preview_wrap.columnconfigure(1, weight=0)
+        preview_wrap.columnconfigure(0, weight=3, minsize=640)
+        preview_wrap.columnconfigure(1, weight=2, minsize=360)
         preview_wrap.rowconfigure(0, weight=1)
 
         self.canvas_campinho_preview = tk.Canvas(
             preview_wrap,
+            width=700,
             height=340,
             background="#0f6a35",
             highlightthickness=1,
@@ -6895,16 +7749,16 @@ class App:
         self.canvas_campinho_preview.bind("<Control-Button-1>", self._abrir_menu_contexto_titulares_preview)
 
         reservas_wrap = ttk.Labelframe(preview_wrap, text="Reservas", padding=6)
-        reservas_wrap.grid(row=0, column=1, sticky="ns", padx=(10, 0))
+        reservas_wrap.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
         reservas_wrap.columnconfigure(0, weight=1)
         reservas_wrap.rowconfigure(0, weight=1)
         self.lista_reservas_preview = tk.Listbox(
             reservas_wrap,
-            width=24,
+            width=42,
             bg=self.colors["entry_bg"], fg=self.colors["entry_fg"],
             selectbackground=self.colors["select_bg"], selectforeground=self.colors["select_fg"]
         )
-        self.lista_reservas_preview.grid(row=0, column=0, sticky="ns")
+        self.lista_reservas_preview.grid(row=0, column=0, sticky="nsew")
         self.lista_reservas_preview.bind("<Button-3>", self._abrir_menu_contexto_reservas_preview)
         self.lista_reservas_preview.bind("<Control-Button-1>", self._abrir_menu_contexto_reservas_preview)
 
@@ -7032,8 +7886,8 @@ class App:
                     sub = substituicoes_por_reserva.get(nome_limpo.casefold())
                     if sub:
                         sufixo = (
-                            f" [entrou {_formatar_minuto_periodo(sub.get('minuto'), sub.get('periodo'))}"
-                            f" no lugar de {sub.get('jogador_saiu', '')}]"
+                            f" [{_formatar_minuto_periodo(sub.get('minuto'), sub.get('periodo'))}"
+                            f" <- {sub.get('jogador_saiu', '')}]"
                         )
                     else:
                         sufixo = " [entrou]" if nome_limpo.casefold() in reservas_que_entraram_cf else ""
@@ -7928,7 +8782,16 @@ class App:
         pos_y = max(0, min(pos_y, max(0, scr_h - top_h)))
         top.geometry(f"{top_w}x{top_h}+{pos_x}+{pos_y}")
 
-    def _abrir_modal_tempo_evento(self, titulo, descricao, minuto_inicial="", periodo_inicial=""):
+    def _abrir_modal_tempo_evento(
+        self,
+        titulo,
+        descricao,
+        minuto_inicial="",
+        periodo_inicial="",
+        assistencia_inicial="",
+        opcoes_assistencia=None,
+        jogador_principal="",
+    ):
         resultado = {}
         top = tk.Toplevel(self.root)
         top.title(titulo)
@@ -7938,7 +8801,7 @@ class App:
         top.focus_force()
         top.resizable(False, False)
         top.configure(bg=self.colors["bg"])
-        top.minsize(560, 210)
+        top.minsize(620, 260 if opcoes_assistencia is not None else 210)
         try:
             top.attributes("-topmost", True)
         except tk.TclError:
@@ -7960,6 +8823,7 @@ class App:
         periodo_map_inv = {codigo: label for codigo, label in PERIODOS_EVENTO}
         minuto_var = tk.StringVar(value=str(minuto_inicial or ""))
         periodo_var = tk.StringVar(value=periodo_map_inv.get(periodo_inicial, ""))
+        assistencia_var = tk.StringVar(value=str(assistencia_inicial or ""))
 
         tk.Label(
             card,
@@ -8002,13 +8866,45 @@ class App:
             width=28,
         )
         combo_periodo.grid(row=0, column=3, sticky="w")
+
+        row_info = 3
+        combo_assistencia = None
+        if opcoes_assistencia is not None:
+            assist_frame = tk.Frame(card, bg=self.colors["bg"])
+            assist_frame.grid(row=3, column=0, sticky="ew", pady=(12, 0))
+            assist_frame.columnconfigure(1, weight=1)
+            opcoes = [
+                str(nome).strip()
+                for nome in opcoes_assistencia
+                if str(nome).strip() and str(nome).strip().casefold() != str(jogador_principal or "").strip().casefold()
+            ]
+            opcoes = sorted(set(opcoes), key=str.casefold)
+            tk.Label(
+                assist_frame,
+                text="Assistência",
+                bg=self.colors["bg"],
+                fg=self.colors["tree_head_fg"],
+            ).grid(row=0, column=0, sticky="w", padx=(0, 10))
+            combo_assistencia = ttk.Combobox(
+                assist_frame,
+                textvariable=assistencia_var,
+                values=[""] + opcoes,
+                width=42,
+            )
+            combo_assistencia.grid(row=0, column=1, sticky="ew")
+            self._forcar_cursor_visivel(combo_assistencia)
+            row_info = 4
+
+        info_texto = "Preencha o minuto e o período do gol."
+        if opcoes_assistencia is not None:
+            info_texto += " Assistência é opcional."
         tk.Label(
             card,
-            text="Preencha o minuto e o período do gol.",
+            text=info_texto,
             bg=self.colors["bg"],
             fg=self.colors["tree_head_fg"],
             font=("Segoe UI", 10),
-        ).grid(row=3, column=0, sticky="w", pady=(8, 14))
+        ).grid(row=row_info, column=0, sticky="w", pady=(8, 14))
 
         def confirmar():
             minuto_txt = minuto_var.get().strip()
@@ -8027,16 +8923,22 @@ class App:
                 messagebox.showwarning(titulo, "Selecione o período do lance.", parent=top)
                 combo_periodo.focus_set()
                 return
-            if minuto > _limite_minuto_por_periodo(periodo):
-                limite = _limite_minuto_por_periodo(periodo)
+            if minuto > _limite_minuto_evento_por_periodo(periodo):
+                limite = _limite_minuto_evento_por_periodo(periodo)
                 messagebox.showwarning(titulo, f"Esse período aceita minutos de 0 até {limite}.", parent=top)
                 entry_minuto.focus_set()
                 return
-            resultado.update({"minuto": minuto, "periodo": periodo})
+            assistencia = assistencia_var.get().strip()
+            if assistencia and assistencia.casefold() == str(jogador_principal or "").strip().casefold():
+                messagebox.showwarning(titulo, "A assistência não pode ser do próprio autor do gol.", parent=top)
+                if combo_assistencia is not None:
+                    combo_assistencia.focus_set()
+                return
+            resultado.update({"minuto": minuto, "periodo": periodo, "assistencia": assistencia})
             top.destroy()
 
         botoes = tk.Frame(card, bg=self.colors["bg"])
-        botoes.grid(row=4, column=0, sticky="e")
+        botoes.grid(row=row_info + 1, column=0, sticky="e")
         ttk.Button(botoes, text="Salvar", command=confirmar).pack(side="left", padx=(0, 8))
         ttk.Button(botoes, text="Cancelar", command=top.destroy).pack(side="left")
 
@@ -8053,7 +8955,13 @@ class App:
             return
         titulo = "Tempo do gol"
         descricao = f"Jogador: {nome}"
-        tempo = self._abrir_modal_tempo_evento(titulo, descricao)
+        opcoes_assistencia = self.listas.get("jogadores_vasco", []) if lado == "vasco" else None
+        tempo = self._abrir_modal_tempo_evento(
+            titulo,
+            descricao,
+            opcoes_assistencia=opcoes_assistencia,
+            jogador_principal=nome,
+        )
         if not tempo:
             return
         evento = {
@@ -8061,9 +8969,15 @@ class App:
             "minuto": tempo["minuto"],
             "periodo": tempo["periodo"],
         }
+        assistencia = str(tempo.get("assistencia", "") or "").strip()
+        if assistencia:
+            evento["assistencia"] = assistencia
         if clube:
             evento["clube"] = clube
         if lado == "vasco":
+            if assistencia and assistencia not in self.listas["jogadores_vasco"]:
+                self.listas["jogadores_vasco"].append(assistencia)
+                self._atualizar_opcoes_gol_vasco()
             self.gols_vasco_eventos.append(evento)
             self._renderizar_lista_eventos(self.lista_gols_vasco, self.gols_vasco_eventos, _formatar_evento_gol)
             self.entry_gol_vasco.delete(0, tk.END)
@@ -8287,6 +9201,7 @@ class App:
                 "nome": nome,
                 "minuto": _normalizar_minuto_partida(evento.get("minuto")),
                 "periodo": str(evento.get("periodo", "")).strip(),
+                "assistencia": str(evento.get("assistencia", "") or "").strip(),
                 "saiu_do_banco": nome_cf in reservas_cf and nome_cf not in titulares_cf,
             })
         gols_vasco = _agrupar_eventos_gol(eventos_gols_vasco)
@@ -8300,6 +9215,7 @@ class App:
                 "nome": nome,
                 "minuto": _normalizar_minuto_partida(evento.get("minuto")),
                 "periodo": str(evento.get("periodo", "")).strip(),
+                "assistencia": str(evento.get("assistencia", "") or "").strip(),
                 "clube": adversario,
             })
         gols_contra = _agrupar_eventos_gol(eventos_gols_contra)
@@ -8340,10 +9256,10 @@ class App:
         arbitro = arbitragem.get("arbitro", "")
         if arbitro:
             lista_arbitros = self.listas.setdefault("arbitros", [])
-            arbitros_cf = {str(nome).casefold() for nome in lista_arbitros}
-            if arbitro.casefold() not in arbitros_cf:
+            arbitros_chaves = {_chave_nome_arbitragem(nome) for nome in lista_arbitros}
+            if _chave_nome_arbitragem(arbitro) not in arbitros_chaves:
                 lista_arbitros.append(arbitro)
-                self.listas["arbitros"] = sorted(lista_arbitros, key=lambda s: s.casefold())
+                self.listas["arbitros"] = _normalizar_lista_arbitragem_nomes(lista_arbitros)
                 alterou_listas = True
             if hasattr(self, "arbitro_entry"):
                 self.arbitro_entry["values"] = self.listas["arbitros"]
@@ -8351,15 +9267,16 @@ class App:
         auxiliares = arbitragem.get("auxiliares", [])
         if auxiliares:
             lista_auxiliares = self.listas.setdefault("auxiliares", [])
-            auxiliares_cf = {str(nome).casefold() for nome in lista_auxiliares}
+            auxiliares_chaves = {_chave_nome_arbitragem(nome) for nome in lista_auxiliares}
             alterou_aux = False
             for nome in auxiliares:
-                if nome.casefold() not in auxiliares_cf:
+                chave_nome = _chave_nome_arbitragem(nome)
+                if chave_nome not in auxiliares_chaves:
                     lista_auxiliares.append(nome)
-                    auxiliares_cf.add(nome.casefold())
+                    auxiliares_chaves.add(chave_nome)
                     alterou_aux = True
             if alterou_aux:
-                self.listas["auxiliares"] = sorted(lista_auxiliares, key=lambda s: s.casefold())
+                self.listas["auxiliares"] = _normalizar_lista_arbitragem_nomes(lista_auxiliares)
                 alterou_listas = True
             if hasattr(self, "auxiliar_1_entry"):
                 self.auxiliar_1_entry["values"] = self.listas["auxiliares"]
@@ -8369,10 +9286,10 @@ class App:
         var_nome = arbitragem.get("var", "")
         if var_nome:
             lista_vars = self.listas.setdefault("vars", [])
-            vars_cf = {str(nome).casefold() for nome in lista_vars}
-            if var_nome.casefold() not in vars_cf:
+            vars_chaves = {_chave_nome_arbitragem(nome) for nome in lista_vars}
+            if _chave_nome_arbitragem(var_nome) not in vars_chaves:
                 lista_vars.append(var_nome)
-                self.listas["vars"] = sorted(lista_vars, key=lambda s: s.casefold())
+                self.listas["vars"] = _normalizar_lista_arbitragem_nomes(lista_vars)
                 alterou_listas = True
             if hasattr(self, "var_arbitragem_entry"):
                 self.var_arbitragem_entry["values"] = self.listas["vars"]
@@ -8422,7 +9339,6 @@ class App:
 
         if self.editing_index is None:
             self._atualizar_condicoes_elenco_por_escalacao(escalacao_partida)
-        self._aplicar_suspensoes_pendentes_no_elenco()
         self._limpar_formulario()
         self._atualizar_abas()
         self.notebook.select(self.frame_temporadas)
@@ -8442,7 +9358,12 @@ class App:
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
 
-        status_var = tk.StringVar(value="Cole um objeto de jogo ou uma lista de jogos.")
+        status_var = tk.StringVar(
+            value=(
+                "Cole um jogo, uma lista, ou um objeto {\"jogos\": [...]}. "
+                "Se bater com data + adversário, o app atualiza a partida existente."
+            )
+        )
         ttk.Label(frame, textvariable=status_var).grid(row=0, column=0, sticky="w", pady=(0, 8))
 
         texto = tk.Text(
@@ -8480,15 +9401,151 @@ class App:
             texto.insert("1.0", conteudo)
             status_var.set(os.path.basename(caminho))
 
+        def inserir_exemplo():
+            if texto.get("1.0", "end").strip() and not messagebox.askyesno(
+                "Inserir exemplo",
+                "Substituir o conteúdo atual pelo exemplo JSON?",
+                parent=top,
+            ):
+                return
+            texto.delete("1.0", "end")
+            texto.insert("1.0", self._exemplo_json_importacao_jogos())
+            status_var.set("Exemplo inserido. Ajuste data/adversário antes de importar.")
+
+        def copiar_exemplo():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(self._exemplo_json_importacao_jogos())
+            self.root.update()
+            status_var.set("Exemplo JSON copiado para a área de transferência.")
+
+        def copiar_prompt_claude():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(self._prompt_claude_importacao_jogos())
+            self.root.update()
+            status_var.set("Prompt para Claude copiado para a área de transferência.")
+
         def importar():
             if self._importar_json_jogos_texto(texto.get("1.0", "end"), parent=top):
                 top.destroy()
 
         ttk.Button(botoes, text="Carregar Arquivo", command=carregar_arquivo).pack(side="left")
+        ttk.Button(botoes, text="Inserir Exemplo", command=inserir_exemplo).pack(side="left", padx=(8, 0))
+        ttk.Button(botoes, text="Copiar Exemplo", command=copiar_exemplo).pack(side="left", padx=(8, 0))
+        ttk.Button(botoes, text="Copiar Prompt Claude", command=copiar_prompt_claude).pack(side="left", padx=(8, 0))
         ttk.Button(botoes, text="Importar", command=importar).pack(side="right", padx=(8, 0))
         ttk.Button(botoes, text="Cancelar", command=top.destroy).pack(side="right")
         top.bind("<Escape>", lambda _e: top.destroy())
         texto.focus_set()
+
+    def _exemplo_json_importacao_jogos(self):
+        exemplo = {
+            "jogos": [
+                {
+                    "data": "dd/mm/aaaa",
+                    "adversario": "Nome do adversário como aparece no app",
+                    "competicao": "Campeonato Brasileiro Serie A",
+                    "local": "casa",
+                    "placar": {"vasco": 0, "adversario": 0},
+                    "estadio": "São Januário",
+                    "horario": "HH:MM",
+                    "tecnico": "Nome do técnico",
+                    "capitao": "",
+                    "publico_pagante": None,
+                    "publico_presente": None,
+                    "renda": None,
+                    "arbitragem": {
+                        "arbitro": "",
+                        "auxiliares": ["", ""],
+                        "var": "",
+                    },
+                    "gols_vasco": [
+                        {
+                            "nome": "Jogador do Vasco",
+                            "minuto": 0,
+                            "periodo": "1T",
+                            "assistencia": "",
+                        }
+                    ],
+                    "gols_adversario": [
+                        {
+                            "nome": "Jogador adversário",
+                            "minuto": 0,
+                            "periodo": "1T",
+                            "assistencia": "",
+                        }
+                    ],
+                    "cartoes_amarelos_vasco": [{"nome": "Jogador do Vasco"}],
+                    "cartoes_vermelhos_vasco": [],
+                    "estatisticas_vasco": {
+                        "posse_bola": None,
+                        "passes_certos": None,
+                        "passes_errados": None,
+                        "passes_tentados": None,
+                        "precisao_passes": None,
+                        "finalizacoes": None,
+                        "finalizacoes_no_gol": None,
+                        "escanteios": None,
+                        "faltas_cometidas": None,
+                        "desarmes": None,
+                    },
+                    "estatisticas_jogadores_vasco": [
+                        {
+                            "nome": "Jogador do Vasco",
+                            "minutos": None,
+                            "passes_certos": None,
+                            "passes_errados": None,
+                            "passes_tentados": None,
+                            "finalizacoes": None,
+                            "desarmes": None,
+                            "nota_sofascore": None,
+                        }
+                    ],
+                    "escalacao_partida": {
+                        "titulares_por_posicao": {
+                            "Goleiro": ["Goleiro"],
+                            "Lateral-Direito": ["Lateral direito"],
+                            "Zagueiro": ["Zagueiro 1", "Zagueiro 2"],
+                            "Lateral-Esquerdo": ["Lateral esquerdo"],
+                            "Volante": ["Volante 1", "Volante 2"],
+                            "Meio-Campista": ["Meia"],
+                            "Atacante": ["Atacante 1", "Atacante 2", "Atacante 3"],
+                        },
+                        "reservas": ["Reserva 1", "Reserva 2", "Reserva 3", "Reserva 4"],
+                        "substituicoes": [
+                            {
+                                "jogador_entrou": "Reserva 1",
+                                "jogador_saiu": "Atacante 1",
+                                "minuto": 20,
+                                "periodo": "2T",
+                            }
+                        ],
+                        "nao_relacionados": [],
+                        "lesionados": [],
+                        "suspensos": [],
+                        "servindo_selecao": [],
+                    },
+                    "observacao": "Resumo editorial do jogo, sem fontes ou links.",
+                }
+            ]
+        }
+        return json.dumps(exemplo, ensure_ascii=False, indent=2)
+
+    def _prompt_claude_importacao_jogos(self):
+        return (
+            "Preencha dados de partidas do Vasco no formato JSON abaixo. "
+            "Retorne somente JSON válido, sem Markdown, sem comentários e sem texto fora do JSON.\n\n"
+            "Regras:\n"
+            "- Pode retornar um objeto {\"jogos\": [...]} ou uma lista direta de jogos.\n"
+            "- Para atualizar jogo já cadastrado, mantenha data + adversário; competição e local ajudam a evitar ambiguidade.\n"
+            "- Só inclua campos que tiver pesquisado. Campos enviados vão sobrescrever o banco; campos omitidos ficam como estão.\n"
+            "- Se alterar gols, cartões ou escalação, envie a lista completa daquele campo, pois listas substituem a lista anterior.\n"
+            "- Em observacao, escreva apenas resumo e curiosidades do jogo, nunca fontes, links ou notas de pesquisa.\n"
+            "- Use periodos 1T, 2T, 1P ou 2P. Para intervalo em substituições, use INT.\n\n"
+            "- Use estatisticas_vasco somente para números do Vasco, sem números do adversário.\n"
+            "- Use estatisticas_jogadores_vasco somente para jogadores do Vasco; cada item precisa ter nome.\n\n"
+            "Modelo:\n"
+            f"{self._exemplo_json_importacao_jogos()}"
+        )
 
     def _importar_json_jogos_texto(self, texto_json: str, parent=None) -> bool:
         texto_json = str(texto_json or "").strip()
@@ -8502,50 +9559,47 @@ class App:
             return False
 
         try:
-            jogos_importados = self._normalizar_payload_jogos_importacao(payload)
+            operacoes = self._preparar_operacoes_importacao_jogos(payload)
         except ValueError as exc:
             messagebox.showerror("Importar JSON", str(exc), parent=parent)
             return False
 
-        if not jogos_importados:
+        if not operacoes:
             messagebox.showerror("Importar JSON", "Nenhum jogo válido encontrado no JSON.", parent=parent)
             return False
 
-        duplicados = self._jogos_importados_possivelmente_duplicados(jogos_importados)
-        if duplicados:
-            previa = "\n".join(duplicados[:5])
-            sufixo = "" if len(duplicados) <= 5 else f"\n... e mais {len(duplicados) - 5}."
-            if not messagebox.askyesno(
-                "Possíveis duplicados",
-                f"Já existe jogo com mesma data, adversário e competição:\n{previa}{sufixo}\n\nImportar mesmo assim?",
-                parent=parent,
-            ):
-                return False
+        resumo = self._resumo_operacoes_importacao_jogos(operacoes)
+        if not messagebox.askyesno("Confirmar importação", resumo, parent=parent):
+            return False
 
-        if len(jogos_importados) > 1:
-            if not messagebox.askyesno(
-                "Confirmar importação",
-                f"Importar {len(jogos_importados)} jogos?",
-                parent=parent,
-            ):
-                return False
-
-        self._salvar_jogos_importados(jogos_importados)
-        qtd = len(jogos_importados)
+        resultado = self._salvar_operacoes_importacao_jogos(operacoes)
         messagebox.showinfo(
             "Importação concluída",
-            f"{qtd} jogo{'s' if qtd != 1 else ''} importado{'s' if qtd != 1 else ''} com sucesso.",
+            (
+                f"{resultado['atualizados']} jogo{'s' if resultado['atualizados'] != 1 else ''} "
+                f"atualizado{'s' if resultado['atualizados'] != 1 else ''}; "
+                f"{resultado['novos']} jogo{'s' if resultado['novos'] != 1 else ''} "
+                f"cadastrado{'s' if resultado['novos'] != 1 else ''}."
+            ),
             parent=parent,
         )
         return True
 
-    def _normalizar_payload_jogos_importacao(self, payload):
+    def _extrair_itens_payload_jogos_importacao(self, payload):
         if isinstance(payload, dict):
-            itens = [payload]
-        elif isinstance(payload, list):
-            itens = payload
-        else:
-            raise ValueError("O JSON deve ser um objeto de jogo ou uma lista de jogos.")
+            for chave in ("jogos", "partidas", "matches"):
+                if chave in payload:
+                    itens = payload.get(chave)
+                    if not isinstance(itens, list):
+                        raise ValueError(f"'{chave}' precisa ser uma lista de jogos.")
+                    return itens
+            return [payload]
+        if isinstance(payload, list):
+            return payload
+        raise ValueError("O JSON deve ser um objeto de jogo, uma lista de jogos ou {'jogos': [...]}.")
+
+    def _normalizar_payload_jogos_importacao(self, payload):
+        itens = self._extrair_itens_payload_jogos_importacao(payload)
 
         self._atualizar_elenco_disponivel_partida()
         jogos = []
@@ -8553,6 +9607,98 @@ class App:
             prefixo = f"Jogo {idx}: " if len(itens) > 1 else ""
             jogos.append(self._normalizar_jogo_importado(item, prefixo))
         return jogos
+
+    def _preparar_operacoes_importacao_jogos(self, payload):
+        itens = self._extrair_itens_payload_jogos_importacao(payload)
+        if not itens:
+            return []
+
+        self._atualizar_elenco_disponivel_partida()
+        jogos_trabalho = [copy.deepcopy(jogo) for jogo in carregar_dados_jogos()]
+        operacoes = []
+        erros = []
+
+        for idx, item in enumerate(itens, start=1):
+            prefixo = f"Jogo {idx}: " if len(itens) > 1 else ""
+            if not isinstance(item, dict):
+                erros.append(f"{prefixo}cada jogo precisa ser um objeto JSON.")
+                continue
+            try:
+                indice, motivo = self._localizar_jogo_existente_importacao(item, jogos_trabalho)
+                if indice is None:
+                    jogo = self._normalizar_jogo_importado(item, prefixo)
+                    operacoes.append({
+                        "acao": "criar",
+                        "indice": None,
+                        "jogo": jogo,
+                        "descricao": self._descricao_jogo_importacao(jogo),
+                        "motivo": motivo,
+                    })
+                    jogos_trabalho.append(copy.deepcopy(jogo))
+                    continue
+
+                existente = jogos_trabalho[indice]
+                mesclado = self._mesclar_json_jogo_importado(existente, item)
+                jogo = self._normalizar_jogo_importado(
+                    mesclado,
+                    prefixo,
+                    completar_escalacao_com_elenco=False,
+                )
+                operacoes.append({
+                    "acao": "atualizar",
+                    "indice": indice,
+                    "jogo": jogo,
+                    "antes": copy.deepcopy(existente),
+                    "descricao": self._descricao_jogo_importacao(jogo),
+                    "motivo": motivo,
+                })
+                jogos_trabalho[indice] = copy.deepcopy(jogo)
+            except ValueError as exc:
+                erros.append(str(exc))
+
+        if erros:
+            limite = "\n".join(erros[:8])
+            sufixo = "" if len(erros) <= 8 else f"\n... e mais {len(erros) - 8} erro(s)."
+            raise ValueError(f"Não foi possível preparar a importação:\n\n{limite}{sufixo}")
+
+        return operacoes
+
+    def _descricao_jogo_importacao(self, jogo):
+        data = str(jogo.get("data", "") or "").strip()
+        adversario = str(jogo.get("adversario", "") or "").strip()
+        competicao = str(jogo.get("competicao", "") or "").strip()
+        local = str(jogo.get("local", "") or "").strip()
+        placar = jogo.get("placar") if isinstance(jogo.get("placar"), dict) else {}
+        placar_txt = ""
+        if "vasco" in placar and "adversario" in placar:
+            placar_txt = f" {placar.get('vasco')}x{placar.get('adversario')}"
+        extras = " · ".join(parte for parte in (competicao, local) if parte)
+        return f"{data} - {adversario}{placar_txt}" + (f" ({extras})" if extras else "")
+
+    def _resumo_operacoes_importacao_jogos(self, operacoes):
+        atualizacoes = [op for op in operacoes if op.get("acao") == "atualizar"]
+        novos = [op for op in operacoes if op.get("acao") == "criar"]
+        linhas = [
+            f"Atualizar existentes: {len(atualizacoes)}",
+            f"Cadastrar novos: {len(novos)}",
+            "",
+            "Campos enviados no JSON substituem os dados atuais; campos omitidos permanecem como estão.",
+        ]
+        previa = []
+        for op in operacoes[:10]:
+            marcador = "Atualizar" if op.get("acao") == "atualizar" else "Cadastrar"
+            previa.append(f"- {marcador}: {op.get('descricao', '')}")
+        if previa:
+            linhas.extend(["", "Prévia:", *previa])
+        if len(operacoes) > 10:
+            linhas.append(f"... e mais {len(operacoes) - 10}.")
+        if novos:
+            linhas.extend([
+                "",
+                "Atenção: jogos em 'Cadastrar novos' não bateram com uma partida existente. "
+                "Confira se não há erro de data/adversário antes de confirmar.",
+            ])
+        return "\n".join(linhas)
 
     def _chave_fuzzy_importacao(self, valor, *, tipo="geral"):
         texto = str(valor or "").strip()
@@ -8656,6 +9802,166 @@ class App:
             return "Copa do Brasil"
         return resolvido
 
+    def _normalizar_data_importacao(self, valor):
+        texto = str(valor or "").strip()
+        if not texto:
+            return ""
+        if _parse_data_ptbr_safe(texto):
+            return texto
+        match_iso = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", texto)
+        if match_iso:
+            ano, mes, dia = match_iso.groups()
+            candidato = f"{dia}/{mes}/{ano}"
+            if _parse_data_ptbr_safe(candidato):
+                return candidato
+        return texto
+
+    def _valor_json_importacao(self, item, *chaves, padrao=""):
+        if not isinstance(item, dict):
+            return padrao
+        for chave in chaves:
+            if chave in item:
+                return item.get(chave)
+        return padrao
+
+    def _adversario_json_importacao(self, item):
+        adversario = self._valor_json_importacao(item, "adversario", "oponente", "opponent", padrao="")
+        adversario = str(adversario or "").strip()
+        if adversario:
+            return adversario
+        confronto = str(self._valor_json_importacao(item, "jogo", "partida", "confronto", padrao="") or "").strip()
+        if confronto:
+            extraido = _extrair_adversario_de_jogo(confronto).replace("Vasco", "").strip()
+            if extraido:
+                return extraido
+        return ""
+
+    def _int_json_importacao_se_possivel(self, valor):
+        if valor in (None, "") or isinstance(valor, bool):
+            return None
+        try:
+            return int(str(valor).strip())
+        except Exception:
+            return None
+
+    def _localizar_jogo_existente_importacao(self, item, jogos_existentes):
+        id_raw = self._valor_json_importacao(item, "db_match_id", "match_id", "id", padrao=None)
+        id_busca = self._int_json_importacao_se_possivel(id_raw)
+        if id_busca is not None:
+            encontrados = [
+                (idx, jogo)
+                for idx, jogo in enumerate(jogos_existentes)
+                if self._int_json_importacao_se_possivel(jogo.get("db_match_id")) == id_busca
+            ]
+            if len(encontrados) == 1:
+                return encontrados[0][0], "id"
+            if len(encontrados) > 1:
+                raise ValueError(f"ID {id_busca} encontrou mais de uma partida.")
+
+        data = self._normalizar_data_importacao(self._valor_json_importacao(item, "data", "date", padrao=""))
+        adversario_raw = self._adversario_json_importacao(item)
+        if not data or not adversario_raw:
+            return None, "sem data/adversário suficientes para localizar existente"
+        if not _parse_data_ptbr_safe(data):
+            return None, "data não está em dd/mm/aaaa"
+
+        adversario = self._resolver_fuzzy_importacao(
+            adversario_raw,
+            self._opcoes_clubes_adversarios(),
+            tipo="geral",
+            threshold=0.76,
+        )
+        adversario = self._resolver_nome_clube_canonico(adversario)
+        chave_adv = _chave_nome_consulta(adversario)
+        if not chave_adv:
+            return None, "adversário vazio"
+
+        competicao_raw = self._valor_json_importacao(item, "competicao", "campeonato", "competition", padrao="")
+        competicao = self._resolver_competicao_importacao(competicao_raw) if str(competicao_raw or "").strip() else ""
+        chave_comp = self._chave_fuzzy_importacao(competicao, tipo="competicao")[0] if competicao else ""
+        local = str(self._valor_json_importacao(item, "local", padrao="") or "").strip().casefold()
+        placar = item.get("placar") if isinstance(item.get("placar"), dict) else {}
+        placar_vasco = self._int_json_importacao_se_possivel(placar.get("vasco")) if placar else None
+        placar_adv = self._int_json_importacao_se_possivel(placar.get("adversario")) if placar else None
+
+        candidatos = []
+        for idx, jogo in enumerate(jogos_existentes):
+            if str(jogo.get("data", "") or "").strip() != data:
+                continue
+            if _chave_nome_consulta(jogo.get("adversario", "")) != chave_adv:
+                continue
+            score = 10
+            if chave_comp:
+                chave_jogo = self._chave_fuzzy_importacao(jogo.get("competicao", ""), tipo="competicao")[0]
+                if chave_jogo != chave_comp:
+                    continue
+                score += 3
+            if local in {"casa", "fora"}:
+                if str(jogo.get("local", "") or "").strip().casefold() != local:
+                    continue
+                score += 1
+            placar_jogo = jogo.get("placar") if isinstance(jogo.get("placar"), dict) else {}
+            if placar_vasco is not None and placar_adv is not None:
+                jogo_vasco = self._int_json_importacao_se_possivel(placar_jogo.get("vasco"))
+                jogo_adv = self._int_json_importacao_se_possivel(placar_jogo.get("adversario"))
+                if jogo_vasco == placar_vasco and jogo_adv == placar_adv:
+                    score += 1
+            candidatos.append((score, idx))
+
+        if not candidatos:
+            return None, "não encontrou partida existente"
+        candidatos.sort(reverse=True)
+        if len(candidatos) > 1 and candidatos[0][0] == candidatos[1][0]:
+            desc = f"{data} - {adversario}"
+            raise ValueError(f"{desc}: mais de uma partida possível. Informe competição, local ou db_match_id.")
+        return candidatos[0][1], "data/adversário"
+
+    def _mesclar_dicts_json_importacao(self, base, entrada):
+        saida = copy.deepcopy(base) if isinstance(base, dict) else {}
+        if not isinstance(entrada, dict):
+            return saida
+        for chave, valor in entrada.items():
+            if isinstance(valor, dict) and isinstance(saida.get(chave), dict):
+                saida[chave] = self._mesclar_dicts_json_importacao(saida.get(chave), valor)
+            else:
+                saida[chave] = copy.deepcopy(valor)
+        return saida
+
+    def _mesclar_json_jogo_importado(self, existente, entrada):
+        mesclado = copy.deepcopy(existente) if isinstance(existente, dict) else {}
+        aliases = {
+            "campeonato": "competicao",
+            "competition": "competicao",
+            "date": "data",
+            "hora": "horario",
+            "observacoes": "observacao",
+            "oponente": "adversario",
+            "opponent": "adversario",
+            "escalacao": "escalacao_partida",
+            "stats_vasco": "estatisticas_vasco",
+            "estatisticas_time_vasco": "estatisticas_vasco",
+            "estatisticas_equipe_vasco": "estatisticas_vasco",
+            "stats_jogadores_vasco": "estatisticas_jogadores_vasco",
+            "estatisticas_individuais_vasco": "estatisticas_jogadores_vasco",
+            "estatisticas_individuais_jogadores_vasco": "estatisticas_jogadores_vasco",
+        }
+        ignorar = {"db_match_id", "db_tecnico_id", "match_id", "id", "_comentario", "_instrucoes"}
+        for chave, valor in entrada.items() if isinstance(entrada, dict) else []:
+            if chave in ignorar:
+                continue
+            chave_destino = aliases.get(chave, chave)
+            if chave_destino == "data":
+                valor = self._normalizar_data_importacao(valor)
+            if (
+                chave_destino in {"placar", "arbitragem", "gols_anulados", "escalacao_partida", "estatisticas_vasco"}
+                and isinstance(valor, dict)
+                and isinstance(mesclado.get(chave_destino), dict)
+            ):
+                mesclado[chave_destino] = self._mesclar_dicts_json_importacao(mesclado.get(chave_destino), valor)
+            else:
+                mesclado[chave_destino] = copy.deepcopy(valor)
+        return mesclado
+
     def _opcoes_jogadores_importacao(self):
         opcoes = []
         for jogador in getattr(self, "elenco_atual", {}).get("jogadores", []):
@@ -8685,6 +9991,9 @@ class App:
                 opcoes.append(evento.get("nome", ""))
             for evento in _expandir_eventos_cartao(jogo.get("cartoes_vermelhos_vasco", [])):
                 opcoes.append(evento.get("nome", ""))
+            for jogador_stats in jogo.get("estatisticas_jogadores_vasco", []):
+                if isinstance(jogador_stats, dict):
+                    opcoes.append(jogador_stats.get("nome", ""))
         return opcoes
 
     def _resolver_jogador_importacao(self, nome):
@@ -8717,7 +10026,7 @@ class App:
 
     def _normalizar_arbitragem_importada(self, dados):
         arbitragem = _normalizar_arbitragem(dados)
-        return {
+        resolvida = {
             "arbitro": self._resolver_fuzzy_importacao(
                 arbitragem.get("arbitro", ""),
                 self.listas.get("arbitros", []),
@@ -8740,6 +10049,7 @@ class App:
                 threshold=0.76,
             ),
         }
+        return _normalizar_arbitragem(resolvida)
 
     def _normalizar_nomes_importados_lista(self, nomes):
         if not isinstance(nomes, list):
@@ -8952,19 +10262,172 @@ class App:
             out["reservas_que_entraram"] = entraram_norm
         return out
 
-    def _normalizar_jogo_importado(self, item, prefixo=""):
+    def _slug_estatistica_importada(self, chave):
+        texto = str(chave or "").strip()
+        if not texto:
+            return ""
+        texto = unicodedata.normalize("NFKD", texto)
+        texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+        texto = re.sub(r"%", " pct ", texto)
+        texto = re.sub(r"[^0-9a-zA-Z]+", "_", texto.casefold()).strip("_")
+        return re.sub(r"_+", "_", texto)
+
+    def _chave_estatistica_importada(self, chave):
+        slug = self._slug_estatistica_importada(chave)
+        return ESTATISTICAS_VASCO_ALIASES.get(slug, slug)
+
+    def _valor_estatistica_importada(self, valor, campo, percentual=False):
+        if valor in (None, ""):
+            return None
+        if isinstance(valor, bool):
+            raise ValueError(f"{campo} precisa ser um número.")
+        txt = str(valor).strip().replace("%", "").replace(" ", "")
+        if not txt:
+            return None
+        if "," in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        elif re.match(r"^\d{1,3}(?:\.\d{3})+$", txt):
+            txt = txt.replace(".", "")
+        try:
+            numero = float(txt)
+        except Exception:
+            raise ValueError(f"{campo} precisa ser um número válido.")
+        if numero < 0:
+            raise ValueError(f"{campo} não pode ser negativo.")
+        if percentual and numero > 100:
+            raise ValueError(f"{campo} não pode passar de 100%.")
+        if numero.is_integer():
+            return int(numero)
+        return round(numero, 4)
+
+    def _normalizar_estatisticas_importadas(self, dados, label, prefixo=""):
+        if dados in (None, ""):
+            return {}
+        if not isinstance(dados, dict):
+            raise ValueError(f"{prefixo}{label} precisa ser um objeto.")
+
+        saida = {}
+
+        def adicionar(chave_raw, valor_raw):
+            chave = self._chave_estatistica_importada(chave_raw)
+            if not chave:
+                return
+            campo = f"{prefixo}{label}.{chave}"
+            saida[chave] = self._valor_estatistica_importada(
+                valor_raw,
+                campo,
+                percentual=chave in ESTATISTICAS_PERCENTUAIS,
+            )
+
+        for chave_raw, valor_raw in dados.items():
+            if isinstance(valor_raw, dict):
+                grupo = self._slug_estatistica_importada(chave_raw)
+                if grupo not in {"passes", "cruzamentos", "lancamentos"}:
+                    raise ValueError(f"{prefixo}{label}.{chave_raw} precisa ser número ou null.")
+                for sub_chave, sub_valor in valor_raw.items():
+                    adicionar(f"{grupo}_{sub_chave}", sub_valor)
+                continue
+            adicionar(chave_raw, valor_raw)
+
+        self._completar_estatisticas_de_passes(saida, label, prefixo)
+        return saida
+
+    def _completar_estatisticas_de_passes(self, stats, label, prefixo=""):
+        certos = stats.get("passes_certos")
+        errados = stats.get("passes_errados")
+        tentados = stats.get("passes_tentados")
+        if certos is not None and errados is not None and tentados is None:
+            stats["passes_tentados"] = certos + errados
+            tentados = stats["passes_tentados"]
+        elif certos is not None and tentados is not None and errados is None:
+            if tentados < certos:
+                raise ValueError(f"{prefixo}{label}.passes_tentados não pode ser menor que passes_certos.")
+            stats["passes_errados"] = tentados - certos
+        elif errados is not None and tentados is not None and certos is None:
+            if tentados < errados:
+                raise ValueError(f"{prefixo}{label}.passes_tentados não pode ser menor que passes_errados.")
+            stats["passes_certos"] = tentados - errados
+            certos = stats["passes_certos"]
+        if (
+            stats.get("precisao_passes") is None
+            and certos is not None
+            and tentados not in (None, 0)
+        ):
+            stats["precisao_passes"] = round((certos / tentados) * 100, 1)
+
+    def _estatisticas_vasco_importadas(self, item, prefixo=""):
+        for chave in (
+            "estatisticas_vasco",
+            "stats_vasco",
+            "estatisticas_time_vasco",
+            "estatisticas_equipe_vasco",
+        ):
+            if chave in item:
+                return self._normalizar_estatisticas_importadas(item.get(chave), "estatisticas_vasco", prefixo)
+        return {}
+
+    def _estatisticas_jogadores_vasco_importadas(self, item, prefixo=""):
+        bruto = None
+        for chave in (
+            "estatisticas_jogadores_vasco",
+            "stats_jogadores_vasco",
+            "estatisticas_individuais_vasco",
+            "estatisticas_individuais_jogadores_vasco",
+        ):
+            if chave in item:
+                bruto = item.get(chave)
+                break
+        if bruto in (None, ""):
+            return []
+        if isinstance(bruto, dict):
+            bruto = [
+                {**stats, "nome": nome}
+                for nome, stats in bruto.items()
+                if isinstance(stats, dict)
+            ]
+        if not isinstance(bruto, list):
+            raise ValueError(f"{prefixo}estatisticas_jogadores_vasco precisa ser uma lista ou objeto por jogador.")
+
+        saida = []
+        vistos = set()
+        for idx, jogador_stats in enumerate(bruto, start=1):
+            if not isinstance(jogador_stats, dict):
+                raise ValueError(f"{prefixo}estatisticas_jogadores_vasco[{idx}] precisa ser um objeto.")
+            nome = self._resolver_jogador_importacao(jogador_stats.get("nome", ""))
+            if not nome:
+                raise ValueError(f"{prefixo}estatisticas_jogadores_vasco[{idx}].nome é obrigatório.")
+            nome_cf = nome.casefold()
+            if nome_cf in vistos:
+                raise ValueError(f"{prefixo}estatisticas_jogadores_vasco tem jogador duplicado: {nome}.")
+            vistos.add(nome_cf)
+            numeros = {
+                chave: valor
+                for chave, valor in jogador_stats.items()
+                if str(chave).strip().casefold() != "nome"
+            }
+            stats_norm = self._normalizar_estatisticas_importadas(
+                numeros,
+                f"estatisticas_jogadores_vasco[{nome}]",
+                prefixo,
+            )
+            saida.append({"nome": nome, **stats_norm})
+        return saida
+
+    def _normalizar_jogo_importado(self, item, prefixo="", completar_escalacao_com_elenco=True):
         if not isinstance(item, dict):
             raise ValueError(f"{prefixo}cada jogo precisa ser um objeto JSON.")
 
-        data = str(item.get("data", "") or "").strip()
+        data = self._normalizar_data_importacao(self._valor_json_importacao(item, "data", "date", padrao=""))
         adversario = self._resolver_fuzzy_importacao(
-            item.get("adversario", ""),
+            self._adversario_json_importacao(item),
             self._opcoes_clubes_adversarios(),
             tipo="geral",
             threshold=0.76,
         )
         adversario = self._resolver_nome_clube_canonico(adversario)
-        competicao = self._resolver_competicao_importacao(item.get("competicao", ""))
+        competicao = self._resolver_competicao_importacao(
+            self._valor_json_importacao(item, "competicao", "campeonato", "competition", padrao="")
+        )
         local = str(item.get("local", "casa") or "casa").strip().casefold()
         estadio = self._resolver_fuzzy_importacao(
             item.get("estadio", ""),
@@ -8980,7 +10443,7 @@ class App:
             threshold=0.76,
         )
         capitao = self._resolver_jogador_importacao(item.get("capitao", ""))
-        observacao = str(item.get("observacao", "") or "").strip()
+        observacao = str(self._valor_json_importacao(item, "observacao", "observacoes", padrao="") or "").strip()
 
         if not data or not adversario:
             raise ValueError(f"{prefixo}informe data e adversário.")
@@ -9007,7 +10470,11 @@ class App:
         if self._competicao_usa_posicao(competicao):
             posicao_tabela = self._int_importado_opcional(item.get("posicao_tabela"), f"{prefixo}posicao_tabela")
 
-        escalacao_partida = self._normalizar_escalacao_importada(item, prefixo)
+        escalacao_partida = self._normalizar_escalacao_importada(
+            item,
+            prefixo,
+            completar_com_elenco=completar_escalacao_com_elenco,
+        )
         titulares_cf, reservas_cf = self._chaves_titulares_reservas(escalacao_partida)
 
         gols_vasco = self._normalizar_gols_importados(
@@ -9028,6 +10495,8 @@ class App:
             reservas_cf,
             prefixo,
         )
+        estatisticas_vasco = self._estatisticas_vasco_importadas(item, prefixo)
+        estatisticas_jogadores_vasco = self._estatisticas_jogadores_vasco_importadas(item, prefixo)
 
         if escalacao_partida:
             reservas_que_entraram_cf = {
@@ -9071,9 +10540,11 @@ class App:
             "posicao_tabela": posicao_tabela,
             "escalacao_partida": escalacao_partida,
             "arbitragem": self._normalizar_arbitragem_importada(item.get("arbitragem", {})),
+            "estatisticas_vasco": estatisticas_vasco,
+            "estatisticas_jogadores_vasco": estatisticas_jogadores_vasco,
         }
 
-    def _normalizar_escalacao_importada(self, item, prefixo=""):
+    def _normalizar_escalacao_importada(self, item, prefixo="", completar_com_elenco=True):
         bruto = item.get("escalacao_partida", item.get("escalacao", {}))
         if _escalacao_partida_vazia(bruto):
             return {}
@@ -9108,9 +10579,11 @@ class App:
                 f"{prefixo}há substituição duplicada, jogador que entrou fora da lista de reservas "
                 "ou jogador substituído repetido."
             )
-        escalacao = self._completar_escalacao_importada_com_elenco(escalacao)
+        if completar_com_elenco:
+            escalacao = self._completar_escalacao_importada_com_elenco(escalacao)
 
-        ok, msg = self._validar_escalacao_partida(escalacao)
+        nomes_obrigatorios = None if completar_com_elenco else self._nomes_presentes_na_escalacao(escalacao)
+        ok, msg = self._validar_escalacao_partida(escalacao, nomes_elenco_obrigatorios=nomes_obrigatorios)
         if not ok:
             raise ValueError(f"{prefixo}{msg}")
         return escalacao
@@ -9179,13 +10652,26 @@ class App:
                 "minuto": minuto,
                 "periodo": periodo,
             }
+            assistencia = str(evento.get("assistencia", "") or "").strip()
             if lado == "vasco":
                 nome_cf = nome.casefold()
                 if titulares_cf or reservas_cf:
                     item["saiu_do_banco"] = nome_cf in reservas_cf and nome_cf not in titulares_cf
                 else:
                     item["saiu_do_banco"] = bool(evento.get("saiu_do_banco", False))
+                if assistencia:
+                    assistencia = self._resolver_jogador_importacao(assistencia)
+                    if assistencia and assistencia.casefold() == nome.casefold():
+                        raise ValueError(f"{prefixo}gol {idx}: assistência não pode ser do próprio autor do gol.")
+                    if assistencia:
+                        item["assistencia"] = assistencia
             else:
+                if assistencia:
+                    assistencia = self._resolver_jogador_contra_importacao(assistencia)
+                    if assistencia and assistencia.casefold() == nome.casefold():
+                        raise ValueError(f"{prefixo}gol {idx}: assistência não pode ser do próprio autor do gol.")
+                    if assistencia:
+                        item["assistencia"] = assistencia
                 item["clube"] = str(evento.get("clube", "") or "").strip() or adversario
             normalizados.append(item)
         return _agrupar_eventos_gol(normalizados)
@@ -9200,8 +10686,8 @@ class App:
             return None, ""
         if periodo not in {codigo for codigo, _label in PERIODOS_EVENTO}:
             raise ValueError(f"{label}: periodo inválido. Use 1T, 2T, 1P ou 2P.")
-        if minuto > _limite_minuto_por_periodo(periodo):
-            raise ValueError(f"{label}: o periodo {periodo} aceita no máximo {_limite_minuto_por_periodo(periodo)}.")
+        if minuto > _limite_minuto_evento_por_periodo(periodo):
+            raise ValueError(f"{label}: o periodo {periodo} aceita no máximo {_limite_minuto_evento_por_periodo(periodo)}.")
         return minuto, periodo
 
     def _normalizar_cartoes_importados(self, dados, label):
@@ -9314,6 +10800,68 @@ class App:
                 )
         return duplicados
 
+    def _salvar_operacoes_importacao_jogos(self, operacoes):
+        jogos = carregar_dados_jogos()
+        atualizados = 0
+        novos = 0
+        ajustes_historico = []
+        jogos_novos = []
+
+        for op in operacoes:
+            jogo = copy.deepcopy(op.get("jogo", {}))
+            if not isinstance(jogo, dict):
+                continue
+            jogo["adversario"] = self._registrar_clube_adversario(jogo.get("adversario", ""))
+            self._registrar_listas_jogo_importado(jogo)
+
+            if op.get("acao") == "atualizar":
+                indice = op.get("indice")
+                if not isinstance(indice, int) or not (0 <= indice < len(jogos)):
+                    raise ValueError("Não foi possível localizar uma partida preparada para atualização.")
+                antes = jogos[indice]
+                jogos[indice] = jogo
+                ajustes_historico.append((
+                    _jogadores_que_participaram_do_jogo(antes),
+                    _jogadores_que_participaram_do_jogo(jogo),
+                ))
+                atualizados += 1
+            else:
+                jogos.append(jogo)
+                jogos_novos.append(jogo)
+                ajustes_historico.append((set(), _jogadores_que_participaram_do_jogo(jogo)))
+                novos += 1
+
+        salvar_lista_jogos(jogos)
+        salvar_listas(_ordenar_listas(self.listas))
+        self._atualizar_combo_tecnicos()
+        self._atualizar_combos_arbitragem()
+        if hasattr(self, "competicao_entry"):
+            self.competicao_entry["values"] = self.listas.get("competicoes", [])
+        if hasattr(self, "entry_gol_contra"):
+            self.entry_gol_contra["values"] = self.listas.get("jogadores_contra", [])
+        self._atualizar_opcoes_gol_vasco()
+
+        if jogos_novos:
+            self._garantir_jogadores_importados_no_elenco_atual(jogos_novos)
+
+        for antes, depois in ajustes_historico:
+            self._ajustar_jogos_pelo_vasco_jogadores_historico(antes, depois)
+
+        jogos_com_escalacao = [
+            jogo for jogo in jogos_novos
+            if isinstance(jogo.get("escalacao_partida"), dict) and jogo.get("escalacao_partida")
+        ]
+        if jogos_com_escalacao:
+            ultimo = max(
+                jogos_com_escalacao,
+                key=lambda jogo: _parse_data_ptbr_safe(str(jogo.get("data", "")).strip()) or datetime.min,
+            )
+            self._atualizar_condicoes_elenco_por_escalacao(ultimo.get("escalacao_partida", {}))
+        self._limpar_formulario()
+        self._atualizar_abas()
+        self.notebook.select(self.frame_temporadas)
+        return {"atualizados": atualizados, "novos": novos}
+
     def _salvar_jogos_importados(self, jogos_importados):
         jogos = carregar_dados_jogos()
         self._garantir_jogadores_importados_no_elenco_atual(jogos_importados)
@@ -9345,19 +10893,21 @@ class App:
                 key=lambda jogo: _parse_data_ptbr_safe(str(jogo.get("data", "")).strip()) or datetime.min,
             )
             self._atualizar_condicoes_elenco_por_escalacao(ultimo.get("escalacao_partida", {}))
-        self._aplicar_suspensoes_pendentes_no_elenco(jogos)
-
         self._limpar_formulario()
         self._atualizar_abas()
         self.notebook.select(self.frame_temporadas)
 
     def _registrar_listas_jogo_importado(self, jogo):
         def add_unico(chave, nome):
-            nome_limpo = str(nome or "").strip()
+            nome_limpo = _normalizar_nome_arbitragem(nome) if chave in {"arbitros", "auxiliares", "vars"} else str(nome or "").strip()
             if not nome_limpo:
                 return
             lista = self.listas.setdefault(chave, [])
-            if not any(str(item).casefold() == nome_limpo.casefold() for item in lista):
+            if chave in {"arbitros", "auxiliares", "vars"}:
+                existe = any(_chave_nome_arbitragem(item) == _chave_nome_arbitragem(nome_limpo) for item in lista)
+            else:
+                existe = any(str(item).casefold() == nome_limpo.casefold() for item in lista)
+            if not existe:
                 lista.append(nome_limpo)
 
         add_unico("competicoes", jogo.get("competicao", ""))
@@ -9555,6 +11105,460 @@ class App:
         self.obs_text.delete("1.0", "end")
         self.obs_text.insert("1.0", jogo.get("observacao", ""))
 
+    def _texto_detalhe_partida(self, valor):
+        if valor in (None, ""):
+            return "—"
+        if isinstance(valor, (list, tuple)):
+            itens = [str(item).strip() for item in valor if str(item).strip()]
+            return ", ".join(itens) if itens else "—"
+        txt = str(valor).strip()
+        return txt if txt else "—"
+
+    def _placar_detalhe_partida(self, jogo):
+        adversario = str(jogo.get("adversario", "") or "").strip() or "Adversário"
+        placar = jogo.get("placar", {}) if isinstance(jogo.get("placar"), dict) else {}
+        gols_vasco = int(placar.get("vasco", 0) or 0)
+        gols_adv = int(placar.get("adversario", 0) or 0)
+        if str(jogo.get("local", "") or "").casefold() == "fora":
+            return f"{adversario} {gols_adv} x {gols_vasco} Vasco"
+        return f"Vasco {gols_vasco} x {gols_adv} {adversario}"
+
+    def _resultado_detalhe_partida(self, jogo):
+        placar = jogo.get("placar", {}) if isinstance(jogo.get("placar"), dict) else {}
+        gols_vasco = int(placar.get("vasco", 0) or 0)
+        gols_adv = int(placar.get("adversario", 0) or 0)
+        if gols_vasco > gols_adv:
+            return "Vitória"
+        if gols_vasco < gols_adv:
+            return "Derrota"
+        return "Empate"
+
+    def _criar_tree_modal_partida(self, parent, columns, headings, widths, *, height=8):
+        wrap = ttk.Frame(parent)
+        wrap.columnconfigure(0, weight=1)
+        wrap.rowconfigure(0, weight=1)
+        tv = ttk.Treeview(wrap, columns=columns, show="headings", height=height)
+        for col, heading, width in zip(columns, headings, widths):
+            tv.heading(col, text=heading)
+            anchor = "center" if col in {"minuto", "qtd", "numero"} else "w"
+            tv.column(col, width=width, anchor=anchor, stretch=True)
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.grid(row=0, column=0, sticky="nsew")
+        sy = ttk.Scrollbar(wrap, orient="vertical", command=tv.yview)
+        sy.grid(row=0, column=1, sticky="ns")
+        tv.configure(yscrollcommand=sy.set)
+        return wrap, tv
+
+    def _abrir_modal_detalhes_partida_por_indice(self, jogo_idx):
+        jogos = carregar_dados_jogos()
+        if not (0 <= jogo_idx < len(jogos)):
+            messagebox.showerror("Erro", "Não foi possível carregar o jogo selecionado.")
+            return
+        self._abrir_modal_detalhes_partida(jogos[jogo_idx], jogo_idx)
+
+    def _abrir_modal_detalhes_partida(self, jogo, jogo_idx=None):
+        if not isinstance(jogo, dict):
+            messagebox.showerror("Erro", "Não foi possível carregar os detalhes da partida.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title(f"Detalhes da partida - {self._placar_detalhe_partida(jogo)}")
+        top.transient(self.root)
+        top.lift()
+        top.focus_force()
+        top.minsize(980, 680)
+        top.configure(bg=self.colors["bg"])
+
+        container = ttk.Frame(top, padding=12)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+        container.rowconfigure(1, weight=1)
+
+        titulo = ttk.Label(
+            container,
+            text=self._placar_detalhe_partida(jogo),
+            font=("Segoe UI", 15, "bold"),
+        )
+        titulo.grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        notebook = ttk.Notebook(container)
+        notebook.grid(row=1, column=0, sticky="nsew")
+
+        # Aba Resumo
+        aba_resumo = ttk.Frame(notebook, padding=10)
+        aba_resumo.columnconfigure(0, weight=1)
+        aba_resumo.rowconfigure(0, weight=1)
+        notebook.add(aba_resumo, text="Resumo")
+        wrap_resumo, tv_resumo = self._criar_tree_modal_partida(
+            aba_resumo,
+            ("campo", "valor"),
+            ("Campo", "Valor"),
+            (220, 680),
+            height=20,
+        )
+        wrap_resumo.grid(row=0, column=0, sticky="nsew")
+
+        arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+        resumo_rows = [
+            ("Data", jogo.get("data", "")),
+            ("Competição", jogo.get("competicao", "")),
+            ("Adversário", jogo.get("adversario", "")),
+            ("Local", "Casa" if str(jogo.get("local", "")).casefold() != "fora" else "Fora"),
+            ("Placar", self._placar_detalhe_partida(jogo)),
+            ("Resultado", self._resultado_detalhe_partida(jogo)),
+            ("Estádio", jogo.get("estadio", "")),
+            ("Horário", jogo.get("horario", "")),
+            ("Técnico", jogo.get("tecnico", "")),
+            ("Capitão", jogo.get("capitao", "")),
+            ("Posição na tabela", jogo.get("posicao_tabela", "")),
+            ("Público pagante", _formatar_publico(jogo.get("publico_pagante"))),
+            ("Público presente", _formatar_publico(jogo.get("publico_presente"))),
+            ("Renda", _formatar_renda_brl(jogo.get("renda"))),
+            ("Árbitro", arbitragem.get("arbitro", "")),
+            ("Auxiliares", arbitragem.get("auxiliares", [])),
+            ("VAR", arbitragem.get("var", "")),
+            ("ID da partida no banco", jogo.get("db_match_id", "")),
+            ("ID do técnico no banco", jogo.get("db_tecnico_id", "")),
+        ]
+        for i, (campo, valor) in enumerate(resumo_rows):
+            tv_resumo.insert("", "end", values=(campo, self._texto_detalhe_partida(valor)), tags=("odd",) if i % 2 else ())
+
+        # Aba Escalação
+        aba_esc = ttk.Frame(notebook, padding=10)
+        aba_esc.columnconfigure(0, weight=1)
+        aba_esc.rowconfigure(1, weight=1)
+        aba_esc.rowconfigure(2, weight=1)
+        notebook.add(aba_esc, text="Escalação")
+
+        esc = jogo.get("escalacao_partida", jogo.get("escalacao", {}))
+        esc = self._normalizar_escalacao_partida(esc if isinstance(esc, dict) else {})
+        titulares = sum(len(esc["titulares_por_posicao"].get(pos, [])) for pos in POSICOES_ELENCO)
+        ttk.Label(
+            aba_esc,
+            text=(
+                f"Titulares: {titulares}/11 | Reservas: {len(esc.get('reservas', []))} | "
+                f"Substituições: {len(esc.get('substituicoes', []))}"
+            ),
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        superior = ttk.Frame(aba_esc)
+        superior.grid(row=1, column=0, sticky="nsew")
+        superior.columnconfigure(0, weight=1)
+        superior.columnconfigure(1, weight=1)
+        superior.rowconfigure(0, weight=1)
+
+        titulares_frame = ttk.Labelframe(superior, text="Titulares", padding=6)
+        titulares_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        titulares_frame.columnconfigure(0, weight=1)
+        titulares_frame.rowconfigure(0, weight=1)
+        wrap_tit, tv_tit = self._criar_tree_modal_partida(
+            titulares_frame,
+            ("posicao", "jogadores"),
+            ("Posição", "Jogadores"),
+            (180, 360),
+            height=9,
+        )
+        wrap_tit.grid(row=0, column=0, sticky="nsew")
+        for i, pos in enumerate(POSICOES_ELENCO):
+            nomes = esc["titulares_por_posicao"].get(pos, [])
+            tv_tit.insert("", "end", values=(pos, self._texto_detalhe_partida(nomes)), tags=("odd",) if i % 2 else ())
+
+        reservas_frame = ttk.Labelframe(superior, text="Reservas e status", padding=6)
+        reservas_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        reservas_frame.columnconfigure(0, weight=1)
+        reservas_frame.rowconfigure(0, weight=1)
+        wrap_res, tv_res = self._criar_tree_modal_partida(
+            reservas_frame,
+            ("grupo", "nomes"),
+            ("Grupo", "Nomes"),
+            (150, 390),
+            height=9,
+        )
+        wrap_res.grid(row=0, column=0, sticky="nsew")
+        grupos_reservas = [
+            ("Reservas", esc.get("reservas", [])),
+            ("Entraram", esc.get("reservas_que_entraram", [])),
+            ("Não relacionados", esc.get("nao_relacionados", [])),
+            ("Lesionados", esc.get("lesionados", [])),
+            ("Suspensos", esc.get("suspensos", [])),
+            ("Seleção", esc.get("servindo_selecao", [])),
+        ]
+        for i, (grupo, nomes) in enumerate(grupos_reservas):
+            tv_res.insert("", "end", values=(grupo, self._texto_detalhe_partida(nomes)), tags=("odd",) if i % 2 else ())
+
+        subs_frame = ttk.Labelframe(aba_esc, text="Substituições", padding=6)
+        subs_frame.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
+        subs_frame.columnconfigure(0, weight=1)
+        subs_frame.rowconfigure(0, weight=1)
+        wrap_subs, tv_subs = self._criar_tree_modal_partida(
+            subs_frame,
+            ("minuto", "entrou", "saiu"),
+            ("Minuto", "Entrou", "Saiu"),
+            (110, 300, 300),
+            height=8,
+        )
+        wrap_subs.grid(row=0, column=0, sticky="nsew")
+        subs = [
+            sub for sub in (_normalizar_substituicao_partida(item) for item in esc.get("substituicoes", []))
+            if sub
+        ]
+        if subs:
+            for i, sub in enumerate(subs):
+                tv_subs.insert(
+                    "",
+                    "end",
+                    values=(
+                        _formatar_minuto_periodo(sub.get("minuto"), sub.get("periodo")),
+                        sub.get("jogador_entrou", ""),
+                        sub.get("jogador_saiu", ""),
+                    ),
+                    tags=("odd",) if i % 2 else (),
+                )
+        else:
+            tv_subs.insert("", "end", values=("—", "—", "—"))
+
+        # Aba Eventos
+        aba_eventos = ttk.Frame(notebook, padding=10)
+        aba_eventos.columnconfigure(0, weight=1)
+        aba_eventos.rowconfigure(0, weight=1)
+        notebook.add(aba_eventos, text="Eventos")
+        wrap_eventos, tv_eventos = self._criar_tree_modal_partida(
+            aba_eventos,
+            ("tipo", "jogador", "minuto", "detalhe"),
+            ("Tipo", "Jogador", "Minuto", "Detalhe"),
+            (170, 300, 110, 300),
+            height=22,
+        )
+        wrap_eventos.grid(row=0, column=0, sticky="nsew")
+
+        eventos = []
+        for evento in _expandir_eventos_gol(jogo.get("gols_vasco", [])):
+            assistencia = str(evento.get("assistencia", "") or "").strip()
+            eventos.append((
+                "Gol do Vasco",
+                evento.get("nome", ""),
+                _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo")) if evento.get("minuto") is not None else "—",
+                " · ".join([parte for parte in (
+                    f"Assistência: {assistencia}" if assistencia else "",
+                    "Saiu do banco" if evento.get("saiu_do_banco") else "",
+                ) if parte]),
+            ))
+        for evento in _expandir_eventos_gol(jogo.get("gols_adversario", [])):
+            assistencia = str(evento.get("assistencia", "") or "").strip()
+            eventos.append((
+                "Gol adversário",
+                evento.get("nome", ""),
+                _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo")) if evento.get("minuto") is not None else "—",
+                " · ".join([parte for parte in (
+                    evento.get("clube", "") or jogo.get("adversario", ""),
+                    f"Assistência: {assistencia}" if assistencia else "",
+                ) if parte]),
+            ))
+        gols_anulados = jogo.get("gols_anulados", {}) if isinstance(jogo.get("gols_anulados"), dict) else {}
+        for lado, label in (("vasco", "Gol anulado Vasco"), ("adversario", "Gol anulado adversário")):
+            for evento in _expandir_eventos_gol(gols_anulados.get(lado, [])):
+                eventos.append((
+                    label,
+                    evento.get("nome", ""),
+                    _formatar_minuto_periodo(evento.get("minuto"), evento.get("periodo")) if evento.get("minuto") is not None else "—",
+                    evento.get("clube", ""),
+                ))
+        for evento in _expandir_eventos_cartao(jogo.get("cartoes_amarelos_vasco", [])):
+            eventos.append(("Cartão amarelo Vasco", evento.get("nome", ""), "—", ""))
+        for evento in _expandir_eventos_cartao(jogo.get("cartoes_vermelhos_vasco", [])):
+            eventos.append(("Cartão vermelho Vasco", evento.get("nome", ""), "—", ""))
+
+        if eventos:
+            for i, row in enumerate(eventos):
+                tv_eventos.insert("", "end", values=tuple(self._texto_detalhe_partida(v) for v in row), tags=("odd",) if i % 2 else ())
+        else:
+            tv_eventos.insert("", "end", values=("—", "—", "—", "—"))
+
+        # Aba Scouts
+        aba_scouts = ttk.Frame(notebook, padding=10)
+        aba_scouts.columnconfigure(0, weight=1)
+        aba_scouts.rowconfigure(0, weight=1)
+        aba_scouts.rowconfigure(1, weight=1)
+        notebook.add(aba_scouts, text="Scouts")
+
+        scouts_time_frame = ttk.Labelframe(aba_scouts, text="Scouts do Vasco", padding=6)
+        scouts_time_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
+        scouts_time_frame.columnconfigure(0, weight=1)
+        scouts_time_frame.rowconfigure(0, weight=1)
+        wrap_scouts_time, tv_scouts_time = self._criar_tree_modal_partida(
+            scouts_time_frame,
+            ("estatistica", "valor"),
+            ("Estatística", "Valor"),
+            (360, 240),
+            height=9,
+        )
+        wrap_scouts_time.grid(row=0, column=0, sticky="nsew")
+
+        stats_vasco = jogo.get("estatisticas_vasco") if isinstance(jogo.get("estatisticas_vasco"), dict) else {}
+        chaves_stats_vasco = self._ordenar_chaves_estatisticas_jogador(stats_vasco)
+        if chaves_stats_vasco:
+            for i, chave in enumerate(chaves_stats_vasco):
+                tv_scouts_time.insert(
+                    "",
+                    "end",
+                    values=(
+                        self._formatar_nome_estatistica_jogador(chave),
+                        self._formatar_valor_estatistica_jogador(chave, stats_vasco.get(chave)),
+                    ),
+                    tags=("odd",) if i % 2 else (),
+                )
+        else:
+            tv_scouts_time.insert("", "end", values=("Sem scouts do Vasco importados", "—"))
+
+        scouts_jogadores_frame = ttk.Labelframe(aba_scouts, text="Scouts dos jogadores do Vasco", padding=6)
+        scouts_jogadores_frame.grid(row=1, column=0, sticky="nsew")
+        scouts_jogadores_frame.columnconfigure(0, weight=1)
+        scouts_jogadores_frame.rowconfigure(0, weight=1)
+        wrap_scouts_jogadores, tv_scouts_jogadores = self._criar_tree_modal_partida(
+            scouts_jogadores_frame,
+            ("jogador", "estatistica", "valor"),
+            ("Jogador", "Estatística", "Valor"),
+            (240, 280, 180),
+            height=10,
+        )
+        wrap_scouts_jogadores.grid(row=0, column=0, sticky="nsew")
+
+        stats_jogadores = jogo.get("estatisticas_jogadores_vasco")
+        linhas_scouts_jogadores = []
+        if isinstance(stats_jogadores, list):
+            for item in sorted(
+                [s for s in stats_jogadores if isinstance(s, dict)],
+                key=lambda s: str(s.get("nome", "") or "").casefold(),
+            ):
+                nome = str(item.get("nome", "") or "").strip()
+                if not nome:
+                    continue
+                for chave in self._ordenar_chaves_estatisticas_jogador(item):
+                    linhas_scouts_jogadores.append((
+                        nome,
+                        self._formatar_nome_estatistica_jogador(chave),
+                        self._formatar_valor_estatistica_jogador(chave, item.get(chave)),
+                    ))
+        if linhas_scouts_jogadores:
+            for i, row in enumerate(linhas_scouts_jogadores):
+                tv_scouts_jogadores.insert("", "end", values=row, tags=("odd",) if i % 2 else ())
+        else:
+            tv_scouts_jogadores.insert("", "end", values=("Sem scouts individuais importados", "—", "—"))
+
+        # Aba Observações
+        aba_obs = ttk.Frame(notebook, padding=10)
+        aba_obs.columnconfigure(0, weight=1)
+        aba_obs.rowconfigure(0, weight=1)
+        notebook.add(aba_obs, text="Observações")
+        obs = tk.Text(
+            aba_obs,
+            wrap="word",
+            height=12,
+            bg=self.colors["entry_bg"],
+            fg=self.colors["entry_fg"],
+            insertbackground=self.colors["fg"],
+        )
+        obs.grid(row=0, column=0, sticky="nsew")
+        obs.insert("1.0", str(jogo.get("observacao", "") or ""))
+        obs.configure(state="disabled")
+        sy_obs = ttk.Scrollbar(aba_obs, orient="vertical", command=obs.yview)
+        sy_obs.grid(row=0, column=1, sticky="ns")
+        obs.configure(yscrollcommand=sy_obs.set)
+
+        botoes = ttk.Frame(container)
+        botoes.grid(row=2, column=0, sticky="e", pady=(10, 0))
+        if jogo_idx is not None:
+            ttk.Button(
+                botoes,
+                text="Enviar para edição",
+                command=lambda idx=jogo_idx, modal=top: (modal.destroy(), self._carregar_jogo_para_edicao(idx)),
+            ).pack(side="left", padx=(0, 8))
+        ttk.Button(botoes, text="Fechar", command=top.destroy).pack(side="left")
+
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
+
+    def _abrir_modal_scouts_temporada(self, ano, linhas_base):
+        linhas_base = list(linhas_base or [])
+        jogos = [r.get("raw") for r in linhas_base if isinstance(r, dict) and isinstance(r.get("raw"), dict)]
+        linhas_time, linhas_jogadores, resumo = self._agregar_estatisticas_vasco_jogos(jogos)
+
+        top = tk.Toplevel(self.root)
+        top.title(f"Scouts consolidados - {ano}")
+        top.transient(self.root)
+        top.lift()
+        top.focus_force()
+        top.minsize(860, 620)
+        top.configure(bg=self.colors["bg"])
+
+        container = ttk.Frame(top, padding=12)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+        container.rowconfigure(1, weight=1)
+
+        resumo_txt = (
+            f"Recorte atual: {resumo['jogos']} jogos | "
+            f"jogos com scout do Vasco: {resumo['jogos_com_scout_time']} | "
+            f"jogos com scout de jogadores: {resumo['jogos_com_scout_jogadores']}"
+        )
+        ttk.Label(container, text=resumo_txt, font=("Segoe UI", 11, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        notebook = ttk.Notebook(container)
+        notebook.grid(row=1, column=0, sticky="nsew")
+
+        aba_time = ttk.Frame(notebook, padding=10)
+        aba_time.columnconfigure(0, weight=1)
+        aba_time.rowconfigure(0, weight=1)
+        notebook.add(aba_time, text="Vasco")
+        wrap_time, tv_time = self._criar_tree_modal_partida(
+            aba_time,
+            ("estatistica", "total", "media", "jogos"),
+            ("Estatística", "Total", "Média", "Jogos com dado"),
+            (300, 160, 160, 130),
+            height=20,
+        )
+        wrap_time.grid(row=0, column=0, sticky="nsew")
+        if linhas_time:
+            for i, row in enumerate(linhas_time):
+                tv_time.insert(
+                    "",
+                    "end",
+                    values=(row["estatistica"], row["total"], row["media"], row["jogos"]),
+                    tags=("odd",) if i % 2 else (),
+                )
+        else:
+            tv_time.insert("", "end", values=("Sem scouts do Vasco no recorte atual", "—", "—", "—"))
+
+        aba_jogadores = ttk.Frame(notebook, padding=10)
+        aba_jogadores.columnconfigure(0, weight=1)
+        aba_jogadores.rowconfigure(0, weight=1)
+        notebook.add(aba_jogadores, text="Jogadores")
+        wrap_jogadores, tv_jogadores = self._criar_tree_modal_partida(
+            aba_jogadores,
+            ("jogador", "estatistica", "total", "media", "jogos"),
+            ("Jogador", "Estatística", "Total", "Média", "Jogos com dado"),
+            (220, 230, 120, 120, 120),
+            height=20,
+        )
+        wrap_jogadores.grid(row=0, column=0, sticky="nsew")
+        if linhas_jogadores:
+            for i, row in enumerate(linhas_jogadores):
+                tv_jogadores.insert(
+                    "",
+                    "end",
+                    values=(row["jogador"], row["estatistica"], row["total"], row["media"], row["jogos"]),
+                    tags=("odd",) if i % 2 else (),
+                )
+        else:
+            tv_jogadores.insert("", "end", values=("Sem scouts individuais no recorte atual", "—", "—", "—", "—"))
+
+        botoes = ttk.Frame(container)
+        botoes.grid(row=2, column=0, sticky="e", pady=(10, 0))
+        ttk.Button(botoes, text="Fechar", command=top.destroy).pack(side="left")
+
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
+
     def _on_tree_double_click(self, event):
         tree = event.widget
         iid = tree.identify_row(event.y)
@@ -9565,7 +11569,7 @@ class App:
         if jogo_idx is None:
             return
         tree.selection_set(iid)
-        self._carregar_jogo_para_edicao(jogo_idx)
+        self._abrir_modal_detalhes_partida_por_indice(jogo_idx)
 
     def _abrir_menu_contexto_temporadas(self, event):
         tree = event.widget
@@ -9599,7 +11603,8 @@ class App:
         jogo = jogos[jogo_idx]
 
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label="Editar jogo", command=lambda idx=jogo_idx: self._carregar_jogo_para_edicao(idx))
+        menu.add_command(label="Ver detalhes", command=lambda idx=jogo_idx: self._abrir_modal_detalhes_partida_por_indice(idx))
+        menu.add_command(label="Enviar para edição", command=lambda idx=jogo_idx: self._carregar_jogo_para_edicao(idx))
         submenu_copiar = tk.Menu(menu, tearoff=0)
         submenu_copiar.add_command(
             label="Confronto com placar",
@@ -9732,7 +11737,6 @@ class App:
 
     def _atualizar_abas(self):
         self.elenco_atual = carregar_elenco_atual()
-        self._aplicar_suspensoes_pendentes_no_elenco()
         self.titulos_vasco = carregar_titulos_vasco()
         self.jogadores_historico = carregar_jogadores_historico()
         self._sincronizar_jogadores_historico()
@@ -10225,6 +12229,7 @@ class App:
         aproveitamento = round(((vitorias * 3 + empates) / (jogos_disputados * 3)) * 100, 1) if jogos_disputados else 0.0
         media_gols_pro = round(gols_pro / jogos_disputados, 2) if jogos_disputados else 0.0
         media_gols_contra = round(gols_contra / jogos_disputados, 2) if jogos_disputados else 0.0
+        scouts_temporada_state = {"linhas": rows}
         recorte_wrap = ttk.Frame(frame_ano)
         recorte_wrap.pack(fill="x", pady=(0, 8))
         ttk.Label(recorte_wrap, text="Recorte:").pack(side="left")
@@ -10232,6 +12237,14 @@ class App:
         ttk.Radiobutton(recorte_wrap, text="Todos", variable=filtro_local_var, value="todos").pack(side="left", padx=(8, 6))
         ttk.Radiobutton(recorte_wrap, text="Casa", variable=filtro_local_var, value="casa").pack(side="left", padx=6)
         ttk.Radiobutton(recorte_wrap, text="Fora", variable=filtro_local_var, value="fora").pack(side="left", padx=6)
+        ttk.Button(
+            recorte_wrap,
+            text="Ver scouts do recorte",
+            command=lambda ano_ref=ano, state=scouts_temporada_state: self._abrir_modal_scouts_temporada(
+                ano_ref,
+                state.get("linhas", []),
+            ),
+        ).pack(side="left", padx=(14, 0))
 
         cards = ttk.Frame(frame_ano)
         cards.pack(fill="x", pady=(0, 8))
@@ -10258,6 +12271,10 @@ class App:
             ("Público Pagante", "publico_pagante"),
             ("Público Presente", "publico_presente"),
             ("Renda", "renda"),
+            ("Jogos com scout", "scout_jogos"),
+            ("Posse média", "scout_posse"),
+            ("Finalizações", "scout_finalizacoes"),
+            ("Chutes no gol", "scout_finalizacoes_no_gol"),
         ]
         card_vars = {chave: tk.StringVar(value="0") for _titulo, chave in card_specs}
         for idx_card, (titulo, chave) in enumerate(card_specs):
@@ -10310,6 +12327,9 @@ class App:
             aproveitamento_f = round(((vitorias_f * 3 + empates_f) / (jogos_filtrados * 3)) * 100, 1) if jogos_filtrados else 0.0
             media_gols_pro_f = round(gols_pro_f / jogos_filtrados, 2) if jogos_filtrados else 0.0
             media_gols_contra_f = round(gols_contra_f / jogos_filtrados, 2) if jogos_filtrados else 0.0
+            _, _, resumo_scout = self._agregar_estatisticas_vasco_jogos([
+                r.get("raw") for r in linhas_base if isinstance(r.get("raw"), dict)
+            ])
 
             card_vars["jogos"].set(str(jogos_filtrados))
             card_vars["vitorias"].set(str(vitorias_f))
@@ -10326,6 +12346,10 @@ class App:
             card_vars["publico_pagante"].set(_formatar_publico(publico_pagante_f))
             card_vars["publico_presente"].set(_formatar_publico(publico_presente_f))
             card_vars["renda"].set(_formatar_renda_brl(renda_f))
+            card_vars["scout_jogos"].set(str(resumo_scout["jogos_com_scout_time"]))
+            card_vars["scout_posse"].set(self._formatar_valor_estatistica_agregada("posse_bola", resumo_scout["posse_media"]))
+            card_vars["scout_finalizacoes"].set(self._formatar_valor_estatistica_agregada("finalizacoes", resumo_scout["finalizacoes_total"]))
+            card_vars["scout_finalizacoes_no_gol"].set(self._formatar_valor_estatistica_agregada("finalizacoes_no_gol", resumo_scout["finalizacoes_no_gol_total"]))
 
         filtros_temporada = ttk.Frame(frame_ano)
         filtros_temporada.pack(fill="x", pady=(0, 6))
@@ -10393,7 +12417,7 @@ class App:
         tooltip_map = {}
         obs_map = {}
         item_to_idx = {}
-        sort_state = {"col": "data", "reverse": False}
+        sort_state = {"col": "data", "reverse": True}
 
         self._bind_treeview_tooltips(tv, tooltip_map)
         tv._item_to_idx = item_to_idx
@@ -10483,8 +12507,8 @@ class App:
                 if score_match:
                     vasco_q = int(score_match.group(1))
                     adv_q = int(score_match.group(2))
-                    linhas = []
-                    for r in rows_base:
+                    linhas_score = []
+                    for r in linhas:
                         placar = (r.get("raw") or {}).get("placar", {})
                         try:
                             v = int(placar.get("vasco", -999))
@@ -10492,10 +12516,11 @@ class App:
                         except Exception:
                             continue
                         if v == vasco_q and a == adv_q:
-                            linhas.append(r)
+                            linhas_score.append(r)
+                    linhas = linhas_score
                 else:
                     linhas = [
-                        r for r in rows_base
+                        r for r in linhas
                         if (
                             termo_cf in str(r.get("adversario", "")).casefold()
                             or termo_norm in _chave_nome_jogador(r.get("adversario", ""))
@@ -10522,6 +12547,7 @@ class App:
                     if str(r.get("competicao", "")).strip().casefold() == competicao_sel.casefold()
                 ]
 
+            scouts_temporada_state["linhas"] = list(linhas)
             _atualizar_cards_temporada(linhas)
 
             def _sort_key(r):
@@ -10960,6 +12986,8 @@ class App:
         self._bind_treeview_tooltips(self.tv_estadios_jogos, tooltip_map)
         self.tv_estadios_jogos._item_to_idx = item_to_idx
         self.tv_estadios_jogos.bind("<Double-1>", self._on_tree_double_click)
+        self.tv_estadios_jogos.bind("<Button-3>", self._abrir_menu_contexto_temporadas)
+        self.tv_estadios_jogos.bind("<Control-Button-1>", self._abrir_menu_contexto_temporadas)
 
         estadios_rows = sorted(agrupados.values(), key=lambda item: (str(item.get("estadio", "")).casefold(),))
         iid_to_estadio = {}
@@ -12027,7 +14055,7 @@ class App:
         container.pack(fill="both", expand=True)
         ttk.Label(
             container,
-            text="Lista de árbitros principais que já apitaram jogos do Vasco.",
+            text="Oficiais de arbitragem em jogos do Vasco.",
             foreground=self.colors["tree_head_fg"],
         ).pack(anchor="w", pady=(0, 8))
 
@@ -12054,17 +14082,74 @@ class App:
         )
         combo_ano.pack(side="left", padx=(8, 0))
 
-        self._arbitros_total_var = tk.StringVar(value="Total de árbitros listados: 0")
-        ttk.Label(
-            container,
-            textvariable=self._arbitros_total_var,
-            foreground=self.colors["tree_head_fg"],
-        ).pack(anchor="w", pady=(0, 8))
+        self._arbitragem_tvs = {}
+        self._arbitragem_headings = {}
+        self._arbitragem_iid_maps = {}
+        self._arbitragem_total_vars = {}
+        self._arbitragem_rows = {}
+        self._arbitragem_sort_cols = {}
+        self._arbitragem_sort_reverse = {}
+        self._arbitros_jogos = list(jogos)
 
-        tabela_wrap = ttk.Frame(container)
-        tabela_wrap.pack(fill="both", expand=True)
+        abas = ttk.Notebook(container)
+        abas.pack(fill="both", expand=True)
+        for papel, spec in self._arbitragem_papeis().items():
+            self._criar_subaba_arbitragem(abas, papel, spec)
+        self._criar_subaba_combinacoes_arbitragem(abas)
+
+        self._arbitros_local_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
+        self._arbitros_ano_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
+        self._aplicar_filtros_arbitros()
+
+    def _arbitragem_papeis(self):
+        return {
+            "arbitro": {
+                "aba": "Árbitros",
+                "coluna_nome": "Árbitro",
+                "total": "árbitros listados",
+                "descricao": "árbitro principal",
+            },
+            "auxiliar": {
+                "aba": "Auxiliares",
+                "coluna_nome": "Auxiliar",
+                "total": "auxiliares listados",
+                "descricao": "auxiliar",
+            },
+            "var": {
+                "aba": "VARs",
+                "coluna_nome": "VAR",
+                "total": "VARs listados",
+                "descricao": "VAR",
+            },
+        }
+
+    def _criar_subaba_arbitragem(self, notebook, papel, spec):
+        frame = ttk.Frame(notebook, padding=8)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(2, weight=1)
+        notebook.add(frame, text=spec["aba"])
+
+        ttk.Label(
+            frame,
+            text=f"Lista de {spec['total']} em jogos do Vasco.",
+            foreground=self.colors["tree_head_fg"],
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        total_var = tk.StringVar(value=f"Total de {spec['total']}: 0")
+        ttk.Label(frame, textvariable=total_var, foreground=self.colors["tree_head_fg"]).grid(
+            row=1,
+            column=0,
+            sticky="w",
+            pady=(0, 8),
+        )
+
+        tabela_wrap = ttk.Frame(frame)
+        tabela_wrap.grid(row=2, column=0, sticky="nsew")
+        tabela_wrap.columnconfigure(0, weight=1)
+        tabela_wrap.rowconfigure(0, weight=1)
+
         cols = (
-            "arbitro",
+            "nome",
             "jogos",
             "primeiro_jogo",
             "ultimo_jogo",
@@ -12075,9 +14160,8 @@ class App:
             "gols_contra",
             "saldo",
         )
-        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=12)
         headings = {
-            "arbitro": "Árbitro",
+            "nome": spec["coluna_nome"],
             "jogos": "Jogos",
             "primeiro_jogo": "Primeiro Jogo",
             "ultimo_jogo": "Último Jogo",
@@ -12089,7 +14173,7 @@ class App:
             "saldo": "Saldo",
         }
         widths = {
-            "arbitro": 220,
+            "nome": 220,
             "jogos": 60,
             "primeiro_jogo": 260,
             "ultimo_jogo": 260,
@@ -12100,27 +14184,143 @@ class App:
             "gols_contra": 110,
             "saldo": 70,
         }
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=12)
         for col in cols:
-            tv.heading(col, text=headings[col], command=lambda c=col: self._ordenar_coluna_arbitros(c))
-            tv.column(col, width=widths[col], anchor="center" if col != "arbitro" else "w", stretch=True)
+            tv.heading(col, text=headings[col], command=lambda c=col, p=papel: self._ordenar_coluna_arbitragem(p, c))
+            tv.column(col, width=widths[col], anchor="center" if col != "nome" else "w", stretch=True)
 
         sy = ttk.Scrollbar(tabela_wrap, orient="vertical", command=tv.yview)
-        sx = ttk.Scrollbar(container, orient="horizontal", command=tv.xview)
+        sx = ttk.Scrollbar(frame, orient="horizontal", command=tv.xview)
         tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
-        tv.pack(side="left", fill="both", expand=True)
-        sy.pack(side="right", fill="y")
-        sx.pack(fill="x", pady=(6, 0))
+        tv.grid(row=0, column=0, sticky="nsew")
+        sy.grid(row=0, column=1, sticky="ns")
+        sx.grid(row=3, column=0, sticky="ew", pady=(6, 0))
         tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.bind("<Double-1>", lambda event, p=papel: self._abrir_modal_arbitragem_evento(event, p))
 
-        self._tv_arbitros = tv
-        self._arbitros_headings = headings
-        self._arbitros_jogos = list(jogos)
-        self._arbitros_sort_col = "jogos"
-        self._arbitros_sort_reverse = True
-        self._arbitros_rows = []
-        self._arbitros_local_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
-        self._arbitros_ano_var.trace_add("write", lambda *_: self._aplicar_filtros_arbitros())
-        self._aplicar_filtros_arbitros()
+        self._arbitragem_tvs[papel] = tv
+        self._arbitragem_headings[papel] = headings
+        self._arbitragem_iid_maps[papel] = {}
+        self._arbitragem_total_vars[papel] = total_var
+        self._arbitragem_rows[papel] = []
+        self._arbitragem_sort_cols[papel] = "jogos"
+        self._arbitragem_sort_reverse[papel] = True
+
+    def _criar_subaba_combinacoes_arbitragem(self, notebook):
+        frame = ttk.Frame(notebook, padding=8)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(2, weight=1)
+        notebook.add(frame, text="Combinações")
+
+        ttk.Label(
+            frame,
+            text="Combinações de árbitro, auxiliares e VAR em jogos do Vasco.",
+            foreground=self.colors["tree_head_fg"],
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+
+        self._arbitragem_combinacoes_total_var = tk.StringVar(value="Total de combinações listadas: 0")
+        ttk.Label(
+            frame,
+            textvariable=self._arbitragem_combinacoes_total_var,
+            foreground=self.colors["tree_head_fg"],
+        ).grid(row=1, column=0, sticky="w", pady=(0, 8))
+
+        tabela_wrap = ttk.Frame(frame)
+        tabela_wrap.grid(row=2, column=0, sticky="nsew")
+        tabela_wrap.columnconfigure(0, weight=1)
+        tabela_wrap.rowconfigure(0, weight=1)
+
+        cols = (
+            "arbitro",
+            "auxiliares",
+            "var",
+            "jogos",
+            "primeiro_jogo",
+            "ultimo_jogo",
+            "vitorias",
+            "empates",
+            "derrotas",
+            "gols_pro",
+            "gols_contra",
+            "saldo",
+        )
+        headings = {
+            "arbitro": "Árbitro",
+            "auxiliares": "Auxiliares",
+            "var": "VAR",
+            "jogos": "Jogos",
+            "primeiro_jogo": "Primeiro Jogo",
+            "ultimo_jogo": "Último Jogo",
+            "vitorias": "Vitórias",
+            "empates": "Empates",
+            "derrotas": "Derrotas",
+            "gols_pro": "Gols Feitos",
+            "gols_contra": "Gols Tomados",
+            "saldo": "Saldo",
+        }
+        widths = {
+            "arbitro": 190,
+            "auxiliares": 300,
+            "var": 180,
+            "jogos": 60,
+            "primeiro_jogo": 230,
+            "ultimo_jogo": 230,
+            "vitorias": 80,
+            "empates": 80,
+            "derrotas": 80,
+            "gols_pro": 100,
+            "gols_contra": 110,
+            "saldo": 70,
+        }
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=12)
+        for col in cols:
+            tv.heading(col, text=headings[col], command=lambda c=col: self._ordenar_coluna_combinacoes_arbitragem(c))
+            tv.column(
+                col,
+                width=widths[col],
+                anchor="center" if col not in {"arbitro", "auxiliares", "var", "primeiro_jogo", "ultimo_jogo"} else "w",
+                stretch=True,
+            )
+
+        sy = ttk.Scrollbar(tabela_wrap, orient="vertical", command=tv.yview)
+        sx = ttk.Scrollbar(frame, orient="horizontal", command=tv.xview)
+        tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+        tv.grid(row=0, column=0, sticky="nsew")
+        sy.grid(row=0, column=1, sticky="ns")
+        sx.grid(row=3, column=0, sticky="ew", pady=(6, 0))
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.bind("<Double-1>", self._abrir_modal_combinacao_arbitragem_evento)
+
+        paginacao = ttk.Frame(frame)
+        paginacao.grid(row=4, column=0, sticky="ew", pady=(8, 0))
+        paginacao.columnconfigure(1, weight=1)
+        self._arbitragem_combinacoes_pagina_anterior_btn = ttk.Button(
+            paginacao,
+            text="Anterior",
+            command=lambda: self._mudar_pagina_combinacoes_arbitragem(-1),
+        )
+        self._arbitragem_combinacoes_pagina_anterior_btn.grid(row=0, column=0, sticky="w")
+        self._arbitragem_combinacoes_paginacao_var = tk.StringVar(value="Linhas 0-0 de 0  |  Página 1/1")
+        ttk.Label(
+            paginacao,
+            textvariable=self._arbitragem_combinacoes_paginacao_var,
+            foreground=self.colors["tree_head_fg"],
+        ).grid(row=0, column=1, padx=10)
+        self._arbitragem_combinacoes_pagina_proxima_btn = ttk.Button(
+            paginacao,
+            text="Próxima",
+            command=lambda: self._mudar_pagina_combinacoes_arbitragem(1),
+        )
+        self._arbitragem_combinacoes_pagina_proxima_btn.grid(row=0, column=2, sticky="e")
+
+        self._tv_arbitragem_combinacoes = tv
+        self._arbitragem_combinacoes_headings = headings
+        self._arbitragem_combinacoes_rows = []
+        self._arbitragem_combinacoes_iid_map = {}
+        self._arbitragem_combinacoes_sort_col = "jogos"
+        self._arbitragem_combinacoes_sort_reverse = True
+        self._arbitragem_combinacoes_page = 0
+        self._arbitragem_combinacoes_page_size = 50
 
     def _aplicar_filtros_arbitros(self):
         jogos = list(getattr(self, "_arbitros_jogos", []))
@@ -12132,18 +14332,55 @@ class App:
         if ano_sel and ano_sel != "Todos":
             jogos = [j for j in jogos if str(j.get("data", "")).strip().endswith(ano_sel)]
 
+        for papel, spec in self._arbitragem_papeis().items():
+            self._arbitragem_rows[papel] = self._montar_rows_arbitragem(jogos, papel)
+            total_var = self._arbitragem_total_vars.get(papel)
+            if total_var is not None:
+                total_var.set(f"Total de {spec['total']}: {len(self._arbitragem_rows[papel])}")
+            self._render_arbitragem_ordenado(papel)
+
+        self._arbitragem_combinacoes_rows = self._montar_rows_combinacoes_arbitragem(jogos)
+        self._arbitragem_combinacoes_page = 0
+        if hasattr(self, "_arbitragem_combinacoes_total_var"):
+            self._arbitragem_combinacoes_total_var.set(
+                f"Total de combinações listadas: {len(self._arbitragem_combinacoes_rows)}"
+            )
+        self._render_combinacoes_arbitragem_ordenado()
+
+    def _nomes_arbitragem_por_papel(self, arbitragem: dict, papel: str) -> list:
+        if papel == "arbitro":
+            nomes = [arbitragem.get("arbitro", "")]
+        elif papel == "auxiliar":
+            nomes = arbitragem.get("auxiliares", [])
+            if not isinstance(nomes, list):
+                nomes = []
+        elif papel == "var":
+            nomes = [arbitragem.get("var", "")]
+        else:
+            nomes = []
+
+        normalizados = []
+        vistos = set()
+        for nome in nomes:
+            nome_limpo = _normalizar_nome_arbitragem(nome)
+            chave = _chave_nome_arbitragem(nome_limpo)
+            if not chave or chave in vistos:
+                continue
+            vistos.add(chave)
+            normalizados.append(nome_limpo)
+        return normalizados
+
+    def _montar_rows_arbitragem(self, jogos, papel: str) -> list:
         stats = defaultdict(_criar_stats_arbitro)
         for jogo in jogos:
             arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
-            arbitro = arbitragem.get("arbitro", "")
-            if not arbitro:
-                continue
-            _acumular_stats_arbitro(stats[arbitro], jogo)
+            for nome in self._nomes_arbitragem_por_papel(arbitragem, papel):
+                _acumular_stats_arbitro(stats[nome], jogo)
 
-        self._arbitros_rows = []
-        for arbitro, info in stats.items():
-            self._arbitros_rows.append({
-                "arbitro": arbitro,
+        rows = []
+        for nome, info in stats.items():
+            rows.append({
+                "nome": nome,
                 "jogos": info["jogos"],
                 "primeiro_jogo": info["primeiro_jogo_txt"],
                 "ultimo_jogo": info["ultimo_jogo_txt"],
@@ -12156,10 +14393,49 @@ class App:
                 "gols_contra": info["gols_contra"],
                 "saldo": info["gols_pro"] - info["gols_contra"],
             })
-        if hasattr(self, "_arbitros_total_var"):
-            total = len(self._arbitros_rows)
-            self._arbitros_total_var.set(f"Total de árbitros listados: {total}")
-        self._render_arbitros_ordenado()
+        return rows
+
+    def _chave_combinacao_arbitragem(self, arbitragem: dict):
+        arbitragem = _normalizar_arbitragem(arbitragem)
+        arbitro = _normalizar_nome_arbitragem(arbitragem.get("arbitro", ""))
+        auxiliares = tuple(self._nomes_arbitragem_por_papel(arbitragem, "auxiliar"))
+        var = _normalizar_nome_arbitragem(arbitragem.get("var", ""))
+        if not arbitro and not auxiliares and not var:
+            return None
+        return (arbitro, auxiliares, var)
+
+    def _montar_rows_combinacoes_arbitragem(self, jogos) -> list:
+        stats = {}
+        for jogo in jogos:
+            chave = self._chave_combinacao_arbitragem(jogo.get("arbitragem", {}))
+            if not chave:
+                continue
+            if chave not in stats:
+                stats[chave] = _criar_stats_arbitro()
+            _acumular_stats_arbitro(stats[chave], jogo)
+
+        rows = []
+        for chave, info in stats.items():
+            arbitro, auxiliares, var = chave
+            rows.append({
+                "chave": chave,
+                "arbitro": arbitro,
+                "auxiliares": list(auxiliares),
+                "auxiliares_txt": self._texto_detalhe_partida(auxiliares),
+                "var": var,
+                "jogos": info["jogos"],
+                "primeiro_jogo": info["primeiro_jogo_txt"],
+                "ultimo_jogo": info["ultimo_jogo_txt"],
+                "primeiro_jogo_data": info["primeiro_jogo_data"],
+                "ultimo_jogo_data": info["ultimo_jogo_data"],
+                "vitorias": info["vitorias"],
+                "empates": info["empates"],
+                "derrotas": info["derrotas"],
+                "gols_pro": info["gols_pro"],
+                "gols_contra": info["gols_contra"],
+                "saldo": info["gols_pro"] - info["gols_contra"],
+            })
+        return rows
 
     def _chave_ordenacao_arbitros(self, row, coluna):
         if coluna in {"jogos", "vitorias", "empates", "derrotas", "gols_pro", "gols_contra", "saldo"}:
@@ -12170,33 +14446,41 @@ class App:
             return row.get("ultimo_jogo_data") or datetime.min
         return str(row.get(coluna, "")).casefold()
 
-    def _render_arbitros_ordenado(self):
-        tv = getattr(self, "_tv_arbitros", None)
+    def _chave_ordenacao_combinacoes_arbitragem(self, row, coluna):
+        if coluna == "auxiliares":
+            return str(row.get("auxiliares_txt", "")).casefold()
+        if coluna in {"arbitro", "var"}:
+            return str(row.get(coluna, "")).casefold()
+        return self._chave_ordenacao_arbitros(row, coluna)
+
+    def _render_arbitragem_ordenado(self, papel: str):
+        tv = getattr(self, "_arbitragem_tvs", {}).get(papel)
         if not tv:
             return
-        headings = getattr(self, "_arbitros_headings", {})
-        sort_col = getattr(self, "_arbitros_sort_col", "")
-        reverse = bool(getattr(self, "_arbitros_sort_reverse", False))
+        headings = getattr(self, "_arbitragem_headings", {}).get(papel, {})
+        sort_col = getattr(self, "_arbitragem_sort_cols", {}).get(papel, "jogos")
+        reverse = bool(getattr(self, "_arbitragem_sort_reverse", {}).get(papel, False))
         for col, titulo in headings.items():
             indicador = ""
             if col == sort_col:
                 indicador = " ▼" if reverse else " ▲"
-            tv.heading(col, text=f"{titulo}{indicador}", command=lambda c=col: self._ordenar_coluna_arbitros(c))
+            tv.heading(col, text=f"{titulo}{indicador}", command=lambda c=col, p=papel: self._ordenar_coluna_arbitragem(p, c))
         for iid in tv.get_children():
             tv.delete(iid)
+        self._arbitragem_iid_maps[papel] = {}
 
         rows = sorted(
-            self._arbitros_rows,
-            key=lambda r: (self._chave_ordenacao_arbitros(r, self._arbitros_sort_col), str(r.get("arbitro", "")).casefold()),
-            reverse=self._arbitros_sort_reverse,
+            self._arbitragem_rows.get(papel, []),
+            key=lambda r: (self._chave_ordenacao_arbitros(r, sort_col), str(r.get("nome", "")).casefold()),
+            reverse=reverse,
         )
         for idx, row in enumerate(rows, start=1):
             tags = ("odd",) if idx % 2 else ()
-            tv.insert(
+            iid = tv.insert(
                 "",
                 "end",
                 values=(
-                    row["arbitro"],
+                    row["nome"],
                     row["jogos"],
                     row["primeiro_jogo"],
                     row["ultimo_jogo"],
@@ -12209,16 +14493,343 @@ class App:
                 ),
                 tags=tags,
             )
+            self._arbitragem_iid_maps[papel][iid] = row
 
-    def _ordenar_coluna_arbitros(self, coluna):
-        if not getattr(self, "_arbitros_rows", None):
+    def _ordenar_coluna_arbitragem(self, papel: str, coluna: str):
+        if not getattr(self, "_arbitragem_rows", {}).get(papel):
             return
-        if getattr(self, "_arbitros_sort_col", None) == coluna:
-            self._arbitros_sort_reverse = not self._arbitros_sort_reverse
+        if self._arbitragem_sort_cols.get(papel) == coluna:
+            self._arbitragem_sort_reverse[papel] = not self._arbitragem_sort_reverse.get(papel, False)
         else:
-            self._arbitros_sort_col = coluna
-            self._arbitros_sort_reverse = False
-        self._render_arbitros_ordenado()
+            self._arbitragem_sort_cols[papel] = coluna
+            self._arbitragem_sort_reverse[papel] = False
+        self._render_arbitragem_ordenado(papel)
+
+    def _render_combinacoes_arbitragem_ordenado(self):
+        tv = getattr(self, "_tv_arbitragem_combinacoes", None)
+        if not tv:
+            return
+        headings = getattr(self, "_arbitragem_combinacoes_headings", {})
+        sort_col = getattr(self, "_arbitragem_combinacoes_sort_col", "jogos")
+        reverse = bool(getattr(self, "_arbitragem_combinacoes_sort_reverse", False))
+        for col, titulo in headings.items():
+            indicador = ""
+            if col == sort_col:
+                indicador = " ▼" if reverse else " ▲"
+            tv.heading(col, text=f"{titulo}{indicador}", command=lambda c=col: self._ordenar_coluna_combinacoes_arbitragem(c))
+        for iid in tv.get_children():
+            tv.delete(iid)
+        self._arbitragem_combinacoes_iid_map = {}
+
+        rows = sorted(
+            getattr(self, "_arbitragem_combinacoes_rows", []),
+            key=lambda r: (
+                self._chave_ordenacao_combinacoes_arbitragem(r, sort_col),
+                str(r.get("arbitro", "")).casefold(),
+                str(r.get("auxiliares_txt", "")).casefold(),
+                str(r.get("var", "")).casefold(),
+            ),
+            reverse=reverse,
+        )
+        total = len(rows)
+        page_size = max(1, int(getattr(self, "_arbitragem_combinacoes_page_size", 50)))
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page_idx = int(getattr(self, "_arbitragem_combinacoes_page", 0))
+        page_idx = max(0, min(page_idx, total_pages - 1))
+        self._arbitragem_combinacoes_page = page_idx
+        ini = page_idx * page_size
+        fim = min(ini + page_size, total)
+        rows_pagina = rows[ini:fim]
+
+        self._atualizar_paginacao_combinacoes_arbitragem(total, ini, fim, page_idx, total_pages)
+
+        for idx, row in enumerate(rows_pagina, start=1):
+            tags = ("odd",) if idx % 2 else ()
+            iid = tv.insert(
+                "",
+                "end",
+                values=(
+                    self._texto_detalhe_partida(row.get("arbitro", "")),
+                    row.get("auxiliares_txt", "—"),
+                    self._texto_detalhe_partida(row.get("var", "")),
+                    row["jogos"],
+                    row["primeiro_jogo"],
+                    row["ultimo_jogo"],
+                    row["vitorias"],
+                    row["empates"],
+                    row["derrotas"],
+                    row["gols_pro"],
+                    row["gols_contra"],
+                    row["saldo"],
+                ),
+                tags=tags,
+            )
+            self._arbitragem_combinacoes_iid_map[iid] = row
+
+    def _atualizar_paginacao_combinacoes_arbitragem(self, total: int, ini: int, fim: int, page_idx: int, total_pages: int):
+        info_var = getattr(self, "_arbitragem_combinacoes_paginacao_var", None)
+        if info_var is not None:
+            if total:
+                info_var.set(f"Linhas {ini + 1}-{fim} de {total}  |  Página {page_idx + 1}/{total_pages}")
+            else:
+                info_var.set("Linhas 0-0 de 0  |  Página 1/1")
+
+        anterior = getattr(self, "_arbitragem_combinacoes_pagina_anterior_btn", None)
+        if anterior is not None:
+            anterior.configure(state=("normal" if page_idx > 0 else "disabled"))
+
+        proxima = getattr(self, "_arbitragem_combinacoes_pagina_proxima_btn", None)
+        if proxima is not None:
+            proxima.configure(state=("normal" if page_idx < total_pages - 1 else "disabled"))
+
+    def _mudar_pagina_combinacoes_arbitragem(self, delta: int):
+        total = len(getattr(self, "_arbitragem_combinacoes_rows", []))
+        page_size = max(1, int(getattr(self, "_arbitragem_combinacoes_page_size", 50)))
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        page_idx = int(getattr(self, "_arbitragem_combinacoes_page", 0))
+        novo_idx = max(0, min(total_pages - 1, page_idx + int(delta)))
+        if novo_idx == page_idx:
+            return
+        self._arbitragem_combinacoes_page = novo_idx
+        self._render_combinacoes_arbitragem_ordenado()
+
+    def _ordenar_coluna_combinacoes_arbitragem(self, coluna: str):
+        if not getattr(self, "_arbitragem_combinacoes_rows", None):
+            return
+        if getattr(self, "_arbitragem_combinacoes_sort_col", None) == coluna:
+            self._arbitragem_combinacoes_sort_reverse = not bool(getattr(self, "_arbitragem_combinacoes_sort_reverse", False))
+        else:
+            self._arbitragem_combinacoes_sort_col = coluna
+            self._arbitragem_combinacoes_sort_reverse = False
+        self._arbitragem_combinacoes_page = 0
+        self._render_combinacoes_arbitragem_ordenado()
+
+    def _partidas_da_arbitragem(self, nome_oficial: str, papel: str) -> list:
+        alvo = _chave_nome_arbitragem(nome_oficial)
+        if not alvo:
+            return []
+        jogos = list(getattr(self, "_arbitros_jogos", [])) or carregar_dados_jogos()
+        partidas = []
+        for idx, jogo in enumerate(jogos):
+            arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+            chaves_papel = {_chave_nome_arbitragem(nome) for nome in self._nomes_arbitragem_por_papel(arbitragem, papel)}
+            if alvo not in chaves_papel:
+                continue
+            data_ord = _parse_data_ptbr_safe(str(jogo.get("data", "")).strip()) or datetime.min
+            partidas.append((idx, jogo, data_ord))
+        return sorted(
+            partidas,
+            key=lambda item: (item[2], str(item[1].get("adversario", "")).casefold()),
+            reverse=True,
+        )
+
+    def _partidas_da_combinacao_arbitragem(self, chave) -> list:
+        if not chave:
+            return []
+        jogos = list(getattr(self, "_arbitros_jogos", [])) or carregar_dados_jogos()
+        partidas = []
+        for idx, jogo in enumerate(jogos):
+            chave_jogo = self._chave_combinacao_arbitragem(jogo.get("arbitragem", {}))
+            if chave_jogo != chave:
+                continue
+            data_ord = _parse_data_ptbr_safe(str(jogo.get("data", "")).strip()) or datetime.min
+            partidas.append((idx, jogo, data_ord))
+        return sorted(
+            partidas,
+            key=lambda item: (item[2], str(item[1].get("adversario", "")).casefold()),
+            reverse=True,
+        )
+
+    def _abrir_modal_arbitragem_evento(self, event=None, papel: str = "arbitro"):
+        tv = event.widget if event is not None else getattr(self, "_arbitragem_tvs", {}).get(papel)
+        if not tv:
+            return
+        iid = tv.identify_row(event.y) if event is not None else (tv.selection()[0] if tv.selection() else "")
+        if not iid:
+            return
+        tv.selection_set(iid)
+        tv.focus(iid)
+        row = getattr(self, "_arbitragem_iid_maps", {}).get(papel, {}).get(iid)
+        if not row:
+            values = tv.item(iid, "values")
+            row = {"nome": values[0] if values else ""}
+        self._abrir_modal_detalhes_arbitragem(row.get("nome", ""), papel)
+
+    def _abrir_modal_combinacao_arbitragem_evento(self, event=None):
+        tv = event.widget if event is not None else getattr(self, "_tv_arbitragem_combinacoes", None)
+        if not tv:
+            return
+        iid = tv.identify_row(event.y) if event is not None else (tv.selection()[0] if tv.selection() else "")
+        if not iid:
+            return
+        tv.selection_set(iid)
+        tv.focus(iid)
+        row = getattr(self, "_arbitragem_combinacoes_iid_map", {}).get(iid)
+        if not row:
+            return
+        self._abrir_modal_detalhes_combinacao_arbitragem(row)
+
+    def _abrir_modal_detalhes_combinacao_arbitragem(self, row: dict):
+        chave = row.get("chave")
+        partidas = self._partidas_da_combinacao_arbitragem(chave)
+        if not partidas:
+            messagebox.showinfo("Combinação", "Não há partidas registradas para esta combinação.")
+            return
+
+        titulo = "Combinação de arbitragem"
+        detalhes = (
+            f"Árbitro: {self._texto_detalhe_partida(row.get('arbitro', ''))} | "
+            f"Auxiliares: {row.get('auxiliares_txt', '—')} | "
+            f"VAR: {self._texto_detalhe_partida(row.get('var', ''))}"
+        )
+        self._abrir_modal_lista_jogos_arbitragem(titulo, detalhes, partidas)
+
+    def _abrir_modal_detalhes_arbitragem(self, nome_oficial: str, papel: str):
+        specs = self._arbitragem_papeis()
+        spec = specs.get(papel, specs["arbitro"])
+        nome = _normalizar_nome_arbitragem(nome_oficial)
+        partidas = self._partidas_da_arbitragem(nome, papel)
+        if not nome or not partidas:
+            messagebox.showinfo(spec["coluna_nome"], f"Não há partidas registradas para este {spec['descricao']}.")
+            return
+
+        stats = _criar_stats_arbitro()
+        for _idx, jogo, _data_ord in partidas:
+            _acumular_stats_arbitro(stats, jogo)
+        aproveitamento = _calcular_aproveitamento_stats(stats)
+
+        titulo = f"Jogos de {nome} como {spec['descricao']}"
+        detalhes = (
+            f"{stats['jogos']} jogos | V/E/D {stats['vitorias']}/{stats['empates']}/{stats['derrotas']} | "
+            f"Gols {stats['gols_pro']} x {stats['gols_contra']} | Aproveitamento {aproveitamento:.1f}%"
+        )
+        self._abrir_modal_lista_jogos_arbitragem(titulo, detalhes, partidas)
+
+    def _abrir_modal_lista_jogos_arbitragem(self, titulo: str, subtitulo: str, partidas: list):
+        if not partidas:
+            messagebox.showinfo("Arbitragem", "Não há partidas registradas para este recorte.")
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title(titulo)
+        top.transient(self.root)
+        top.lift()
+        top.focus_force()
+        top.minsize(1280, 640)
+        top.configure(bg=self.colors["bg"])
+
+        container = ttk.Frame(top, padding=12)
+        container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+        container.rowconfigure(2, weight=1)
+
+        ttk.Label(
+            container,
+            text=titulo,
+            font=("Segoe UI", 15, "bold"),
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            container,
+            text=subtitulo,
+            foreground=self.colors["tree_head_fg"],
+        ).grid(row=1, column=0, sticky="w", pady=(4, 10))
+
+        tabela_wrap = ttk.Frame(container)
+        tabela_wrap.grid(row=2, column=0, sticky="nsew")
+        tabela_wrap.columnconfigure(0, weight=1)
+        tabela_wrap.rowconfigure(0, weight=1)
+
+        cols = (
+            "data",
+            "local",
+            "competicao",
+            "adversario",
+            "resultado",
+            "placar",
+            "arbitro",
+            "auxiliares",
+            "var",
+            "estadio",
+            "horario",
+            "tecnico",
+        )
+        headings = {
+            "data": "Data",
+            "local": "Local",
+            "competicao": "Competição",
+            "adversario": "Adversário",
+            "resultado": "Resultado",
+            "placar": "Placar",
+            "arbitro": "Árbitro",
+            "auxiliares": "Auxiliares",
+            "var": "VAR",
+            "estadio": "Estádio",
+            "horario": "Horário",
+            "tecnico": "Técnico",
+        }
+        widths = {
+            "data": 90,
+            "local": 70,
+            "competicao": 170,
+            "adversario": 160,
+            "resultado": 110,
+            "placar": 230,
+            "arbitro": 190,
+            "auxiliares": 300,
+            "var": 190,
+            "estadio": 170,
+            "horario": 80,
+            "tecnico": 160,
+        }
+        tv = ttk.Treeview(tabela_wrap, columns=cols, show="headings", height=18, selectmode="extended")
+        for col in cols:
+            tv.heading(col, text=headings[col])
+            tv.column(col, width=widths[col], anchor="w", stretch=True)
+        tv.tag_configure("odd", background=self.colors["row_alt_bg"])
+        tv.grid(row=0, column=0, sticky="nsew")
+        sy = ttk.Scrollbar(tabela_wrap, orient="vertical", command=tv.yview)
+        sx = ttk.Scrollbar(container, orient="horizontal", command=tv.xview)
+        sy.grid(row=0, column=1, sticky="ns")
+        sx.grid(row=3, column=0, sticky="ew", pady=(6, 0))
+        tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+
+        item_to_idx = {}
+        for i, (idx_global, jogo, _data_ord) in enumerate(partidas, start=1):
+            arbitragem = _normalizar_arbitragem(jogo.get("arbitragem", {}))
+            local_raw = str(jogo.get("local", "") or "").strip().casefold()
+            local_txt = "Fora" if local_raw == "fora" else "Casa"
+            iid = tv.insert(
+                "",
+                "end",
+                values=(
+                    str(jogo.get("data", "")).strip(),
+                    local_txt,
+                    str(jogo.get("competicao", "")).strip() or "—",
+                    str(jogo.get("adversario", "")).strip() or "—",
+                    self._formatar_resultado_com_bolinha(self._resultado_detalhe_partida(jogo)),
+                    self._placar_detalhe_partida(jogo),
+                    self._texto_detalhe_partida(arbitragem.get("arbitro", "")),
+                    self._texto_detalhe_partida(arbitragem.get("auxiliares", [])),
+                    self._texto_detalhe_partida(arbitragem.get("var", "")),
+                    str(jogo.get("estadio", "")).strip() or "—",
+                    str(jogo.get("horario", "")).strip() or "—",
+                    str(jogo.get("tecnico", "")).strip() or "—",
+                ),
+                tags=("odd",) if i % 2 else (),
+            )
+            item_to_idx[iid] = idx_global
+
+        tv._item_to_idx = item_to_idx
+        tv.bind("<Double-1>", self._on_tree_double_click)
+        tv.bind("<Button-3>", self._abrir_menu_contexto_temporadas)
+        tv.bind("<Control-Button-1>", self._abrir_menu_contexto_temporadas)
+
+        botoes = ttk.Frame(container)
+        botoes.grid(row=4, column=0, sticky="e", pady=(10, 0))
+        ttk.Button(botoes, text="Fechar", command=top.destroy).pack(side="left")
+
+        top.update_idletasks()
+        self._centralizar_modal_no_app(top)
 
     # --------------------- Títulos ---------------------
     def _carregar_titulos(self):
