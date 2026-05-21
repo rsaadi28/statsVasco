@@ -16,8 +16,12 @@
     {
       "nome": "Carlos Cuesta",
       "gols": 1,
-      "minutos": [48],
-      "periodos": ["1T"],
+      "minutos": [
+        48
+      ],
+      "periodos": [
+        "1T"
+      ],
       "assistencia": "Nuno Moreira"
     }
   ],
@@ -25,22 +29,34 @@
     {
       "nome": "Mateo Gamarra",
       "gols": 1,
-      "minutos": [21],
-      "periodos": ["2T"],
+      "minutos": [
+        21
+      ],
+      "periodos": [
+        "2T"
+      ],
       "clube": "Olimpia"
     },
     {
       "nome": "Hugo Sandoval",
       "gols": 1,
-      "minutos": [39],
-      "periodos": ["2T"],
+      "minutos": [
+        39
+      ],
+      "periodos": [
+        "2T"
+      ],
       "clube": "Olimpia"
     },
     {
       "nome": "Sebastián Ferreira",
       "gols": 1,
-      "minutos": [49],
-      "periodos": ["2T"],
+      "minutos": [
+        49
+      ],
+      "periodos": [
+        "2T"
+      ],
       "clube": "Olimpia"
     }
   ],
@@ -178,5 +194,206 @@
     "suspensos": [],
     "servindo_selecao": []
   },
-  "observacao": "Olimpia 3 x 1 Vasco, no Defensores del Chaco, pela 5ª rodada do Grupo G da Copa Sul-Americana 2026; o Vasco caiu para a 2ª colocação do grupo, com 7 pontos. O Vasco atuou com time misto/reserva: fontes pré-jogo informaram que a maioria dos titulares ficou no Rio com Renato Gaúcho, que cumpria o terceiro jogo de suspensão aplicada pela Conmebol por não viajar para a estreia contra o Barracas Central. Gols: Carlos Cuesta aos 48'/1T, de cabeça após escanteio de Nuno Moreira; Mateo Gamarra aos 21'/2T; Hugo Sandoval aos 39'/2T; Sebastián Ferreira aos 49'/2T. Público e renda não localizados em fonte confiável. Arbitragem e reclamações: Wilmar Roldán foi alvo de forte contestação vascaína. Bruno Lazaroni afirmou em coletiva que faltou critério e que a falta que originou o segundo gol do Olimpia não foi marcada para o Vasco durante a partida, dizendo que isso prejudicou a equipe; ele, porém, reconheceu como correta a expulsão de João Vitor. Lances de rigor/reclamação registrados por fontes de tempo real e ficha: aos 16'/1T, Léo Jardim demorou mais de 8 segundos para repor a bola e a arbitragem marcou escanteio para o Olimpia; Marcelo Salles foi expulso aos 47'/1T por reclamação; João Vitor foi expulso aos 26-27'/2T por entrada dura/solada em Franco Alfonso; Hugo Moura recebeu amarelo por reclamação aos 36'/2T; Léo Jardim recebeu amarelo aos 39'/2T; Lucas Freitas recebeu amarelo aos 46'/2T; Tche Tche também foi advertido. A jogada do segundo gol nasceu de falta assinalada contra Avellar em Bryan Bentaberry, lance que gerou reclamação por suposta diferença de critério. Também houve percepção de torcedores de perseguição/retaliação da arbitragem da Conmebol contra o Vasco por usar reservas na competição, inclusive por cartões mais rigorosos ao Vasco e por decisões pequenas como controle de reposição/bola parada; essa hipótese foi registrada como percepção/reclamação, sem comprovação documental encontrada. A ficha da NetVasco registrou apenas um amarelo para o Olimpia, Alex Franco, enquanto bases de estatística apontaram dois amarelos do Olimpia e quatro do Vasco. Reservas completos normalizados pela base local: Alison De Nardi Araujo como Alison; Bruno André Azevedo Ribeiro como Bruno André; Lukas Zuccarello como Lukas Zucarello; João Pedro como JP; Samuel como Samuel Jesus; Riquelme Avellar como Avellar; João Vitor Silva/Mutano como João Vitor; Barros/Cauan Barros e outros titulares poupados ficaram como não relacionados. Cristian Aguirre (COL), David Rodríguez (COL), Wilmar Roldán (COL), Defensores del Chaco e Bruno Lopes não estavam nas listas auxiliares locais antes da importação e devem ser cadastrados/foram preparados para cadastro."
+  "observacao": "Olimpia 3 x 1 Vasco, no Defensores del Chaco, pela 5ª rodada do Grupo G da Copa Sul-Americana 2026; o Vasco caiu para a 2ª colocação do grupo, com 7 pontos. O Vasco atuou com time misto/reserva: fontes pré-jogo informaram que a maioria dos titulares ficou no Rio com Renato Gaúcho, que cumpria o terceiro jogo de suspensão aplicada pela Conmebol por não viajar para a estreia contra o Barracas Central. Gols: Carlos Cuesta aos 48'/1T, de cabeça após escanteio de Nuno Moreira; Mateo Gamarra aos 21'/2T; Hugo Sandoval aos 39'/2T; Sebastián Ferreira aos 49'/2T. Público e renda não localizados em fonte confiável. Arbitragem e reclamações: Wilmar Roldán foi alvo de forte contestação vascaína. Bruno Lazaroni afirmou em coletiva que faltou critério e que a falta que originou o segundo gol do Olimpia não foi marcada para o Vasco durante a partida, dizendo que isso prejudicou a equipe; ele, porém, reconheceu como correta a expulsão de João Vitor. Lances de rigor/reclamação registrados por fontes de tempo real e ficha: aos 16'/1T, Léo Jardim demorou mais de 8 segundos para repor a bola e a arbitragem marcou escanteio para o Olimpia; Marcelo Salles foi expulso aos 47'/1T por reclamação; João Vitor foi expulso aos 26-27'/2T por entrada dura/solada em Franco Alfonso; Hugo Moura recebeu amarelo por reclamação aos 36'/2T; Léo Jardim recebeu amarelo aos 39'/2T; Lucas Freitas recebeu amarelo aos 46'/2T; Tche Tche também foi advertido. A jogada do segundo gol nasceu de falta assinalada contra Avellar em Bryan Bentaberry, lance que gerou reclamação por suposta diferença de critério. Também houve percepção de torcedores de perseguição/retaliação da arbitragem da Conmebol contra o Vasco por usar reservas na competição, inclusive por cartões mais rigorosos ao Vasco e por decisões pequenas como controle de reposição/bola parada; essa hipótese foi registrada como percepção/reclamação, sem comprovação documental encontrada. A ficha da NetVasco registrou apenas um amarelo para o Olimpia, Alex Franco, enquanto bases de estatística apontaram dois amarelos do Olimpia e quatro do Vasco. Reservas completos normalizados pela base local: Alison De Nardi Araujo como Alison; Bruno André Azevedo Ribeiro como Bruno André; Lukas Zuccarello como Lukas Zucarello; João Pedro como JP; Samuel como Samuel Jesus; Riquelme Avellar como Avellar; João Vitor Silva/Mutano como João Vitor; Barros/Cauan Barros e outros titulares poupados ficaram como não relacionados. Cristian Aguirre (COL), David Rodríguez (COL), Wilmar Roldán (COL), Defensores del Chaco e Bruno Lopes não estavam nas listas auxiliares locais antes da importação e devem ser cadastrados/foram preparados para cadastro. Scouts do Vasco atualizados com base na tabela de estatísticas do SuperVasco (coletivo e jogadores: nota, minutos, gols, assistências, passes totais e certos) e em 365Scores para complementos coletivos como xG, cruzamentos, lançamentos, duelos, interceptações e desarmes; passes errados e finalizações fora foram calculados a partir dos totais da própria fonte.",
+  "estatisticas_vasco": {
+    "posse_bola": 24,
+    "passes_certos": 123,
+    "passes_errados": 65,
+    "passes_tentados": 188,
+    "precisao_passes": 65,
+    "finalizacoes": 6,
+    "finalizacoes_no_gol": 2,
+    "finalizacoes_fora": 3,
+    "finalizacoes_bloqueadas": 1,
+    "escanteios": 3,
+    "impedimentos": 0,
+    "faltas_cometidas": 5,
+    "defesas": 7,
+    "xg": 0.46,
+    "faltas_recebidas": 3,
+    "desarmes": 7,
+    "interceptacoes": 4,
+    "duelos_ganhos": 40,
+    "duelos_aereos_ganhos": 21,
+    "cruzamentos_certos": 4,
+    "cruzamentos_errados": 5,
+    "cruzamentos_tentados": 9,
+    "lancamentos_certos": 15,
+    "lancamentos_errados": 35,
+    "lancamentos_tentados": 50
+  },
+  "estatisticas_jogadores_vasco": [
+    {
+      "nome": "Léo Jardim",
+      "nota": 7.2,
+      "minutos": 94,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 27,
+      "passes_certos": 4,
+      "passes_errados": 23,
+      "precisao_passes": 14.8
+    },
+    {
+      "nome": "João Vitor",
+      "nota": 6.0,
+      "minutos": 72,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 11,
+      "passes_certos": 7,
+      "passes_errados": 4,
+      "precisao_passes": 63.6
+    },
+    {
+      "nome": "Carlos Cuesta",
+      "nota": 7.3,
+      "minutos": 94,
+      "gols": 1,
+      "assistencias": 0,
+      "passes_tentados": 11,
+      "passes_certos": 5,
+      "passes_errados": 6,
+      "precisao_passes": 45.5
+    },
+    {
+      "nome": "Lucas Freitas",
+      "nota": 6.9,
+      "minutos": 94,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 10,
+      "passes_certos": 7,
+      "passes_errados": 3,
+      "precisao_passes": 70.0
+    },
+    {
+      "nome": "Avellar",
+      "nota": 6.3,
+      "minutos": 85,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 15,
+      "passes_certos": 13,
+      "passes_errados": 2,
+      "precisao_passes": 86.7
+    },
+    {
+      "nome": "Tche Tche",
+      "nota": 6.5,
+      "minutos": 94,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 13,
+      "passes_certos": 12,
+      "passes_errados": 1,
+      "precisao_passes": 92.3
+    },
+    {
+      "nome": "Hugo Moura",
+      "nota": 6.9,
+      "minutos": 94,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 17,
+      "passes_certos": 12,
+      "passes_errados": 5,
+      "precisao_passes": 70.6
+    },
+    {
+      "nome": "Ramon Rique",
+      "nota": 7.0,
+      "minutos": 69,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 18,
+      "passes_certos": 17,
+      "passes_errados": 1,
+      "precisao_passes": 94.4
+    },
+    {
+      "nome": "Marino",
+      "nota": 6.6,
+      "minutos": 78,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 11,
+      "passes_certos": 7,
+      "passes_errados": 4,
+      "precisao_passes": 63.6
+    },
+    {
+      "nome": "David",
+      "nota": 6.3,
+      "minutos": 69,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 19,
+      "passes_certos": 12,
+      "passes_errados": 7,
+      "precisao_passes": 63.2
+    },
+    {
+      "nome": "Nuno Moreira",
+      "nota": 7.0,
+      "minutos": 69,
+      "gols": 0,
+      "assistencias": 1,
+      "passes_tentados": 25,
+      "passes_certos": 18,
+      "passes_errados": 7,
+      "precisao_passes": 72.0
+    },
+    {
+      "nome": "Walace Falcão",
+      "nota": 6.3,
+      "minutos": 25,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 4,
+      "passes_certos": 4,
+      "passes_errados": 0,
+      "precisao_passes": 100.0
+    },
+    {
+      "nome": "Matheus França",
+      "nota": 6.3,
+      "minutos": 25,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 1,
+      "passes_certos": 1,
+      "passes_errados": 0,
+      "precisao_passes": 100.0
+    },
+    {
+      "nome": "Brenner",
+      "nota": 6.7,
+      "minutos": 25,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 4,
+      "passes_certos": 3,
+      "passes_errados": 1,
+      "precisao_passes": 75.0
+    },
+    {
+      "nome": "JP",
+      "nota": 6.3,
+      "minutos": 16,
+      "gols": 0,
+      "assistencias": 0
+    },
+    {
+      "nome": "Samuel Jesus",
+      "nota": 6.5,
+      "minutos": 9,
+      "gols": 0,
+      "assistencias": 0,
+      "passes_tentados": 2,
+      "passes_certos": 1,
+      "passes_errados": 1,
+      "precisao_passes": 50.0
+    }
+  ]
 }
