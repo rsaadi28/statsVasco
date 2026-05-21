@@ -11413,18 +11413,32 @@ class App:
         scouts_jogadores_frame = ttk.Labelframe(aba_scouts, text="Scouts dos jogadores do Vasco", padding=6)
         scouts_jogadores_frame.grid(row=1, column=0, sticky="nsew")
         scouts_jogadores_frame.columnconfigure(0, weight=1)
-        scouts_jogadores_frame.rowconfigure(0, weight=1)
+        scouts_jogadores_frame.rowconfigure(1, weight=1)
+
+        seletor_scout_jogador = ttk.Frame(scouts_jogadores_frame)
+        seletor_scout_jogador.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        seletor_scout_jogador.columnconfigure(1, weight=1)
+        ttk.Label(seletor_scout_jogador, text="Jogador:").grid(row=0, column=0, sticky="w", padx=(0, 6))
+        jogador_scout_var = tk.StringVar(value="")
+        combo_scout_jogador = ttk.Combobox(
+            seletor_scout_jogador,
+            textvariable=jogador_scout_var,
+            state="readonly",
+            width=36,
+        )
+        combo_scout_jogador.grid(row=0, column=1, sticky="w")
+
         wrap_scouts_jogadores, tv_scouts_jogadores = self._criar_tree_modal_partida(
             scouts_jogadores_frame,
-            ("jogador", "estatistica", "valor"),
-            ("Jogador", "Estatística", "Valor"),
-            (240, 280, 180),
+            ("estatistica", "valor"),
+            ("Estatística", "Valor"),
+            (420, 220),
             height=10,
         )
-        wrap_scouts_jogadores.grid(row=0, column=0, sticky="nsew")
+        wrap_scouts_jogadores.grid(row=1, column=0, sticky="nsew")
 
         stats_jogadores = jogo.get("estatisticas_jogadores_vasco")
-        linhas_scouts_jogadores = []
+        stats_jogadores_por_nome = {}
         if isinstance(stats_jogadores, list):
             for item in sorted(
                 [s for s in stats_jogadores if isinstance(s, dict)],
@@ -11433,17 +11447,40 @@ class App:
                 nome = str(item.get("nome", "") or "").strip()
                 if not nome:
                     continue
-                for chave in self._ordenar_chaves_estatisticas_jogador(item):
-                    linhas_scouts_jogadores.append((
-                        nome,
+                stats_jogadores_por_nome.setdefault(nome, item)
+
+        def _render_scout_jogador(_event=None):
+            for iid in tv_scouts_jogadores.get_children():
+                tv_scouts_jogadores.delete(iid)
+            nome = jogador_scout_var.get()
+            item = stats_jogadores_por_nome.get(nome)
+            if not item:
+                tv_scouts_jogadores.insert("", "end", values=("Sem scouts individuais importados", "—"))
+                return
+            chaves = self._ordenar_chaves_estatisticas_jogador(item)
+            if not chaves:
+                tv_scouts_jogadores.insert("", "end", values=("Sem scouts para o jogador selecionado", "—"))
+                return
+            for i, chave in enumerate(chaves):
+                tv_scouts_jogadores.insert(
+                    "",
+                    "end",
+                    values=(
                         self._formatar_nome_estatistica_jogador(chave),
                         self._formatar_valor_estatistica_jogador(chave, item.get(chave)),
-                    ))
-        if linhas_scouts_jogadores:
-            for i, row in enumerate(linhas_scouts_jogadores):
-                tv_scouts_jogadores.insert("", "end", values=row, tags=("odd",) if i % 2 else ())
+                    ),
+                    tags=("odd",) if i % 2 else (),
+                )
+
+        nomes_scouts_jogadores = sorted(stats_jogadores_por_nome, key=lambda n: n.casefold())
+        if nomes_scouts_jogadores:
+            combo_scout_jogador.configure(values=nomes_scouts_jogadores)
+            jogador_scout_var.set(nomes_scouts_jogadores[0])
+            combo_scout_jogador.bind("<<ComboboxSelected>>", _render_scout_jogador)
+            _render_scout_jogador()
         else:
-            tv_scouts_jogadores.insert("", "end", values=("Sem scouts individuais importados", "—", "—"))
+            combo_scout_jogador.configure(state="disabled")
+            tv_scouts_jogadores.insert("", "end", values=("Sem scouts individuais importados", "—"))
 
         # Aba Observações
         aba_obs = ttk.Frame(notebook, padding=10)

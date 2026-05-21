@@ -59,12 +59,232 @@ function computeArtilheiros(jogos, season) {
     );
 }
 
+const SEASON_SCOUT_TEAM_ORDER = [
+  "posse_bola",
+  "passes_certos",
+  "passes_errados",
+  "passes_tentados",
+  "precisao_passes",
+  "finalizacoes",
+  "finalizacoes_no_gol",
+  "finalizacoes_fora",
+  "finalizacoes_bloqueadas",
+  "escanteios",
+  "impedimentos",
+  "faltas_cometidas",
+  "faltas_recebidas",
+  "desarmes",
+  "interceptacoes",
+  "cruzamentos_certos",
+  "cruzamentos_errados",
+  "cruzamentos_tentados",
+  "lancamentos_certos",
+  "lancamentos_errados",
+  "lancamentos_tentados",
+  "xg",
+];
+
+const SEASON_SCOUT_PLAYER_ORDER = [
+  "minutos",
+  "nota_sofascore",
+  "nota",
+  "gols",
+  "assistencias",
+  "passes_certos",
+  "passes_errados",
+  "passes_tentados",
+  "precisao_passes",
+  "finalizacoes",
+  "finalizacoes_no_gol",
+  "chances_criadas",
+  "desarmes",
+  "interceptacoes",
+  "duelos_ganhos",
+  "duelos_aereos_ganhos",
+  "faltas_cometidas",
+  "faltas_recebidas",
+  "defesas",
+  "cruzamentos_certos",
+  "cruzamentos_errados",
+  "lancamentos_certos",
+  "lancamentos_errados",
+];
+
+const SEASON_SCOUT_LABELS = {
+  assistencias: "Assistências",
+  chances_criadas: "Chances criadas",
+  cruzamentos_certos: "Cruzamentos certos",
+  cruzamentos_errados: "Cruzamentos errados",
+  cruzamentos_tentados: "Cruzamentos tentados",
+  defesas: "Defesas",
+  desarmes: "Desarmes",
+  duelos_aereos_ganhos: "Duelos aéreos ganhos",
+  duelos_ganhos: "Duelos ganhos",
+  escanteios: "Escanteios",
+  faltas_cometidas: "Faltas cometidas",
+  faltas_recebidas: "Faltas recebidas",
+  finalizacoes: "Finalizações",
+  finalizacoes_bloqueadas: "Finalizações bloqueadas",
+  finalizacoes_fora: "Finalizações fora",
+  finalizacoes_no_gol: "Finalizações no gol",
+  gols: "Gols",
+  impedimentos: "Impedimentos",
+  interceptacoes: "Interceptações",
+  lancamentos_certos: "Lançamentos certos",
+  lancamentos_errados: "Lançamentos errados",
+  lancamentos_tentados: "Lançamentos tentados",
+  minutos: "Minutos",
+  nota: "Nota",
+  nota_sofascore: "Nota SofaScore",
+  passes_certos: "Passes certos",
+  passes_errados: "Passes errados",
+  passes_tentados: "Passes tentados",
+  posse_bola: "Posse de bola",
+  precisao_passes: "Precisão dos passes",
+  xg: "xG",
+};
+
+const SEASON_SCOUT_PERCENT_STATS = new Set([
+  "posse_bola",
+  "precisao_cruzamentos",
+  "precisao_lancamentos",
+  "precisao_passes",
+]);
+
+const SEASON_SCOUT_AVG_ONLY_STATS = new Set([
+  "posse_bola",
+  "precisao_cruzamentos",
+  "precisao_lancamentos",
+  "precisao_passes",
+  "nota",
+  "nota_sofascore",
+]);
+
+function seasonScoutLabel(key) {
+  if (SEASON_SCOUT_LABELS[key]) return SEASON_SCOUT_LABELS[key];
+  return String(key || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+function seasonScoutNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const normalized = String(value).replace("%", "").replace(/\s+/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function seasonScoutAdd(map, key, value) {
+  const n = seasonScoutNumber(value);
+  if (n === null) return false;
+  const current = map.get(key) || { total: 0, count: 0 };
+  current.total += n;
+  current.count += 1;
+  map.set(key, current);
+  return true;
+}
+
+function seasonScoutOrderedKeys(map, order) {
+  const orderIndex = new Map(order.map((key, idx) => [key, idx]));
+  return Array.from(map.keys()).sort((a, b) => {
+    const ai = orderIndex.has(a) ? orderIndex.get(a) : 9999;
+    const bi = orderIndex.has(b) ? orderIndex.get(b) : 9999;
+    return ai - bi || seasonScoutLabel(a).localeCompare(seasonScoutLabel(b), "pt-BR");
+  });
+}
+
+function seasonScoutFormat(key, value, mode) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const digits = mode === "media" || SEASON_SCOUT_PERCENT_STATS.has(key) || key === "nota" || key === "nota_sofascore" || key === "xg" ? 2 : 0;
+  const text = value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: digits,
+  });
+  return SEASON_SCOUT_PERCENT_STATS.has(key) ? `${text}%` : text;
+}
+
+function seasonScoutBuildRows(map, order) {
+  return seasonScoutOrderedKeys(map, order).map((key) => {
+    const acc = map.get(key);
+    const media = acc.count ? acc.total / acc.count : 0;
+    return {
+      key,
+      estatistica: seasonScoutLabel(key),
+      total: SEASON_SCOUT_AVG_ONLY_STATS.has(key) ? "—" : seasonScoutFormat(key, acc.total, "total"),
+      media: seasonScoutFormat(key, media, "media"),
+      jogos: acc.count,
+    };
+  });
+}
+
+function aggregateSeasonScouts(jogos) {
+  const team = new Map();
+  const players = new Map();
+  let jogosComScoutTime = 0;
+  let jogosComScoutJogadores = 0;
+
+  jogos.forEach((jogo) => {
+    const detalhe = partidaDetalhada(jogo);
+    const statsTime = detalhe?.estatisticas_vasco && typeof detalhe.estatisticas_vasco === "object"
+      ? detalhe.estatisticas_vasco
+      : null;
+    let hasTeamScout = false;
+    if (statsTime) {
+      Object.entries(statsTime).forEach(([key, value]) => {
+        if (seasonScoutAdd(team, key, value)) hasTeamScout = true;
+      });
+    }
+    if (hasTeamScout) jogosComScoutTime += 1;
+
+    const statsJogadores = Array.isArray(detalhe?.estatisticas_jogadores_vasco)
+      ? detalhe.estatisticas_jogadores_vasco
+      : [];
+    let hasPlayerScout = false;
+    statsJogadores.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      const nome = String(item.nome || "").trim();
+      if (!nome) return;
+      if (!players.has(nome)) players.set(nome, { nome, stats: new Map() });
+      const player = players.get(nome);
+      Object.entries(item).forEach(([key, value]) => {
+        if (key === "nome") return;
+        if (seasonScoutAdd(player.stats, key, value)) hasPlayerScout = true;
+      });
+    });
+    if (hasPlayerScout) jogosComScoutJogadores += 1;
+  });
+
+  const playerRows = Array.from(players.values())
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+    .flatMap((player) => seasonScoutBuildRows(player.stats, SEASON_SCOUT_PLAYER_ORDER)
+      .map((row) => ({ ...row, jogador: player.nome })));
+
+  const posse = team.get("posse_bola");
+  const finalizacoes = team.get("finalizacoes");
+  const noGol = team.get("finalizacoes_no_gol");
+
+  return {
+    teamRows: seasonScoutBuildRows(team, SEASON_SCOUT_TEAM_ORDER),
+    playerRows,
+    summary: {
+      jogos: jogos.length,
+      jogosComScoutTime,
+      jogosComScoutJogadores,
+      posseMedia: posse?.count ? posse.total / posse.count : null,
+      finalizacoesTotal: finalizacoes?.total || 0,
+      finalizacoesNoGolTotal: noGol?.total || 0,
+    },
+  };
+}
+
 // ============ Temporadas Page ============
 function Temporadas({ season, onOpenMatch }) {
   const [recorte, setRecorte] = useState("todos"); // todos | casa | fora
   const [view, setView] = useState("table"); // table | cards
   const [comp, setComp] = useState("todas");
   const [search, setSearch] = useState("");
+  const [showScouts, setShowScouts] = useState(false);
 
   const allJogos = season.jogos;
   const filtered = useMemo(() => {
@@ -94,6 +314,7 @@ function Temporadas({ season, onOpenMatch }) {
   }, [filtered]);
 
   const { saldoSeries, aproveitamentoSeries } = useMemo(() => computeRollingStats(filtered), [filtered]);
+  const scouts = useMemo(() => aggregateSeasonScouts(filtered), [filtered]);
 
   const allResults = filtered.map(j => j.resultado);
 
@@ -114,7 +335,16 @@ function Temporadas({ season, onOpenMatch }) {
   return (
     <div className="main">
       <Hero season={season} resumo={resumo} recorte={recorte} setRecorte={setRecorte} />
-      <SummaryRow resumo={resumo} saldoSeries={saldoSeries} aproveitamentoSeries={aproveitamentoSeries} allResults={allResults} allJogos={filtered} season={season} />
+      <SummaryRow
+        resumo={resumo}
+        saldoSeries={saldoSeries}
+        aproveitamentoSeries={aproveitamentoSeries}
+        allResults={allResults}
+        allJogos={filtered}
+        season={season}
+        scouts={scouts}
+        onOpenScouts={() => setShowScouts(true)}
+      />
       <Toolbar
         comps={comps}
         compCounts={compCounts}
@@ -127,6 +357,7 @@ function Temporadas({ season, onOpenMatch }) {
         ? <GamesTable jogos={displayJogos} chronologicalResults={allResults} chronologicalJogos={filtered} onOpen={onOpenMatch} />
         : <GamesCards jogos={displayJogos} onOpen={onOpenMatch} />}
       <SidePanels season={season} jogos={filtered} />
+      {showScouts && <SeasonScoutsModal scouts={scouts} onClose={() => setShowScouts(false)} />}
     </div>
   );
 }
@@ -161,7 +392,7 @@ function Hero({ season, resumo, recorte, setRecorte }) {
 }
 
 // ============ Summary Row ============
-function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, allJogos, season }) {
+function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, allJogos, season, scouts, onOpenScouts }) {
   return (
     <section className="summary">
       <div>
@@ -208,7 +439,90 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
           <div className="summary-sub" style={{margin:0}}><strong style={{color:"var(--r-v)"}}>{season.resumo.maior_invicta}j</strong> invicto · <strong style={{color:"var(--r-d)"}}>{season.resumo.maior_jejum}j</strong> sem vencer</div>
         </div>
       </div>
+      <div>
+        <div className="summary-label">Scouts do recorte</div>
+        <div className="summary-scout-grid">
+          <div>
+            <strong>{scouts.summary.jogosComScoutTime}</strong>
+            <span>jogos</span>
+          </div>
+          <div>
+            <strong>{seasonScoutFormat("posse_bola", scouts.summary.posseMedia, "media")}</strong>
+            <span>posse média</span>
+          </div>
+          <div>
+            <strong>{seasonScoutFormat("finalizacoes", scouts.summary.finalizacoesTotal, "total")}</strong>
+            <span>finalizações</span>
+          </div>
+          <div>
+            <strong>{seasonScoutFormat("finalizacoes_no_gol", scouts.summary.finalizacoesNoGolTotal, "total")}</strong>
+            <span>no gol</span>
+          </div>
+        </div>
+        <button className="summary-scout-btn" onClick={onOpenScouts}>Ver scouts</button>
+      </div>
     </section>
+  );
+}
+
+function SeasonScoutsModal({ scouts, onClose }) {
+  const [tab, setTab] = useState("vasco");
+
+  React.useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const rows = tab === "vasco" ? scouts.teamRows : scouts.playerRows;
+
+  return (
+    <div className="season-scout-modal" onClick={onClose}>
+      <div className="season-scout-dialog" onClick={(event) => event.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+        <div className="season-scout-head">
+          <span className="modal-eyebrow">Temporada · recorte atual</span>
+          <h3>Scouts consolidados</h3>
+          <p>
+            {scouts.summary.jogosComScoutTime} jogos com scout do Vasco · {scouts.summary.jogosComScoutJogadores} com scouts individuais
+          </p>
+        </div>
+        <div className="season-scout-tabs">
+          <button className={tab === "vasco" ? "active" : ""} onClick={() => setTab("vasco")}>Vasco</button>
+          <button className={tab === "jogadores" ? "active" : ""} onClick={() => setTab("jogadores")}>Jogadores</button>
+        </div>
+        {rows.length ? (
+          <div className="season-scout-table-wrap">
+            <table className="season-scout-table">
+              <thead>
+                <tr>
+                  {tab === "jogadores" && <th>Jogador</th>}
+                  <th>Estatística</th>
+                  <th>Total</th>
+                  <th>Média</th>
+                  <th>Jogos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={`${row.jogador || "vasco"}-${row.key}`}>
+                    {tab === "jogadores" && <td>{row.jogador}</td>}
+                    <td>{row.estatistica}</td>
+                    <td>{row.total}</td>
+                    <td>{row.media}</td>
+                    <td>{row.jogos}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="stats-empty">Sem scouts no recorte atual.</div>
+        )}
+      </div>
+    </div>
   );
 }
 
