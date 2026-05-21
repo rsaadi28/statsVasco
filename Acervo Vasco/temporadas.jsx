@@ -261,6 +261,8 @@ function aggregateSeasonScouts(jogos) {
       .map((row) => ({ ...row, jogador: player.nome })));
 
   const posse = team.get("posse_bola");
+  const passesCertos = team.get("passes_certos");
+  const passesTentados = team.get("passes_tentados");
   const finalizacoes = team.get("finalizacoes");
   const noGol = team.get("finalizacoes_no_gol");
 
@@ -272,6 +274,8 @@ function aggregateSeasonScouts(jogos) {
       jogosComScoutTime,
       jogosComScoutJogadores,
       posseMedia: posse?.count ? posse.total / posse.count : null,
+      passesCertosTotal: passesCertos?.total || 0,
+      passesTentadosTotal: passesTentados?.total || 0,
       finalizacoesTotal: finalizacoes?.total || 0,
       finalizacoesNoGolTotal: noGol?.total || 0,
     },
@@ -342,9 +346,8 @@ function Temporadas({ season, onOpenMatch }) {
         allResults={allResults}
         allJogos={filtered}
         season={season}
-        scouts={scouts}
-        onOpenScouts={() => setShowScouts(true)}
       />
+      <ScoutSummaryStrip scouts={scouts} onOpenScouts={() => setShowScouts(true)} />
       <Toolbar
         comps={comps}
         compCounts={compCounts}
@@ -392,7 +395,7 @@ function Hero({ season, resumo, recorte, setRecorte }) {
 }
 
 // ============ Summary Row ============
-function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, allJogos, season, scouts, onOpenScouts }) {
+function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, allJogos, season }) {
   return (
     <section className="summary">
       <div>
@@ -439,34 +442,39 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
           <div className="summary-sub" style={{margin:0}}><strong style={{color:"var(--r-v)"}}>{season.resumo.maior_invicta}j</strong> invicto · <strong style={{color:"var(--r-d)"}}>{season.resumo.maior_jejum}j</strong> sem vencer</div>
         </div>
       </div>
-      <div>
-        <div className="summary-label">Scouts do recorte</div>
-        <div className="summary-scout-grid">
-          <div>
-            <strong>{scouts.summary.jogosComScoutTime}</strong>
-            <span>jogos</span>
+    </section>
+  );
+}
+
+function ScoutSummaryStrip({ scouts, onOpenScouts }) {
+  const metrics = [
+    ["Jogos com scout", seasonScoutFormat("jogos", scouts.summary.jogosComScoutTime, "total")],
+    ["Posse média", seasonScoutFormat("posse_bola", scouts.summary.posseMedia, "media")],
+    ["Passes certos", seasonScoutFormat("passes_certos", scouts.summary.passesCertosTotal, "total")],
+    ["Passes tentados", seasonScoutFormat("passes_tentados", scouts.summary.passesTentadosTotal, "total")],
+    ["Finalizações", seasonScoutFormat("finalizacoes", scouts.summary.finalizacoesTotal, "total")],
+    ["No gol", seasonScoutFormat("finalizacoes_no_gol", scouts.summary.finalizacoesNoGolTotal, "total")],
+  ];
+
+  return (
+    <section className="season-scout-strip">
+      <div className="summary-label">Scouts do recorte</div>
+      <div className="season-scout-strip-metrics">
+        {metrics.map(([label, value]) => (
+          <div className="season-scout-strip-metric" key={label}>
+            <span>{label}:</span>
+            <strong>{value}</strong>
           </div>
-          <div>
-            <strong>{seasonScoutFormat("posse_bola", scouts.summary.posseMedia, "media")}</strong>
-            <span>posse média</span>
-          </div>
-          <div>
-            <strong>{seasonScoutFormat("finalizacoes", scouts.summary.finalizacoesTotal, "total")}</strong>
-            <span>finalizações</span>
-          </div>
-          <div>
-            <strong>{seasonScoutFormat("finalizacoes_no_gol", scouts.summary.finalizacoesNoGolTotal, "total")}</strong>
-            <span>no gol</span>
-          </div>
-        </div>
-        <button className="summary-scout-btn" onClick={onOpenScouts}>Ver scouts</button>
+        ))}
       </div>
+      <button className="summary-scout-btn" onClick={onOpenScouts}>Ver scouts</button>
     </section>
   );
 }
 
 function SeasonScoutsModal({ scouts, onClose }) {
   const [tab, setTab] = useState("vasco");
+  const [selectedPlayer, setSelectedPlayer] = useState("");
 
   React.useEffect(() => {
     const onKey = (event) => {
@@ -476,7 +484,35 @@ function SeasonScoutsModal({ scouts, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const rows = tab === "vasco" ? scouts.teamRows : scouts.playerRows;
+  const playerNames = useMemo(() => {
+    const names = Array.from(new Set((scouts.playerRows || []).map(row => row.jogador).filter(Boolean)));
+    const elencoOrder = new Map(
+      (window.ELENCO_DATA || [])
+        .filter(player => player && player.status !== "ex")
+        .map((player, idx) => [String(player.nome || "").trim(), idx])
+    );
+    return names.sort((a, b) => {
+      const ai = elencoOrder.has(a) ? elencoOrder.get(a) : 9999;
+      const bi = elencoOrder.has(b) ? elencoOrder.get(b) : 9999;
+      return ai - bi || a.localeCompare(b, "pt-BR");
+    });
+  }, [scouts]);
+
+  React.useEffect(() => {
+    if (tab !== "jogadores") return;
+    if (!playerNames.length) {
+      setSelectedPlayer("");
+      return;
+    }
+    if (!selectedPlayer || !playerNames.includes(selectedPlayer)) {
+      setSelectedPlayer(playerNames[0]);
+    }
+  }, [tab, playerNames, selectedPlayer]);
+
+  const activePlayer = playerNames.includes(selectedPlayer) ? selectedPlayer : (playerNames[0] || "");
+  const rows = tab === "vasco"
+    ? scouts.teamRows
+    : scouts.playerRows.filter(row => row.jogador === activePlayer);
 
   return (
     <div className="season-scout-modal" onClick={onClose}>
@@ -493,12 +529,23 @@ function SeasonScoutsModal({ scouts, onClose }) {
           <button className={tab === "vasco" ? "active" : ""} onClick={() => setTab("vasco")}>Vasco</button>
           <button className={tab === "jogadores" ? "active" : ""} onClick={() => setTab("jogadores")}>Jogadores</button>
         </div>
+        {tab === "jogadores" && playerNames.length > 0 && (
+          <div className="season-scout-player-select">
+            <label htmlFor="season-scout-player">Jogador</label>
+            <select
+              id="season-scout-player"
+              value={activePlayer}
+              onChange={(event) => setSelectedPlayer(event.target.value)}
+            >
+              {playerNames.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+        )}
         {rows.length ? (
           <div className="season-scout-table-wrap">
             <table className="season-scout-table">
               <thead>
                 <tr>
-                  {tab === "jogadores" && <th>Jogador</th>}
                   <th>Estatística</th>
                   <th>Total</th>
                   <th>Média</th>
@@ -508,7 +555,6 @@ function SeasonScoutsModal({ scouts, onClose }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={`${row.jogador || "vasco"}-${row.key}`}>
-                    {tab === "jogadores" && <td>{row.jogador}</td>}
                     <td>{row.estatistica}</td>
                     <td>{row.total}</td>
                     <td>{row.media}</td>

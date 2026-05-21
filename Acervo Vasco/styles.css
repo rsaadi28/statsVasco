@@ -245,11 +245,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ===== Summary line + sparklines ===== */
 .summary {
   display: grid;
-  grid-template-columns: minmax(260px, 1.35fr) repeat(3, minmax(170px, 1fr)) minmax(230px, 1.1fr);
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
   gap: 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  margin-bottom: 28px;
+  margin-bottom: 0;
 }
 .summary > div {
   padding: 18px 22px;
@@ -269,32 +269,45 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--ff-mono); font-size: 11px; color: var(--ink-mute);
   letter-spacing: 0.05em;
 }
-.summary-scout-grid {
+.season-scout-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px 12px;
-  margin-top: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 28px;
 }
-.summary-scout-grid div {
+.season-scout-strip .summary-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+.season-scout-strip-metrics {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 24px;
   min-width: 0;
 }
-.summary-scout-grid strong {
-  display: block;
+.season-scout-strip-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.season-scout-strip-metric span {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
+.season-scout-strip-metric strong {
   font-family: var(--ff-display);
   font-size: 24px;
   line-height: 1;
   color: var(--ink);
 }
-.summary-scout-grid span {
-  display: block;
-  margin-top: 3px;
-  font-family: var(--ff-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--ink-mute);
-}
 .summary-scout-btn {
-  margin-top: 12px;
   padding: 8px 12px;
   border: 1px solid var(--ink);
   font-family: var(--ff-sans);
@@ -1187,6 +1200,29 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .season-scout-tabs button.active {
   background: var(--ink);
   color: var(--paper-light);
+}
+.season-scout-player-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.season-scout-player-select label {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.season-scout-player-select select {
+  min-width: min(360px, 100%);
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-family: var(--ff-serif);
+  font-size: 15px;
 }
 .season-scout-table-wrap {
   width: 100%;
@@ -4188,6 +4224,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .summary { grid-template-columns: 1fr 1fr; }
   .summary > div:nth-child(2) { border-right: 1px solid var(--rule); }
   .summary > div:nth-child(2n) { border-right: 0; }
+  .season-scout-strip { grid-template-columns: 1fr; align-items: start; }
+  .season-scout-strip .summary-scout-btn { width: fit-content; }
   .resumo-grid { grid-template-columns: 1fr; }
   .lineup-grid { grid-template-columns: 1fr; }
   .lineup-list-only { grid-template-columns: repeat(2,1fr); }
@@ -4211,8 +4249,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     border-bottom: 1px solid var(--rule);
   }
   .summary > div:last-child { border-bottom: 0; }
-  .summary-scout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .season-scout-strip { padding: 13px 0; }
+  .season-scout-strip-metrics { gap: 10px 18px; }
+  .season-scout-strip-metric { white-space: normal; }
   .season-scout-modal { padding: 14px; }
   .season-scout-dialog { padding: 20px; }
   .season-scout-head h3 { font-size: 34px; }
+  .season-scout-player-select { align-items: stretch; flex-direction: column; }
+  .season-scout-player-select select { min-width: 0; width: 100%; }
 }
