@@ -2253,6 +2253,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .retro-score-x {
   font-size: 56px; color: var(--ink-faint);
 }
+.retro-score-empty {
+  font-size: 56px;
+  color: var(--ink-faint);
+  line-height: 1;
+}
 .retro-hero-foot {
   display: flex; gap: 18px; flex-wrap: wrap;
   font-family: var(--ff-sans); font-size: 11px;
@@ -2277,6 +2282,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-size: 48px; letter-spacing: 0.02em; line-height: 1;
   color: var(--ink);
   border-bottom: 2px solid transparent;
+}
+.adv-picker-btn.empty .adv-picker-name {
+  color: var(--ink-mute);
 }
 .adv-picker-btn:hover .adv-picker-name { border-bottom-color: var(--red); }
 .adv-picker-chev {
@@ -2344,6 +2352,15 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   grid-template-columns: 1.5fr 1fr;
   gap: 36px;
   align-items: start;
+}
+.retro-empty-state {
+  border: 1px dashed var(--rule);
+  background: var(--paper-card);
+  padding: 34px 28px;
+  font-family: var(--ff-serif);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--ink-mute);
 }
 .retro-section-title {
   font-family: var(--ff-display);

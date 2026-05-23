@@ -89,7 +89,7 @@ function App() {
             ? <Partida partida={selectedMatch} onBack={handleBack} onOpenPlayer={handleOpenPlayer} />
             : (function () {
                 switch (activeTab) {
-                  case "Retrospecto":    return <Retrospecto initial={retroAdv || "Botafogo-RJ"} onOpenPlayer={handleOpenPlayer} onOpenMatch={handleOpenMatch} />;
+                  case "Retrospecto":    return <Retrospecto initial={retroAdv || ""} onOpenPlayer={handleOpenPlayer} onOpenMatch={handleOpenMatch} />;
                   case "Jogos Futuros":  return <JogosFuturos onOpenRetro={handleOpenRetro} />;
                   case "Elenco Atual":   return <ElencoAtual onOpenPlayer={handleOpenPlayer} />;
                   case "Jogadores":      return <Jogadores onOpenPlayer={handleOpenPlayer} />;

@@ -1,27 +1,35 @@
 // Acervo Vasco — aba Retrospecto
 
-function Retrospecto({ initial = "Botafogo-RJ", onOpenPlayer, onOpenMatch }) {
-  const adversarios = Object.keys(window.RETROSPECTOS).sort();
-  const [advNome, setAdvNome] = useState(initial);
+function Retrospecto({ initial = "", onOpenPlayer, onOpenMatch }) {
+  const adversarios = Object.keys(window.RETROSPECTOS || {}).sort();
+  const [advNome, setAdvNome] = useState(initial || "");
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
-  const data = window.RETROSPECTOS[advNome];
+  const data = advNome ? (window.RETROSPECTOS || {})[advNome] : null;
 
   const calc = useMemo(() => calcular(data), [data]);
 
+  useEffect(() => {
+    setAdvNome(initial || "");
+  }, [initial]);
+
   return (
     <div className="main">
-      <RetrospectoHero advNome={advNome} adversarios={adversarios} setAdv={setAdvNome} open={open} setOpen={setOpen} busca={busca} setBusca={setBusca} calc={calc} />
-      <div className="retro-grid">
-        <RetroGames jogos={data.jogos} onOpenMatch={onOpenMatch} />
-        <RetroAside data={data} calc={calc} onOpenPlayer={onOpenPlayer} />
-      </div>
+      <RetrospectoHero advNome={advNome} adversarios={adversarios} setAdv={setAdvNome} open={open} setOpen={setOpen} busca={busca} setBusca={setBusca} calc={calc} hasSelection={Boolean(data)} />
+      {data ? (
+        <div className="retro-grid">
+          <RetroGames jogos={data.jogos} onOpenMatch={onOpenMatch} />
+          <RetroAside data={data} calc={calc} onOpenPlayer={onOpenPlayer} />
+        </div>
+      ) : (
+        <div className="retro-empty-state">Selecione um time para ver o retrospecto.</div>
+      )}
     </div>
   );
 }
 
 function calcular(data) {
-  const jogos = data.jogos;
+  const jogos = data?.jogos || [];
   let v=0,e=0,d=0, gp=0, gc=0;
   jogos.forEach(j => {
     if (j.res==="V") v++;
@@ -90,7 +98,7 @@ function countScorers(list) {
 }
 
 // ============ Hero ============
-function RetrospectoHero({ advNome, adversarios, setAdv, open, setOpen, busca, setBusca, calc }) {
+function RetrospectoHero({ advNome, adversarios, setAdv, open, setOpen, busca, setBusca, calc, hasSelection }) {
   const filtered = adversarios.filter(a => a.toLowerCase().includes(busca.toLowerCase()));
   return (
     <section className="retro-hero">
@@ -101,21 +109,31 @@ function RetrospectoHero({ advNome, adversarios, setAdv, open, setOpen, busca, s
             <Monogram club="Vasco" vasco size="huge" />
             <span className="retro-team-name">Vasco</span>
           </div>
-          <div className="retro-score">
-            <div className="retro-score-num">{calc.gp}</div>
-            <div className="retro-score-x">×</div>
-            <div className="retro-score-num">{calc.gc}</div>
-          </div>
+          {hasSelection ? (
+            <div className="retro-score">
+              <div className="retro-score-num">{calc.gp}</div>
+              <div className="retro-score-x">×</div>
+              <div className="retro-score-num">{calc.gc}</div>
+            </div>
+          ) : (
+            <div className="retro-score retro-score-empty">×</div>
+          )}
           <div className="retro-team retro-team-adv">
             <RetroAdvPicker advNome={advNome} adversarios={filtered} setAdv={setAdv} open={open} setOpen={setOpen} busca={busca} setBusca={setBusca} />
           </div>
         </div>
         <div className="retro-hero-foot">
-          <span><strong>{calc.total}</strong> jogos no acervo</span>
-          <span className="dot">·</span>
-          <span><strong>{calc.aprov.toFixed(1)}%</strong> de aproveitamento</span>
-          <span className="dot">·</span>
-          <span>saldo <strong style={{color: calc.gp - calc.gc >= 0 ? "var(--r-v)" : "var(--r-d)"}}>{calc.gp - calc.gc >= 0 ? "+" : ""}{calc.gp - calc.gc}</strong></span>
+          {hasSelection ? (
+            <>
+              <span><strong>{calc.total}</strong> jogos no acervo</span>
+              <span className="dot">·</span>
+              <span><strong>{calc.aprov.toFixed(1)}%</strong> de aproveitamento</span>
+              <span className="dot">·</span>
+              <span>saldo <strong style={{color: calc.gp - calc.gc >= 0 ? "var(--r-v)" : "var(--r-d)"}}>{calc.gp - calc.gc >= 0 ? "+" : ""}{calc.gp - calc.gc}</strong></span>
+            </>
+          ) : (
+            <span>Selecione um time para ver o retrospecto.</span>
+          )}
         </div>
       </div>
     </section>
@@ -124,6 +142,7 @@ function RetrospectoHero({ advNome, adversarios, setAdv, open, setOpen, busca, s
 
 function RetroAdvPicker({ advNome, adversarios, setAdv, open, setOpen, busca, setBusca }) {
   const ref = React.useRef(null);
+  const label = advNome || "Selecione um time";
   useEffect(() => {
     function close(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
     document.addEventListener("mousedown", close);
@@ -131,9 +150,9 @@ function RetroAdvPicker({ advNome, adversarios, setAdv, open, setOpen, busca, se
   }, [setOpen]);
   return (
     <div className="adv-picker" ref={ref}>
-      <button className={"adv-picker-btn" + (open ? " open" : "")} onClick={()=>setOpen(o=>!o)}>
-        <Monogram club={advNome} size="huge" />
-        <span className="adv-picker-name">{advNome}</span>
+      <button type="button" className={"adv-picker-btn" + (open ? " open" : "") + (!advNome ? " empty" : "")} onClick={()=>setOpen(o=>!o)}>
+        {advNome && <Monogram club={advNome} size="huge" />}
+        <span className="adv-picker-name">{label}</span>
         <span className="adv-picker-chev">▾</span>
       </button>
       {open && (
