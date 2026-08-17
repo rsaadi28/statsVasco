@@ -33,6 +33,30 @@ function lastN(arr, n, idx) {
   return arr.slice(start, idx + 1);
 }
 
+function formatShortDate(dateText) {
+  const parts = String(dateText || "").split("/");
+  return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : "--/--";
+}
+
+function formatLatestMatch(jogos) {
+  const latest = Array.isArray(jogos) && jogos.length ? jogos[jogos.length - 1] : null;
+  if (!latest) return "--";
+  const placar = Array.isArray(latest.placar) ? `${latest.placar[0]}x${latest.placar[1]}` : "--";
+  return `${formatShortDate(latest.data)} · ${placar} ${latest.adversario || ""}`.trim();
+}
+
+function formatCurrentSequence(jogos) {
+  if (!Array.isArray(jogos) || !jogos.length) return "--";
+  const latestResult = jogos[jogos.length - 1]?.resultado;
+  if (!latestResult) return "--";
+  let count = 0;
+  for (let idx = jogos.length - 1; idx >= 0; idx--) {
+    if (jogos[idx]?.resultado !== latestResult) break;
+    count += 1;
+  }
+  return `${count}${latestResult}`;
+}
+
 function partidaDetalhada(jogo) {
   const detalhes = window.PARTIDAS_DETALHES || {};
   const idKey = jogo?.id != null ? String(jogo.id) : "";
@@ -368,6 +392,9 @@ function Temporadas({ season, onOpenMatch }) {
 // ============ Hero ============
 function Hero({ season, resumo, recorte, setRecorte }) {
   const tecnicos = season.tecnicos;
+  const jogos = Array.isArray(season.jogos) ? season.jogos : [];
+  const sequenciaAtual = formatCurrentSequence(jogos);
+  const ultimaPartida = formatLatestMatch(jogos);
   return (
     <section className="hero">
       <div className="hero-left">
@@ -378,9 +405,9 @@ function Hero({ season, resumo, recorte, setRecorte }) {
         <div className="hero-meta">
           <span><strong>Técnicos:</strong> {tecnicos.map(t => t.nome).join(" → ")}</span>
           <span className="dot">·</span>
-          <span><strong>Sequência atual:</strong> 4V 2E em 6 jogos</span>
+          <span><strong>Sequência atual:</strong> {sequenciaAtual}</span>
           <span className="dot">·</span>
-          <span><strong>Última partida:</strong> 13/05 · 2x2 Paysandu</span>
+          <span><strong>Última partida:</strong> {ultimaPartida}</span>
         </div>
       </div>
       <div className="hero-right">
