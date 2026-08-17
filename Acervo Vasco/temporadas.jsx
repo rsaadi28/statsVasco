@@ -433,7 +433,7 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
           <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
         </div>
         <div className="spark">
-          <StreakBars results={allResults} games={allJogos} width={420} height={32} />
+          <StreakBars results={allResults} games={allJogos} width={920} height={34} />
         </div>
         <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
       </div>
