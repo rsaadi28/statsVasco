@@ -485,7 +485,6 @@ function ScoutSummaryStrip({ scouts, onOpenScouts }) {
 
   return (
     <section className="season-scout-strip">
-      <div className="summary-label">Scouts do recorte</div>
       <div className="season-scout-strip-metrics">
         {metrics.map(([label, value]) => (
           <div className="season-scout-strip-metric" key={label}>
