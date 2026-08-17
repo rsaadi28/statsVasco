@@ -27,8 +27,13 @@
 <script src="estadios-arbitros.js"></script>
 <script src="tecnicos.js"></script>
 <script src="titulos.js"></script>
-<script src="data-runtime.js"></script>
-<script src="/api/data-runtime"></script>
+<script>
+(function () {
+  const runtimeVersion = Date.now();
+  document.write('<script src="data-runtime.js?v=' + runtimeVersion + '"><\/script>');
+  document.write('<script src="/api/data-runtime?v=' + runtimeVersion + '"><\/script>');
+})();
+</script>
 <script type="text/babel" src="components.jsx"></script>
 <script type="text/babel" src="temporadas.jsx"></script>
 <script type="text/babel" src="partida.jsx"></script>
