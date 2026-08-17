@@ -1,10 +1,78 @@
 // Acervo Vasco — aba Técnicos
 
+function tecnicoLatestSeason() {
+  const seasons = window.ACERVO_SEASONS || {};
+  const years = Object.keys(seasons).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+  const latestYear = years.length ? years[years.length - 1] : 2026;
+  return seasons[String(latestYear)] || window.SEASON_2026 || null;
+}
+
+function tecnicoAproveitamento(stats) {
+  const jogos = Number(stats?.jogos || 0);
+  if (!jogos) return 0;
+  return ((Number(stats.v || 0) * 3 + Number(stats.e || 0)) / (jogos * 3)) * 100;
+}
+
+function tecnicoEmptyStats() {
+  return { jogos: 0, casa: 0, fora: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0, saldo: 0, aprov: 0 };
+}
+
+function tecnicoAddGame(stats, jogo) {
+  stats.jogos += 1;
+  if (jogo.local === "casa") stats.casa += 1;
+  else if (jogo.local === "fora") stats.fora += 1;
+  if (jogo.resultado === "V") stats.v += 1;
+  else if (jogo.resultado === "E") stats.e += 1;
+  else if (jogo.resultado === "D") stats.d += 1;
+  stats.gp += Number(jogo.placar?.[0] || 0);
+  stats.gc += Number(jogo.placar?.[1] || 0);
+  stats.saldo = stats.gp - stats.gc;
+  stats.aprov = tecnicoAproveitamento(stats);
+}
+
+function tecnicoFormatDate(dateText) {
+  const parts = String(dateText || "").split("/");
+  return parts.length >= 3 ? `${parts[0]}/${parts[1]}/${parts[2]}` : (dateText || "--");
+}
+
+function tecnicoCurrentContext() {
+  const season = tecnicoLatestSeason();
+  const jogos = Array.isArray(season?.jogos) ? season.jogos : [];
+  const latest = jogos.length ? jogos[jogos.length - 1] : null;
+  const nome = latest?.tecnico || "";
+  if (!nome) return null;
+
+  const jogosDoTecnico = jogos.filter((jogo) => jogo.tecnico === nome);
+  const resumo = tecnicoEmptyStats();
+  const porCompeticao = new Map();
+  jogosDoTecnico.forEach((jogo) => {
+    tecnicoAddGame(resumo, jogo);
+    const comp = jogo.competicao || "Sem competição";
+    if (!porCompeticao.has(comp)) porCompeticao.set(comp, tecnicoEmptyStats());
+    tecnicoAddGame(porCompeticao.get(comp), jogo);
+  });
+
+  const ranking = window.TECNICOS || [];
+  const geral = ranking.find((tecnico) => tecnico.nome === nome) || resumo;
+  const competicoes = Array.from(porCompeticao, ([competicao, stats]) => ({ competicao, ...stats }))
+    .sort((a, b) => b.jogos - a.jogos || a.competicao.localeCompare(b.competicao, "pt-BR"));
+
+  return {
+    nome,
+    ano: season?.ano,
+    resumo,
+    geral,
+    competicoes,
+    primeiroJogo: jogosDoTecnico[0] || null,
+    ultimoJogo: latest,
+  };
+}
 function Tecnicos({ onOpenPlayer, onOpenMatch }) {
   const all = window.TECNICOS;
   const [busca, setBusca] = useState("");
   const [sort, setSort]   = useState({ k:"jogos", dir:"desc" });
   const [selected, setSelected] = useState(null);
+  const tecnicoAtual = useMemo(() => tecnicoCurrentContext(), [all]);
 
   const filtered = useMemo(() => {
     let out = all.filter(t => !busca.trim() || t.nome.toLowerCase().includes(busca.trim().toLowerCase()));
@@ -40,6 +108,8 @@ function Tecnicos({ onOpenPlayer, onOpenMatch }) {
         </div>
       </section>
 
+      {tecnicoAtual && <TecnicoAtualPanel tecnico={tecnicoAtual} onOpen={() => setSelected(tecnicoAtual.nome)} />}
+
       <h3 className="ea-section-title">Lista de técnicos <small>{filtered.length}</small></h3>
       <div className="table-wrap">
         <table className="tbl ea-tbl tec-tbl">
@@ -60,11 +130,14 @@ function Tecnicos({ onOpenPlayer, onOpenMatch }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(t => (
-              <tr key={t.nome} className="has-detail" onClick={()=>setSelected(t.nome)}>
+            {filtered.map(t => {
+              const isAtual = tecnicoAtual?.nome === t.nome;
+              return (
+              <tr key={t.nome} className={"has-detail" + (isAtual ? " is-current-coach" : "")} onClick={()=>setSelected(t.nome)}>
                 <td className="opponent" style={{fontFamily:"var(--ff-serif)", fontSize:15, fontWeight:600}}>
                   <Monogram club={t.nome} />
-                  {t.nome}
+                  <span>{t.nome}</span>
+                  {isAtual && <span className="tec-current-badge">Atual</span>}
                 </td>
                 <td className="num"><strong>{t.jogos}</strong></td>
                 <td className="num">{t.casa}</td>
@@ -80,11 +153,70 @@ function Tecnicos({ onOpenPlayer, onOpenMatch }) {
                   {t.maior_goleador ? <>{t.maior_goleador.nome} <span style={{fontFamily:"var(--ff-mono)", fontSize:11, color:"var(--ink-mute)"}}>({t.maior_goleador.gols})</span></> : "—"}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+
+function TecnicoAtualPanel({ tecnico, onOpen }) {
+  const { nome, resumo, geral, competicoes, primeiroJogo, ultimoJogo, ano } = tecnico;
+  const inicio = primeiroJogo ? tecnicoFormatDate(primeiroJogo.data) : "--";
+  const ultimo = ultimoJogo ? `${tecnicoFormatDate(ultimoJogo.data)} · ${ultimoJogo.placar?.[0] ?? "--"}x${ultimoJogo.placar?.[1] ?? "--"} ${ultimoJogo.adversario || ""}` : "--";
+  const saldoClass = resumo.saldo > 0 ? "c-v" : (resumo.saldo < 0 ? "c-d" : "");
+
+  return (
+    <section className="tec-current-panel">
+      <div className="tec-current-head">
+        <div>
+          <div className="hero-eyebrow">Técnico atual · {ano || "temporada"}</div>
+          <h2>{nome}</h2>
+          <div className="tec-current-meta">
+            <span>desde <strong>{inicio}</strong></span>
+            <span className="dot">·</span>
+            <span>último jogo <strong>{ultimo}</strong></span>
+            {geral?.jogos != null && (
+              <>
+                <span className="dot">·</span>
+                <span>no acervo <strong>{geral.jogos}</strong> jogos</span>
+              </>
+            )}
+          </div>
+        </div>
+        <button className="summary-scout-btn" onClick={onOpen}>Ver detalhe</button>
+      </div>
+
+      <div className="tec-current-kpis">
+        <div><span>Jogos</span><strong>{resumo.jogos}</strong></div>
+        <div><span>Resultados</span><strong><em className="c-v">{resumo.v}</em><small>V</small> <em className="c-e">{resumo.e}</em><small>E</small> <em className="c-d">{resumo.d}</em><small>D</small></strong></div>
+        <div><span>Gols</span><strong>{resumo.gp}<small>–</small>{resumo.gc}</strong></div>
+        <div><span>Saldo</span><strong className={saldoClass}>{resumo.saldo > 0 ? "+" : ""}{resumo.saldo}</strong></div>
+        <div><span>Aproveitamento</span><strong>{resumo.aprov.toFixed(1)}<small>%</small></strong></div>
+      </div>
+
+      <div className="tec-current-comps">
+        <div className="summary-label">Números por competição</div>
+        <div className="tec-current-comp-grid">
+          {competicoes.map((comp) => (
+            <div className="tec-current-comp" key={comp.competicao}>
+              <div className="tec-current-comp-name">{comp.competicao}</div>
+              <div className="tec-current-comp-line">
+                <strong>{comp.jogos}</strong> jogos
+                <span><em className="c-v">{comp.v}</em>V</span>
+                <span><em className="c-e">{comp.e}</em>E</span>
+                <span><em className="c-d">{comp.d}</em>D</span>
+                <span>{comp.gp}–{comp.gc}</span>
+                <span>{comp.aprov.toFixed(1)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -34,21 +34,30 @@
   document.write('<script src="/api/data-runtime?v=' + runtimeVersion + '"><\/script>');
 })();
 </script>
-<script type="text/babel" src="components.jsx"></script>
-<script type="text/babel" src="temporadas.jsx"></script>
-<script type="text/babel" src="partida.jsx"></script>
-<script type="text/babel" src="jogador.jsx"></script>
-<script type="text/babel" src="jogadores.jsx"></script>
-<script type="text/babel" src="retrospecto.jsx"></script>
-<script type="text/babel" src="comparativo.jsx"></script>
-<script type="text/babel" src="evolucao.jsx"></script>
-<script type="text/babel" src="jogos-futuros.jsx"></script>
-<script type="text/babel" src="elenco.jsx"></script>
-<script type="text/babel" src="estadios-arbitros.jsx"></script>
-<script type="text/babel" src="geral.jsx"></script>
-<script type="text/babel" src="tecnicos.jsx"></script>
-<script type="text/babel" src="titulos.jsx"></script>
-<script type="text/babel" src="admin.jsx"></script>
-<script type="text/babel" src="app.jsx"></script>
+<script>
+(function () {
+  const assetVersion = Date.now();
+  [
+    "components.jsx",
+    "temporadas.jsx",
+    "partida.jsx",
+    "jogador.jsx",
+    "jogadores.jsx",
+    "retrospecto.jsx",
+    "comparativo.jsx",
+    "evolucao.jsx",
+    "jogos-futuros.jsx",
+    "elenco.jsx",
+    "estadios-arbitros.jsx",
+    "geral.jsx",
+    "tecnicos.jsx",
+    "titulos.jsx",
+    "admin.jsx",
+    "app.jsx",
+  ].forEach((src) => {
+    document.write('<script type="text/babel" src="' + src + '?v=' + assetVersion + '"><\/script>');
+  });
+})();
+</script>
 </body>
 </html>
