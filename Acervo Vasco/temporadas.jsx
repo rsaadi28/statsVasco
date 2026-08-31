@@ -452,33 +452,16 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
   return (
     <section className="summary">
       <div>
-        <div className="summary-results-layout">
-          <div className="summary-results-main">
-            <div className="summary-label">Resultados ({resumo.total} jogos)</div>
-            <div className="ved-row">
-              <span><span className="v">{resumo.v}</span><span className="lbl">V</span></span>
-              <span><span className="e">{resumo.e}</span><span className="lbl">E</span></span>
-              <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
-            </div>
-            <div className="spark">
-              <StreakBars results={allResults} games={allJogos} width={920} height={34} />
-            </div>
-            <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
-          </div>
-          <div className="summary-cards-total" aria-label="Totais de cartões do recorte">
-            <div className="summary-label">Cartões</div>
-            <div className="summary-card-kpis">
-              <div className="summary-card-kpi">
-                <span className="summary-card-icon yellow" aria-hidden="true"></span>
-                <strong>{resumo.ca}</strong>
-              </div>
-              <div className="summary-card-kpi">
-                <span className="summary-card-icon red" aria-hidden="true"></span>
-                <strong>{resumo.cv}</strong>
-              </div>
-            </div>
-          </div>
+        <div className="summary-label">Resultados ({resumo.total} jogos)</div>
+        <div className="ved-row">
+          <span><span className="v">{resumo.v}</span><span className="lbl">V</span></span>
+          <span><span className="e">{resumo.e}</span><span className="lbl">E</span></span>
+          <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
         </div>
+        <div className="spark summary-results-spark">
+          <StreakBars results={allResults} games={allJogos} width={920} height={34} />
+        </div>
+        <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
       </div>
       <div>
         <div className="summary-label">Gols (pró – contra)</div>
@@ -495,6 +478,19 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
           <AproveitamentoChart data={aproveitamentoSeries} width={260} height={32} />
         </div>
         <div className="summary-sub">linha de 50% pontilhada</div>
+      </div>
+      <div className="summary-cards-total" aria-label="Totais de cartões do recorte">
+        <div className="summary-label">Cartões</div>
+        <div className="summary-card-kpis">
+          <div className="summary-card-kpi">
+            <span className="summary-card-icon yellow" aria-hidden="true"></span>
+            <strong>{resumo.ca}</strong>
+          </div>
+          <div className="summary-card-kpi">
+            <span className="summary-card-icon red" aria-hidden="true"></span>
+            <strong>{resumo.cv}</strong>
+          </div>
+        </div>
       </div>
       <div>
         <div className="summary-label">Médias e séries</div>
