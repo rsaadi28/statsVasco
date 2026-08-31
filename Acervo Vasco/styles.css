@@ -1229,6 +1229,197 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .stats-table tr.has-detail:hover td {
   background: var(--paper-light);
 }
+
+/* Previsão da partida */
+.match-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.match-forecast-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.45fr);
+  gap: 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+.match-forecast-card,
+.match-forecast-score > div,
+.match-forecast-audit > div,
+.match-forecast-box {
+  padding: 20px 22px;
+}
+.match-forecast-card {
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 172px;
+}
+.match-forecast-card span,
+.match-forecast-score span,
+.match-forecast-audit span,
+.match-forecast-box span,
+.match-forecast-method h4 {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.match-forecast-card strong {
+  font-family: var(--ff-display);
+  font-size: 54px;
+  line-height: 0.92;
+  margin-top: 8px;
+}
+.match-forecast-card small,
+.match-forecast-score small,
+.match-forecast-audit small,
+.match-forecast-box small {
+  margin-top: 7px;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.match-forecast-score {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.match-forecast-score > div {
+  min-height: 172px;
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.match-forecast-score > div:last-child {
+  border-right: 0;
+}
+.match-forecast-score strong,
+.match-forecast-audit strong {
+  font-family: var(--ff-display);
+  font-size: 42px;
+  line-height: 0.95;
+  margin-top: 8px;
+}
+.match-forecast-bars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.match-forecast-row {
+  min-width: 0;
+}
+.match-forecast-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.match-forecast-row-head span {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.match-forecast-row-head strong {
+  font-family: var(--ff-display);
+  font-size: 28px;
+}
+.match-forecast-track {
+  height: 14px;
+  border: 1px solid var(--ink);
+  background: rgba(199, 179, 125, 0.18);
+  overflow: hidden;
+}
+.match-forecast-track i {
+  display: block;
+  height: 100%;
+}
+.match-forecast-audit {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.match-forecast-audit > div {
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.match-forecast-audit > div:last-child {
+  border-right: 0;
+}
+.match-forecast-samples {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.match-forecast-box {
+  border-right: 1px solid var(--rule);
+  min-width: 0;
+}
+.match-forecast-box:last-child {
+  border-right: 0;
+}
+.match-forecast-box strong {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--ff-display);
+  font-size: 28px;
+  line-height: 1;
+}
+.match-forecast-box b {
+  font-weight: inherit;
+}
+.match-forecast-method {
+  max-width: 880px;
+}
+.match-forecast-method h4 {
+  margin-bottom: 10px;
+}
+.match-forecast-method ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px dotted var(--rule);
+}
+.match-forecast-method li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--ff-mono);
+  font-size: 12px;
+}
+.match-forecast-method li strong {
+  font-family: var(--ff-display);
+  font-size: 18px;
+}
+.match-forecast-method li em {
+  font-style: normal;
+  color: var(--ink-mute);
+}
+.match-forecast-method p {
+  margin-top: 12px;
+  font-family: var(--ff-serif);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.match-forecast .tone-V { color: var(--r-v); }
+.match-forecast .tone-E { color: var(--r-e); }
+.match-forecast .tone-D { color: var(--r-d); }
+.match-forecast-track .tone-V { background: var(--r-v); }
+.match-forecast-track .tone-E { background: var(--r-e); }
+.match-forecast-track .tone-D { background: var(--r-d); }
 .match-player-modal {
   position: fixed;
   inset: 0;
@@ -3337,6 +3528,25 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--ink-mute);
   margin-top: 8px;
 }
+.jf-prob-scoreline {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dotted var(--rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+.jf-prob-scoreline span {
+  margin: 0;
+  font-size: 8.5px;
+}
+.jf-prob-scoreline b {
+  font-family: var(--ff-display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--ink);
+}
 .jf-prob-bars {
   display: flex;
   flex-direction: column;
@@ -4717,6 +4927,29 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .stats-kpi-grid { grid-template-columns: repeat(3, 1fr); }
   .stats-kpi-grid > div:nth-child(3n) { border-right: 0; }
   .match-stats-layout { grid-template-columns: 1fr; }
+  .match-forecast-hero,
+  .match-forecast-score,
+  .match-forecast-bars,
+  .match-forecast-audit {
+    grid-template-columns: 1fr;
+  }
+  .match-forecast-card,
+  .match-forecast-score > div,
+  .match-forecast-audit > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+    min-height: 0;
+  }
+  .match-forecast-score > div:last-child,
+  .match-forecast-audit > div:last-child {
+    border-bottom: 0;
+  }
+  .match-forecast-samples {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .match-forecast-box:nth-child(2n) {
+    border-right: 0;
+  }
   .modal-player-head { grid-template-columns: 1fr; }
   .modal-rating { text-align: left; }
   .modal-event-grid { grid-template-columns: repeat(2, 1fr); }
@@ -4750,4 +4983,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .season-scout-head h3 { font-size: 34px; }
   .season-scout-player-select { align-items: stretch; flex-direction: column; }
   .season-scout-player-select select { min-width: 0; width: 100%; }
+  .match-forecast-samples {
+    grid-template-columns: 1fr;
+  }
+  .match-forecast-box {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .match-forecast-box:last-child {
+    border-bottom: 0;
+  }
+  .match-forecast-method li {
+    grid-template-columns: 1fr auto;
+  }
+  .match-forecast-method li em {
+    grid-column: 1 / -1;
+  }
 }

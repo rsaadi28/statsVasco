@@ -223,6 +223,209 @@ function playerEventRows(p, name) {
   ].filter(([, value]) => value > 0);
 }
 
+function matchDateValue(dateText) {
+  const parts = String(dateText || "").split("/").map(Number);
+  return parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]).getTime() : 0;
+}
+
+function teamNameKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/-?(RJ|SP|MG|RS|PR|SC|BA|PE|CE|PA|GO|AL|RN|SE|MT|MS|ES|DF)$/i, "")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeForecastMatch(raw, index = 0, ano = null) {
+  const placarArr = Array.isArray(raw?.placar)
+    ? raw.placar
+    : [raw?.placar?.vasco, raw?.placar?.adversario];
+  const gp = Number(placarArr[0] || 0);
+  const gc = Number(placarArr[1] || 0);
+  const result = raw?.resultado || raw?.res || (gp > gc ? "V" : gp < gc ? "D" : "E");
+  const parsedYear = Number(String(raw?.data || "").split("/")[2]);
+  return {
+    id: raw?.id ?? raw?.db_match_id ?? null,
+    data: raw?.data || "",
+    dataValue: matchDateValue(raw?.data),
+    ano: Number.isFinite(parsedYear) ? parsedYear : ano,
+    adversario: raw?.adversario || raw?.adv || "",
+    advKey: teamNameKey(raw?.adversario || raw?.adv),
+    local: raw?.local || "",
+    competicao: raw?.competicao || "",
+    resultado: result,
+    placar: [gp, gc],
+    sourceIndex: index,
+  };
+}
+
+function allForecastMatches() {
+  const seasons = window.ACERVO_SEASONS || {};
+  return Object.entries(seasons)
+    .flatMap(([ano, season]) => (season?.jogos || []).map((game, index) => normalizeForecastMatch(game, index, Number(ano))))
+    .filter(game => game.data && game.adversario && ["V", "E", "D"].includes(game.resultado))
+    .sort((a, b) => a.dataValue - b.dataValue || a.sourceIndex - b.sourceIndex || String(a.id || "").localeCompare(String(b.id || "")));
+}
+
+function currentForecastMatch(p, allGames) {
+  const current = normalizeForecastMatch(p);
+  return allGames.find(game => game.id != null && current.id != null && String(game.id) === String(current.id))
+    || allGames.find(game => game.data === current.data && game.advKey === current.advKey)
+    || current;
+}
+
+function countForecastGames(games) {
+  const counts = { v: 0, e: 0, d: 0, total: 0, gp: 0, gc: 0 };
+  (games || []).forEach((game) => {
+    if (game.resultado === "V") counts.v += 1;
+    else if (game.resultado === "E") counts.e += 1;
+    else if (game.resultado === "D") counts.d += 1;
+    else return;
+    counts.total += 1;
+    counts.gp += Number(game.placar?.[0] || 0);
+    counts.gc += Number(game.placar?.[1] || 0);
+  });
+  return counts;
+}
+
+function forecastDistribution(counts) {
+  const total = counts.total + 3;
+  return {
+    v: (counts.v + 1) / total,
+    e: (counts.e + 1) / total,
+    d: (counts.d + 1) / total,
+  };
+}
+
+function pctForecast(value) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function forecastResultLabel(result) {
+  return ({ V: "Vitória", E: "Empate", D: "Derrota" })[result] || "—";
+}
+
+function scoreFromExpected(gp, gc, result) {
+  let vasco = Math.max(0, Math.round(gp));
+  let adv = Math.max(0, Math.round(gc));
+  if (result === "V" && vasco <= adv) vasco = adv + 1;
+  if (result === "D" && vasco >= adv) adv = vasco + 1;
+  if (result === "E") {
+    const draw = Math.max(0, Math.round((gp + gc) / 2));
+    vasco = draw;
+    adv = draw;
+  }
+  return [Math.min(5, vasco), Math.min(5, adv)];
+}
+
+function buildMatchForecastFromPrior(match, priorGames) {
+  const sameOpponent = priorGames.filter(game => game.advKey === match.advKey);
+  const sameOpponentVenue = sameOpponent.filter(game => game.local === match.local);
+  const recentOpponent = sameOpponent.slice(-5);
+  const sameYear = priorGames.filter(game => game.ano === match.ano);
+  const recentSeason = sameYear.slice(-10);
+  const sameVenueSeason = sameYear.filter(game => game.local === match.local);
+
+  const pieces = [
+    { key: "geral", label: "Retrospecto geral", weight: 0.30, counts: countForecastGames(sameOpponent) },
+    { key: "mando", label: match.local === "casa" ? "Contra o adversário em casa" : "Contra o adversário fora", weight: 0.25, counts: countForecastGames(sameOpponentVenue) },
+    { key: "recentes", label: "Últimos 5 confrontos", weight: 0.20, counts: countForecastGames(recentOpponent) },
+    { key: "forma", label: "Forma recente no ano", weight: 0.15, counts: countForecastGames(recentSeason) },
+    { key: "mando_temporada", label: match.local === "casa" ? "Vasco em casa no ano" : "Vasco fora no ano", weight: 0.10, counts: countForecastGames(sameVenueSeason) },
+  ].filter(piece => piece.counts.total > 0);
+
+  const fallbackPieces = pieces.length
+    ? pieces
+    : [{ key: "neutro", label: "Sem amostra anterior", weight: 1, counts: { v: 0, e: 0, d: 0, total: 0, gp: 0, gc: 0 } }];
+  const weightTotal = fallbackPieces.reduce((sum, piece) => sum + piece.weight, 0) || 1;
+  const probability = fallbackPieces.reduce((acc, piece) => {
+    const dist = forecastDistribution(piece.counts);
+    const weight = piece.weight / weightTotal;
+    acc.v += dist.v * weight;
+    acc.e += dist.e * weight;
+    acc.d += dist.d * weight;
+    if (piece.counts.total > 0) {
+      acc.xgFor += (piece.counts.gp / piece.counts.total) * weight;
+      acc.xgAgainst += (piece.counts.gc / piece.counts.total) * weight;
+    }
+    return acc;
+  }, { v: 0, e: 0, d: 0, xgFor: 0, xgAgainst: 0 });
+  const probTotal = probability.v + probability.e + probability.d || 1;
+  probability.v /= probTotal;
+  probability.e /= probTotal;
+  probability.d /= probTotal;
+
+  if (!Number.isFinite(probability.xgFor) || probability.xgFor === 0) probability.xgFor = 1;
+  if (!Number.isFinite(probability.xgAgainst) || probability.xgAgainst === 0) probability.xgAgainst = 1;
+
+  const predicted = [
+    ["V", probability.v],
+    ["E", probability.e],
+    ["D", probability.d],
+  ].sort((a, b) => b[1] - a[1])[0][0];
+  const predictedScore = scoreFromExpected(probability.xgFor, probability.xgAgainst, predicted);
+  const actualScore = match.placar || [0, 0];
+  const actual = match.resultado;
+  const hitResult = predicted === actual;
+  const hitScore = predictedScore[0] === actualScore[0] && predictedScore[1] === actualScore[1];
+  const confidence = sameOpponent.length >= 20 && sameOpponentVenue.length >= 8
+    ? "alta"
+    : sameOpponent.length >= 8 || sameOpponentVenue.length >= 5 || recentSeason.length >= 8
+      ? "média"
+      : "baixa";
+
+  return {
+    match,
+    probability,
+    predicted,
+    predictedScore,
+    actual,
+    actualScore,
+    hitResult,
+    hitScore,
+    confidence,
+    pieces: fallbackPieces,
+    general: countForecastGames(sameOpponent),
+    venue: countForecastGames(sameOpponentVenue),
+    recent: countForecastGames(recentOpponent),
+    season: countForecastGames(recentSeason),
+    seasonVenue: countForecastGames(sameVenueSeason),
+  };
+}
+
+function buildForecastAudit(currentMatch) {
+  const allGames = allForecastMatches();
+  const current = currentForecastMatch(currentMatch, allGames);
+  const currentIndex = allGames.findIndex(game =>
+    (game.id != null && current.id != null && String(game.id) === String(current.id)) ||
+    (game.data === current.data && game.advKey === current.advKey)
+  );
+  const priorGames = currentIndex >= 0 ? allGames.slice(0, currentIndex) : allGames.filter(game => game.dataValue < current.dataValue);
+  const selected = buildMatchForecastFromPrior(current, priorGames);
+  const predictions = [];
+  allGames.forEach((game, index) => {
+    const prior = allGames.slice(0, index);
+    if (prior.length < 5) return;
+    predictions.push(buildMatchForecastFromPrior(game, prior));
+  });
+  const resultHits = predictions.filter(item => item.hitResult).length;
+  const scoreHits = predictions.filter(item => item.hitScore).length;
+  return {
+    selected,
+    history: {
+      total: predictions.length,
+      acertos: resultHits,
+      erros: predictions.length - resultHits,
+      placarAcertos: scoreHits,
+      aproveitamento: predictions.length ? (resultHits / predictions.length) * 100 : 0,
+      placarAproveitamento: predictions.length ? (scoreHits / predictions.length) * 100 : 0,
+    },
+  };
+}
+
 function Partida({ partida, onBack, onOpenPlayer }) {
   const [tab, setTab] = useState("resumo");
   const [matchPlayer, setMatchPlayer] = useState(null);
@@ -244,6 +447,7 @@ function Partida({ partida, onBack, onOpenPlayer }) {
           ["escalacao","Escalação"],
           ["eventos","Eventos"],
           ["estatisticas","Estatísticas"],
+          ["previsao","Previsão"],
           ["arbitragem","Arbitragem"],
           ["bilheteria","Bilheteria"],
         ].map(([k,l]) => (
@@ -254,6 +458,7 @@ function Partida({ partida, onBack, onOpenPlayer }) {
       {tab==="escalacao"  && <TabEscalacao p={partida} />}
       {tab==="eventos"    && <TabEventos p={partida} />}
       {tab==="estatisticas" && <TabEstatisticas p={partida} />}
+      {tab==="previsao"   && <TabPrevisao p={partida} />}
       {tab==="arbitragem" && <TabArbitragem p={partida} />}
       {tab==="bilheteria" && <TabBilheteria p={partida} />}
       {matchPlayer && (
@@ -714,6 +919,113 @@ function PlayerStatsTable({ p }) {
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function TabPrevisao({ p }) {
+  const audit = useMemo(() => buildForecastAudit(p), [p?.id, p?.data, p?.adversario]);
+  const forecast = audit.selected;
+  const rows = [
+    ["Vitória", forecast.probability.v, "V"],
+    ["Empate", forecast.probability.e, "E"],
+    ["Derrota", forecast.probability.d, "D"],
+  ];
+  return (
+    <div className="match-forecast">
+      <section className="match-forecast-hero">
+        <div className="match-forecast-card">
+          <span>Previsão antes do jogo</span>
+          <strong className={`tone-${forecast.predicted}`}>{forecastResultLabel(forecast.predicted)}</strong>
+          <small>confiança {forecast.confidence}</small>
+        </div>
+        <div className="match-forecast-score">
+          <div>
+            <span>Placar previsto</span>
+            <strong>{forecast.predictedScore[0]} × {forecast.predictedScore[1]}</strong>
+          </div>
+          <div>
+            <span>Resultado oficial</span>
+            <strong className={`tone-${forecast.actual}`}>{forecastResultLabel(forecast.actual)}</strong>
+            <small>{forecast.actualScore[0]} × {forecast.actualScore[1]}</small>
+          </div>
+          <div>
+            <span>Status da previsão</span>
+            <strong className={forecast.hitResult ? "tone-V" : "tone-D"}>{forecast.hitResult ? "Acertou" : "Errou"}</strong>
+            <small>{forecast.hitScore ? "placar exato" : "placar diferente"}</small>
+          </div>
+        </div>
+      </section>
+
+      <section className="match-forecast-bars">
+        {rows.map(([label, value, key]) => (
+          <div className="match-forecast-row" key={key}>
+            <div className="match-forecast-row-head">
+              <span>{label}</span>
+              <strong className={`tone-${key}`}>{pctForecast(value)}</strong>
+            </div>
+            <div className="match-forecast-track">
+              <i className={`tone-${key}`} style={{width: pctForecast(value)}} />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="match-forecast-audit">
+        <div>
+          <span>Histórico simulado do modelo</span>
+          <strong>{audit.history.acertos} × {audit.history.erros}</strong>
+          <small>{audit.history.total} jogos com ao menos 5 partidas anteriores no acervo</small>
+        </div>
+        <div>
+          <span>Aproveitamento V/E/D</span>
+          <strong>{audit.history.aproveitamento.toFixed(1)}%</strong>
+          <small>acertos do resultado provável</small>
+        </div>
+        <div>
+          <span>Placares exatos</span>
+          <strong>{audit.history.placarAcertos}</strong>
+          <small>{audit.history.placarAproveitamento.toFixed(1)}% dos jogos simulados</small>
+        </div>
+      </section>
+
+      <section className="match-forecast-samples">
+        <ForecastBox title="Confronto geral" counts={forecast.general} />
+        <ForecastBox title={p.local === "casa" ? "Confronto em casa" : "Confronto fora"} counts={forecast.venue} />
+        <ForecastBox title="Últimos 5 confrontos" counts={forecast.recent} />
+        <ForecastBox title="Forma recente no ano" counts={forecast.season} />
+        <ForecastBox title={p.local === "casa" ? "Vasco em casa no ano" : "Vasco fora no ano"} counts={forecast.seasonVenue} />
+      </section>
+
+      <section className="match-forecast-method">
+        <h4>Base usada</h4>
+        <ul>
+          {forecast.pieces.map(piece => {
+            const totalWeight = forecast.pieces.reduce((sum, item) => sum + item.weight, 0) || 1;
+            return (
+              <li key={piece.key}>
+                <span>{piece.label}</span>
+                <strong>{Math.round((piece.weight / totalWeight) * 100)}%</strong>
+                <em>{piece.counts.total} jogos anteriores</em>
+              </li>
+            );
+          })}
+        </ul>
+        <p>
+          A simulação usa somente partidas anteriores ao jogo selecionado. O placar previsto vem das médias ponderadas
+          de gols pró e contra nas mesmas amostras usadas para calcular V/E/D.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function ForecastBox({ title, counts }) {
+  return (
+    <div className="match-forecast-box">
+      <span>{title}</span>
+      <strong><b className="tone-V">{counts.v}</b>V · <b className="tone-E">{counts.e}</b>E · <b className="tone-D">{counts.d}</b>D</strong>
+      <small>{counts.total} jogos · {counts.gp}–{counts.gc}</small>
     </div>
   );
 }

@@ -168,6 +168,19 @@ function formatProbPct(value) {
   return `${Math.round(value * 100)}%`;
 }
 
+function futureScoreFromExpected(gp, gc, resultKey) {
+  let vasco = Math.max(0, Math.round(gp));
+  let adv = Math.max(0, Math.round(gc));
+  if (resultKey === "v" && vasco <= adv) vasco = adv + 1;
+  if (resultKey === "d" && vasco >= adv) adv = vasco + 1;
+  if (resultKey === "e") {
+    const draw = Math.max(0, Math.round((gp + gc) / 2));
+    vasco = draw;
+    adv = draw;
+  }
+  return [Math.min(5, vasco), Math.min(5, adv)];
+}
+
 function calcFutureProbability(match) {
   const retro = getRetroData(match.adv);
   const history = Array.isArray(retro?.jogos) ? retro.jogos : [];
@@ -201,13 +214,19 @@ function calcFutureProbability(match) {
     acc.v += dist.v * weight;
     acc.e += dist.e * weight;
     acc.d += dist.d * weight;
+    if (piece.counts.total > 0) {
+      acc.xgFor += (piece.counts.gp / piece.counts.total) * weight;
+      acc.xgAgainst += (piece.counts.gc / piece.counts.total) * weight;
+    }
     return acc;
-  }, { v: 0, e: 0, d: 0 });
+  }, { v: 0, e: 0, d: 0, xgFor: 0, xgAgainst: 0 });
 
   const rawTotal = probability.v + probability.e + probability.d || 1;
   probability.v /= rawTotal;
   probability.e /= rawTotal;
   probability.d /= rawTotal;
+  if (!Number.isFinite(probability.xgFor) || probability.xgFor === 0) probability.xgFor = 1;
+  if (!Number.isFinite(probability.xgAgainst) || probability.xgAgainst === 0) probability.xgAgainst = 1;
 
   const general = countVED(history);
   const venue = countVED(history.filter(game => game.local === match.local));
@@ -222,6 +241,7 @@ function calcFutureProbability(match) {
     ["Empate", probability.e, "e"],
     ["Derrota", probability.d, "d"],
   ].sort((a, b) => b[1] - a[1])[0];
+  const predictedScore = futureScoreFromExpected(probability.xgFor, probability.xgAgainst, favorite[2]);
 
   return {
     match,
@@ -229,6 +249,7 @@ function calcFutureProbability(match) {
     probability,
     confidence,
     favorite,
+    predictedScore,
     pieces: fallbackPieces,
     general,
     venue,
@@ -270,6 +291,10 @@ function JFProbabilityModal({ match, onClose }) {
             <span>Tendência</span>
             <strong className={`c-${analysis.favorite[2]}`}>{analysis.favorite[0]}</strong>
             <small>confiança {analysis.confidence}</small>
+            <div className="jf-prob-scoreline">
+              <span>Placar provável</span>
+              <b>{analysis.predictedScore[0]} × {analysis.predictedScore[1]}</b>
+            </div>
           </div>
           <div className="jf-prob-bars">
             {rows.map(([label, value, key]) => (
