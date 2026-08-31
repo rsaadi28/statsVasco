@@ -67,17 +67,19 @@ function Sparkline({ data, width = 320, height = 56, color = "#b21f2d" }) {
   const min = Math.min(0, ...data);
   const max = Math.max(0, ...data);
   const range = max - min || 1;
-  const pad = 4;
-  const w = width - pad * 2;
-  const h = height - pad * 2;
+  const padX = 8;
+  const padRight = 18;
+  const padY = 4;
+  const w = width - padX - padRight;
+  const h = height - padY * 2;
   const step = w / Math.max(1, data.length - 1);
-  const pts = data.map((d, i) => [pad + i * step, pad + h - ((d - min) / range) * h]);
-  const zeroY = pad + h - ((0 - min) / range) * h;
+  const pts = data.map((d, i) => [padX + i * step, padY + h - ((d - min) / range) * h]);
+  const zeroY = padY + h - ((0 - min) / range) * h;
   const path = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(" ");
   const last = pts[pts.length - 1];
   return (
     <svg width={width} height={height} style={{ display: "block" }}>
-      <line x1={pad} x2={pad + w} y1={zeroY} y2={zeroY} stroke="#d6c9a6" strokeWidth="1" strokeDasharray="2 3" />
+      <line x1={padX} x2={padX + w} y1={zeroY} y2={zeroY} stroke="#d6c9a6" strokeWidth="1" strokeDasharray="2 3" />
       <path d={path} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
       {pts.map((p, i) => (
         <circle key={i} cx={p[0]} cy={p[1]} r="1.6" fill={color} />
@@ -91,17 +93,19 @@ function Sparkline({ data, width = 320, height = 56, color = "#b21f2d" }) {
 function AproveitamentoChart({ data, width = 320, height = 56 }) {
   // data: array de % acumulado (0-100)
   if (!data || data.length === 0) return null;
-  const pad = 4;
-  const w = width - pad * 2;
-  const h = height - pad * 2;
+  const padX = 8;
+  const padRight = 18;
+  const padY = 4;
+  const w = width - padX - padRight;
+  const h = height - padY * 2;
   const step = w / Math.max(1, data.length - 1);
-  const pts = data.map((d, i) => [pad + i * step, pad + h - (d / 100) * h]);
+  const pts = data.map((d, i) => [padX + i * step, padY + h - (d / 100) * h]);
   const path = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(" ");
-  const area = path + ` L${pts[pts.length-1][0]},${pad+h} L${pts[0][0]},${pad+h} Z`;
-  const y50 = pad + h - (50 / 100) * h;
+  const area = path + ` L${pts[pts.length-1][0]},${padY+h} L${pts[0][0]},${padY+h} Z`;
+  const y50 = padY + h - (50 / 100) * h;
   return (
     <svg width={width} height={height} style={{ display: "block" }}>
-      <line x1={pad} x2={pad + w} y1={y50} y2={y50} stroke="#d6c9a6" strokeWidth="1" strokeDasharray="2 3" />
+      <line x1={padX} x2={padX + w} y1={y50} y2={y50} stroke="#d6c9a6" strokeWidth="1" strokeDasharray="2 3" />
       <path d={area} fill="#b21f2d" fillOpacity="0.08" />
       <path d={path} fill="none" stroke="#15110b" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
@@ -147,7 +151,8 @@ function StreakBars({ results, games = [], width = 320, height = 56 }) {
   const [hover, setHover] = useState(null);
   if (!n) return null;
   const pad = 2;
-  const barW = (width - pad * (n + 1)) / n;
+  const padRight = 12;
+  const barW = (width - pad * (n + 1) - padRight) / n;
   const COLORS = { V: "#4d6b2a", E: "#b48415", D: "#a8341f" };
   const RESULT_LABELS = { V: "Vitória", E: "Empate", D: "Derrota" };
   const tooltipGame = hover ? games[hover.index] : null;
