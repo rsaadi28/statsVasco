@@ -157,7 +157,8 @@ function StreakBars({ results, games = [], width = 320, height = 56 }) {
   const RESULT_LABELS = { V: "Vitória", E: "Empate", D: "Derrota" };
   const tooltipGame = hover ? games[hover.index] : null;
   const tooltipHalf = 110;
-  const tooltipLeft = hover ? Math.max(tooltipHalf, Math.min(width - tooltipHalf, hover.left)) : 0;
+  const tooltipLeft = hover ? Math.max(tooltipHalf + 8, Math.min((window.innerWidth || width) - tooltipHalf - 8, hover.clientX || hover.left)) : 0;
+  const tooltipTop = hover ? Math.max(168, (hover.clientY || 0) - 12) : 0;
   return (
     <span className="streak-bars-wrap" style={{ width, height }}>
       <svg width={width} height={height} className="streak-bars-svg" aria-label="Sequência de resultados">
@@ -175,8 +176,8 @@ function StreakBars({ results, games = [], width = 320, height = 56 }) {
               width={barW}
               height={h}
               fill={COLORS[r]}
-              onMouseEnter={() => game && setHover({ index: i, left: x + barW / 2 })}
-              onMouseMove={() => game && setHover({ index: i, left: x + barW / 2 })}
+              onMouseEnter={(event) => game && setHover({ index: i, left: x + barW / 2, clientX: event.clientX, clientY: event.clientY })}
+              onMouseMove={(event) => game && setHover({ index: i, left: x + barW / 2, clientX: event.clientX, clientY: event.clientY })}
               onMouseLeave={() => setHover(null)}
             />
           );
@@ -185,7 +186,7 @@ function StreakBars({ results, games = [], width = 320, height = 56 }) {
       {tooltipGame && (
         <span
           className={"streak-tooltip " + tooltipGame.resultado}
-          style={{ left: tooltipLeft, bottom: height + 8 }}
+          style={{ left: tooltipLeft, top: tooltipTop }}
         >
           <span className="streak-tooltip-kicker">
             {tooltipGame.data} · {RESULT_LABELS[tooltipGame.resultado] || tooltipGame.resultado}

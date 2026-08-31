@@ -346,6 +346,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
   min-height: 156px;
 }
 .summary-media-kpis {
@@ -452,10 +454,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   opacity: 0.86;
 }
 .streak-tooltip {
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  z-index: 1000;
   width: 220px;
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   padding: 10px 11px 9px;
   border: 1px solid var(--rule);
   background: var(--paper-card);
