@@ -5,6 +5,7 @@ function JogosFuturos({ onOpenRetro }) {
   const [comp, setComp] = useState("todas");
   const [hover, setHover] = useState(null);
   const [probMatch, setProbMatch] = useState(null);
+  const [forecastAuditOpen, setForecastAuditOpen] = useState(false);
 
   const competicoes = useMemo(() => {
     const set = new Set();
@@ -37,6 +38,9 @@ function JogosFuturos({ onOpenRetro }) {
             </button>
           ))}
         </div>
+        <button type="button" className="jf-audit-btn" onClick={() => setForecastAuditOpen(true)}>
+          Histórico de previsões
+        </button>
         <div style={{fontFamily:"var(--ff-sans)", fontSize:10, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>
           clique numa partida para ver o retrospecto contra o adversário
         </div>
@@ -105,6 +109,7 @@ function JogosFuturos({ onOpenRetro }) {
         </table>
       </div>
       {probMatch && <JFProbabilityModal match={probMatch} onClose={() => setProbMatch(null)} />}
+      {forecastAuditOpen && <JFForecastAuditModal onClose={() => setForecastAuditOpen(false)} />}
     </div>
   );
 }
@@ -345,6 +350,114 @@ function ProbBox({ title, counts }) {
       <span>{title}</span>
       <strong><b className="c-v">{counts.v}</b>V · <b className="c-e">{counts.e}</b>E · <b className="c-d">{counts.d}</b>D</strong>
       <small>{counts.total} jogos · saldo {counts.gp - counts.gc >= 0 ? "+" : ""}{counts.gp - counts.gc}</small>
+    </div>
+  );
+}
+
+function buildJFForecastAudit() {
+  if (typeof allForecastMatches !== "function" || typeof buildMatchForecastFromPrior !== "function") {
+    return { rows: [], total: 0, acertos: 0, erros: 0, placarAcertos: 0, aproveitamento: 0, placarAproveitamento: 0 };
+  }
+  const games = allForecastMatches();
+  const rows = [];
+  games.forEach((game, index) => {
+    const prior = games.slice(0, index);
+    if (prior.length < 5) return;
+    rows.push(buildMatchForecastFromPrior(game, prior));
+  });
+  const acertos = rows.filter(row => row.hitResult).length;
+  const placarAcertos = rows.filter(row => row.hitScore).length;
+  return {
+    rows: rows.sort((a, b) => b.match.dataValue - a.match.dataValue),
+    total: rows.length,
+    acertos,
+    erros: rows.length - acertos,
+    placarAcertos,
+    placarErros: rows.length - placarAcertos,
+    aproveitamento: rows.length ? (acertos / rows.length) * 100 : 0,
+    placarAproveitamento: rows.length ? (placarAcertos / rows.length) * 100 : 0,
+  };
+}
+
+function scoreText(score) {
+  return Array.isArray(score) ? `${score[0]} × ${score[1]}` : "—";
+}
+
+function JFForecastAuditModal({ onClose }) {
+  const audit = useMemo(() => buildJFForecastAudit(), []);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="jf-prob-modal" role="dialog" aria-modal="true" aria-label="Histórico de previsões" onClick={onClose}>
+      <div className="jf-audit-dialog" onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+        <div className="jf-prob-head">
+          <span className="modal-eyebrow">Modelo probabilístico</span>
+          <h3>Histórico de previsões</h3>
+          <p>Simulação com dados anteriores a cada jogo, ordenada do mais recente ao primeiro previsto.</p>
+        </div>
+
+        <div className="jf-audit-kpis">
+          <div>
+            <span>Resultado V/E/D</span>
+            <strong><b className="c-v">{audit.acertos}</b> × <b className="c-d">{audit.erros}</b></strong>
+            <small>{audit.aproveitamento.toFixed(1)}% de acerto</small>
+          </div>
+          <div>
+            <span>Placar exato</span>
+            <strong><b className="c-v">{audit.placarAcertos}</b> × <b className="c-d">{audit.placarErros}</b></strong>
+            <small>{audit.placarAproveitamento.toFixed(1)}% de acerto</small>
+          </div>
+          <div>
+            <span>Jogos avaliados</span>
+            <strong>{audit.total}</strong>
+            <small>mínimo de 5 jogos anteriores no acervo</small>
+          </div>
+        </div>
+
+        <div className="jf-audit-table-wrap">
+          <table className="jf-audit-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Adversário</th>
+                <th>Competição</th>
+                <th>Resultado previsto</th>
+                <th>Resultado real</th>
+                <th>Placar previsto</th>
+                <th>Placar real</th>
+                <th>Placar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {audit.rows.map((row, index) => (
+                <tr key={`${row.match.data}-${row.match.adversario}-${index}`} className={row.hitResult ? "hit" : "miss"}>
+                  <td>{row.match.data}</td>
+                  <td>{row.match.adversario}</td>
+                  <td>{shortCompJF(row.match.competicao)}</td>
+                  <td><strong className={`c-${row.predicted.toLowerCase()}`}>{forecastResultLabel(row.predicted)}</strong></td>
+                  <td><strong className={`c-${row.actual.toLowerCase()}`}>{forecastResultLabel(row.actual)}</strong></td>
+                  <td>{scoreText(row.predictedScore)}</td>
+                  <td>{scoreText(row.actualScore)}</td>
+                  <td>{row.hitScore ? "Acertou" : "Errou"}</td>
+                </tr>
+              ))}
+              {audit.rows.length === 0 && (
+                <tr>
+                  <td colSpan="8">Histórico insuficiente para simular previsões.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
