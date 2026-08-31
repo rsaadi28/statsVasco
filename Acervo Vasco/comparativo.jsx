@@ -38,7 +38,7 @@ function Comparativo() {
   const ativo = COMP_TABS.find(c => c.id === tab);
 
   const series = useMemo(
-    () => buildSeries(window.SEASON_2026, window.SEASON_2025_TOTALS, ativo.competicao, anoComp),
+    () => buildSeries(window.SEASON_2026, ativo.competicao, anoComp),
     [ativo, anoComp]
   );
 
@@ -51,27 +51,39 @@ function Comparativo() {
   );
 }
 
+function seasonForComparisonYear(anoComparacao) {
+  const runtimeSeason = window.ACERVO_SEASONS?.[String(anoComparacao)];
+  if (runtimeSeason?.jogos?.length) return { season: runtimeSeason, source: "runtime" };
+  if (anoComparacao === 2025 && window.SEASON_2025_TOTALS?.jogos?.length) {
+    return { season: window.SEASON_2025_TOTALS, source: "legacy" };
+  }
+  return { season: null, source: "synthetic" };
+}
+
+function normalizeComparableMatch(j) {
+  return {
+    placar: Array.isArray(j.placar) ? j.placar : [Number(j.gp || 0), Number(j.gc || 0)],
+    res: j.resultado || j.res,
+    rodada: j.rodada,
+    posicao: j.posicao,
+    competicao: j.competicao,
+  };
+}
+
 // Constrói as séries acumulativas filtradas por competição
-function buildSeries(season26, season25, competicao, anoComparacao) {
+function buildSeries(season26, competicao, anoComparacao) {
   // 2026 — pega do SEASON_2026.jogos (ordem cronológica) e normaliza o campo de resultado
   const jogos26 = season26.jogos
     .filter(j => sameCompeticao(j.competicao, competicao))
-    .map(j => ({
-      placar: j.placar,
-      res: j.resultado,
-      rodada: j.rodada,
-      posicao: j.posicao,
-      competicao: j.competicao,
-    }));
+    .map(normalizeComparableMatch);
 
-  // Ano anterior — usa data-2025 quando é 2025, senão gera de YEARLY totals
+  // Ano comparado — prioriza a base consolidada do runtime; data-2025 é apenas fallback legado.
   let jogosPrev = [];
-  if (anoComparacao === 2025 && season25?.jogos) {
-    jogosPrev = season25.jogos
+  const prevSource = seasonForComparisonYear(anoComparacao);
+  if (prevSource.season?.jogos) {
+    jogosPrev = prevSource.season.jogos
       .filter(j => sameCompeticao(j.competicao, competicao))
-      .map(j => ({
-        placar: j.placar, res: j.res, rodada: j.rodada, posicao: j.posicao, competicao: j.competicao,
-      }));
+      .map(normalizeComparableMatch);
   } else if (window.gameSeriesForYear) {
     // gera série sintética a partir de YEARLY
     const ser = window.gameSeriesForYear(anoComparacao) || [];
@@ -88,11 +100,15 @@ function buildSeries(season26, season25, competicao, anoComparacao) {
   // recorte do mesmo número de jogos
   const n = jogos26.length;
   const jogosPrevCut = jogosPrev.slice(0, n);
+  const nComparado = jogosPrevCut.length;
 
   return {
     competicao,
     anoComparacao,
     n_atual: n,
+    n_comparado: nComparado,
+    comparacaoCompleta: nComparado >= n,
+    fonteComparacao: prevSource.source,
     jogos26,
     jogos25: jogosPrevCut,
     jogos25_full: jogosPrev,
@@ -162,10 +178,14 @@ function CmpHero({ ativo, series, anoComp, setAnoComp }) {
         <div className="cmp-hero-meta">
           <div className="cmp-pill">
             {ativo.id === "totais"
-              ? <><strong>{series.n_atual}</strong> jogos comparados aos primeiros <strong>{series.n_atual}</strong> de {anoComp}</>
+              ? series.comparacaoCompleta
+                ? <><strong>{series.n_atual}</strong> jogos comparados aos primeiros <strong>{series.n_atual}</strong> de {anoComp}</>
+                : <><strong>{series.n_atual}</strong> jogos em 2026 · {anoComp} tem <strong>{series.n_comparado}</strong> no recorte disponível</>
               : ativo.isLeague
                 ? <>Rodada <strong>{series.n_atual}</strong> registrada no Brasileirão · mesma rodada em {anoComp}</>
-                : <><strong>{series.n_atual}</strong> jogo(s) em <strong>{ativo.label}</strong> · mesmo recorte em {anoComp}</>
+                : series.comparacaoCompleta
+                  ? <><strong>{series.n_atual}</strong> jogo(s) em <strong>{ativo.label}</strong> · mesmo recorte em {anoComp}</>
+                  : <><strong>{series.n_atual}</strong> jogo(s) em <strong>{ativo.label}</strong> · {anoComp} tem <strong>{series.n_comparado}</strong> disponível(is)</>
             }
           </div>
           {ativo.isLeague && <PosicaoBadges series={series} anoComp={anoComp} />}
