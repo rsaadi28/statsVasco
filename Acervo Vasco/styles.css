@@ -274,6 +274,55 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--ff-mono); font-size: 11px; color: var(--ink-mute);
   letter-spacing: 0.05em;
 }
+.summary-results-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(140px, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+.summary-results-main {
+  min-width: 0;
+}
+.summary-results-main .spark {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.summary-cards-total {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-left: 22px;
+  border-left: 1px solid var(--rule);
+}
+.summary-card-kpis {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 8px;
+}
+.summary-card-kpi {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.summary-card-kpi strong {
+  font-family: var(--ff-display);
+  font-size: 32px;
+  line-height: 1;
+  color: var(--ink);
+}
+.summary-card-icon {
+  display: inline-block;
+  width: 15px;
+  height: 21px;
+  border: 1px solid rgba(24, 22, 19, 0.18);
+  border-radius: 2px;
+  transform: rotate(2deg);
+}
+.summary-card-icon.yellow { background: var(--r-e); }
+.summary-card-icon.red { background: var(--r-d); }
 .season-scout-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -4391,6 +4440,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .summary > div:nth-child(2) { border-right: 1px solid var(--rule); }
   .summary > div:nth-child(3) { border-right: 0; }
   .summary > div:nth-child(4) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--rule); }
+  .summary-results-layout { grid-template-columns: minmax(0, 4fr) minmax(120px, 1fr); }
+  .summary-cards-total { padding-left: 18px; }
+  .summary-card-kpis { gap: 14px; }
   .season-scout-strip { grid-template-columns: 1fr; align-items: start; }
   .season-scout-strip .summary-scout-btn { width: fit-content; }
   .resumo-grid { grid-template-columns: 1fr; }
@@ -4421,6 +4473,14 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     border-bottom: 1px solid var(--rule);
   }
   .summary > div:last-child { border-bottom: 0; }
+  .summary-results-layout { grid-template-columns: 1fr; gap: 14px; }
+  .summary-cards-total {
+    justify-content: flex-start;
+    padding-left: 0;
+    padding-top: 14px;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
   .season-scout-strip { padding: 13px 0; }
   .season-scout-strip-metrics { gap: 10px 18px; }
   .season-scout-strip-metric { white-space: normal; }

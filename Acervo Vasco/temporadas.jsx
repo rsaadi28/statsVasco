@@ -28,6 +28,29 @@ function computeRollingStats(jogos) {
   return { saldoSeries, aproveitamentoSeries };
 }
 
+function countCardEntries(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object") return Object.keys(value).length;
+  const n = seasonScoutNumber(value);
+  return n === null ? 0 : n;
+}
+
+function matchCardTotals(jogo) {
+  const detalhe = partidaDetalhada(jogo);
+  const stats = detalhe?.estatisticas_vasco && typeof detalhe.estatisticas_vasco === "object"
+    ? detalhe.estatisticas_vasco
+    : {};
+  const amarelos = Math.max(
+    countCardEntries(detalhe?.cartoes_amarelos_vasco),
+    countCardEntries(stats.cartoes_amarelos)
+  );
+  const vermelhos = Math.max(
+    countCardEntries(detalhe?.cartoes_vermelhos_vasco),
+    countCardEntries(stats.cartoes_vermelhos)
+  );
+  return { amarelos, vermelhos };
+}
+
 function lastN(arr, n, idx) {
   const start = Math.max(0, idx - n + 1);
   return arr.slice(start, idx + 1);
@@ -331,14 +354,17 @@ function Temporadas({ season, onOpenMatch }) {
 
   // resumo do recorte
   const resumo = useMemo(() => {
-    let v=0,e=0,d=0,gp=0,gc=0;
+    let v=0,e=0,d=0,gp=0,gc=0,ca=0,cv=0;
     filtered.forEach((j)=>{
       if(j.resultado==="V")v++;else if(j.resultado==="E")e++;else d++;
       gp+=j.placar[0]; gc+=j.placar[1];
+      const cartoes = matchCardTotals(j);
+      ca += cartoes.amarelos;
+      cv += cartoes.vermelhos;
     });
     const total = v+e+d;
     const aprov = total ? ((v*3+e)/(total*3))*100 : 0;
-    return { v,e,d,gp,gc, total, saldo: gp-gc, aprov };
+    return { v,e,d,gp,gc,ca,cv, total, saldo: gp-gc, aprov };
   }, [filtered]);
 
   const { saldoSeries, aproveitamentoSeries } = useMemo(() => computeRollingStats(filtered), [filtered]);
@@ -426,16 +452,33 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
   return (
     <section className="summary">
       <div>
-        <div className="summary-label">Resultados ({resumo.total} jogos)</div>
-        <div className="ved-row">
-          <span><span className="v">{resumo.v}</span><span className="lbl">V</span></span>
-          <span><span className="e">{resumo.e}</span><span className="lbl">E</span></span>
-          <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
+        <div className="summary-results-layout">
+          <div className="summary-results-main">
+            <div className="summary-label">Resultados ({resumo.total} jogos)</div>
+            <div className="ved-row">
+              <span><span className="v">{resumo.v}</span><span className="lbl">V</span></span>
+              <span><span className="e">{resumo.e}</span><span className="lbl">E</span></span>
+              <span><span className="d">{resumo.d}</span><span className="lbl">D</span></span>
+            </div>
+            <div className="spark">
+              <StreakBars results={allResults} games={allJogos} width={920} height={34} />
+            </div>
+            <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
+          </div>
+          <div className="summary-cards-total" aria-label="Totais de cartões do recorte">
+            <div className="summary-label">Cartões</div>
+            <div className="summary-card-kpis">
+              <div className="summary-card-kpi">
+                <span className="summary-card-icon yellow" aria-hidden="true"></span>
+                <strong>{resumo.ca}</strong>
+              </div>
+              <div className="summary-card-kpi">
+                <span className="summary-card-icon red" aria-hidden="true"></span>
+                <strong>{resumo.cv}</strong>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="spark">
-          <StreakBars results={allResults} games={allJogos} width={920} height={34} />
-        </div>
-        <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
       </div>
       <div>
         <div className="summary-label">Gols (pró – contra)</div>
