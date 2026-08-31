@@ -229,27 +229,27 @@ function RetroAside({ data, calc, onOpenPlayer }) {
 function RetroKPIs({ calc }) {
   return (
     <div className="retro-kpis">
-      <div className="rkpi" style={{gridColumn:"span 2"}}>
+      <div className="rkpi" style={{gridColumn:"span 3"}}>
         <div className="rkpi-lbl">Jogos</div>
         <div className="rkpi-val">{calc.total}</div>
       </div>
-      <div className="rkpi rkpi-ap" style={{gridColumn:"span 2"}}>
+      <div className="rkpi rkpi-ap" style={{gridColumn:"span 3"}}>
         <div className="rkpi-lbl">Aproveitamento</div>
         <div className="rkpi-val red">{calc.aprov.toFixed(1)}<small>%</small></div>
       </div>
-      <div className="rkpi rkpi-v">
+      <div className="rkpi rkpi-v" style={{gridColumn:"span 2"}}>
         <div className="rkpi-lbl">V</div>
         <div className="rkpi-val">{calc.v}</div>
       </div>
-      <div className="rkpi rkpi-e">
+      <div className="rkpi rkpi-e" style={{gridColumn:"span 2"}}>
         <div className="rkpi-lbl">E</div>
         <div className="rkpi-val">{calc.e}</div>
       </div>
-      <div className="rkpi rkpi-d">
+      <div className="rkpi rkpi-d" style={{gridColumn:"span 2"}}>
         <div className="rkpi-lbl">D</div>
         <div className="rkpi-val">{calc.d}</div>
       </div>
-      <div className="rkpi rkpi-bar" style={{gridColumn:"span 4", marginTop:-2}}>
+      <div className="rkpi rkpi-bar" style={{gridColumn:"span 6", marginTop:-2}}>
         <div className="rkpi-bar-track">
           <div style={{flex: calc.v, background:"var(--r-v)"}}/>
           <div style={{flex: calc.e, background:"var(--r-e)"}}/>
