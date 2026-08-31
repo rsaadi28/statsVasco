@@ -3201,11 +3201,233 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--ink-mute);
   font-weight: 400;
 }
+.jf-prob-btn {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 10px;
+  font-family: var(--ff-sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.jf-prob-btn:hover,
+.jf-prob-btn:focus-visible {
+  background: var(--ink);
+  color: var(--paper-light);
+}
+.jf-prob-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 230;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(21, 17, 11, 0.42);
+}
+.jf-prob-dialog {
+  position: relative;
+  width: min(860px, 100%);
+  max-height: min(820px, calc(100vh - 56px));
+  overflow: auto;
+  background: var(--paper-card);
+  border: 1px solid var(--ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  padding: 28px;
+}
+.jf-prob-head {
+  border-bottom: 1px solid var(--rule);
+  padding: 0 42px 18px 0;
+  margin-bottom: 20px;
+}
+.jf-prob-head h3 {
+  font-family: var(--ff-display);
+  font-size: 46px;
+  line-height: 0.95;
+  margin: 7px 0 8px;
+  letter-spacing: 0;
+}
+.jf-prob-head p {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.jf-prob-main {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+.jf-prob-score {
+  border: 1px solid var(--ink);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 156px;
+}
+.jf-prob-score span,
+.jf-prob-box span {
+  font-family: var(--ff-sans);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.jf-prob-score strong {
+  font-family: var(--ff-display);
+  font-size: 44px;
+  line-height: 0.95;
+  margin-top: 8px;
+}
+.jf-prob-score small,
+.jf-prob-box small {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 8px;
+}
+.jf-prob-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.jf-prob-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.jf-prob-row-head span {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.jf-prob-row-head strong {
+  font-family: var(--ff-display);
+  font-size: 24px;
+}
+.jf-prob-track {
+  height: 12px;
+  border: 1px solid var(--ink);
+  background: rgba(199, 179, 125, 0.18);
+  overflow: hidden;
+}
+.jf-prob-fill {
+  height: 100%;
+}
+.jf-prob-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.jf-prob-box {
+  padding: 14px 16px;
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jf-prob-box:last-child {
+  border-right: 0;
+}
+.jf-prob-box strong {
+  font-family: var(--ff-display);
+  font-size: 26px;
+  line-height: 1;
+}
+.jf-prob-box b {
+  font-weight: inherit;
+}
+.jf-prob-method {
+  margin-top: 20px;
+}
+.jf-prob-method h4 {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 10px;
+}
+.jf-prob-method ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px dotted var(--rule);
+}
+.jf-prob-method li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--rule);
+  align-items: baseline;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+}
+.jf-prob-method li strong {
+  font-family: var(--ff-display);
+  font-size: 18px;
+}
+.jf-prob-method li em {
+  font-style: normal;
+  color: var(--ink-mute);
+}
+.jf-prob-method p {
+  margin-top: 12px;
+  max-width: 680px;
+  font-family: var(--ff-serif);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.jf-prob-dialog .c-v { color: var(--green); }
+.jf-prob-dialog .c-e { color: var(--gold); }
+.jf-prob-dialog .c-d { color: var(--red); }
+.jf-prob-fill.c-v { background: var(--green); }
+.jf-prob-fill.c-e { background: var(--gold); }
+.jf-prob-fill.c-d { background: var(--red); }
 
 @media (max-width: 1100px) {
   .jf-hero-line { grid-template-columns: 1fr; }
   .jf-title { font-size: 84px; }
   .jf-next-label { text-align: left; }
+  .jf-prob-grid { grid-template-columns: repeat(2, 1fr); }
+  .jf-prob-box:nth-child(2n) { border-right: 0; }
+}
+
+@media (max-width: 700px) {
+  .jf-prob-modal { padding: 14px; }
+  .jf-prob-dialog { padding: 20px; }
+  .jf-prob-head h3 { font-size: 34px; }
+  .jf-prob-main,
+  .jf-prob-grid {
+    grid-template-columns: 1fr;
+  }
+  .jf-prob-box {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .jf-prob-box:last-child {
+    border-bottom: 0;
+  }
+  .jf-prob-method li {
+    grid-template-columns: 1fr auto;
+  }
+  .jf-prob-method li em {
+    grid-column: 1 / -1;
+  }
 }
 
 /* ===================================================== */
