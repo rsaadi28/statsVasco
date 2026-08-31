@@ -463,19 +463,19 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
         </div>
         <div className="summary-sub">cronológico · esquerda = 1ª rodada</div>
       </div>
-      <div>
+      <div className="summary-goals">
         <div className="summary-label">Gols (pró – contra)</div>
         <div className="summary-value">{resumo.gp}<span style={{color:"var(--ink-faint)", margin:"0 8px"}}>–</span>{resumo.gc}</div>
         <div className="spark">
-          <Sparkline data={saldoSeries} width={260} height={32} color="#b21f2d" />
+          <Sparkline data={saldoSeries} width={560} height={58} color="#b21f2d" />
         </div>
         <div className="summary-sub">saldo acumulado <strong style={{color:"var(--ink)"}}>{resumo.saldo > 0 ? "+" : ""}{resumo.saldo}</strong></div>
       </div>
-      <div>
+      <div className="summary-aproveitamento">
         <div className="summary-label">Aproveitamento</div>
         <div className="summary-value">{resumo.aprov.toFixed(1)}<span style={{fontSize:"22px", color:"var(--ink-mute)"}}>%</span></div>
         <div className="spark">
-          <AproveitamentoChart data={aproveitamentoSeries} width={260} height={32} />
+          <AproveitamentoChart data={aproveitamentoSeries} width={560} height={58} />
         </div>
         <div className="summary-sub">linha de 50% pontilhada</div>
       </div>
@@ -492,19 +492,19 @@ function SummaryRow({ resumo, saldoSeries, aproveitamentoSeries, allResults, all
           </div>
         </div>
       </div>
-      <div>
+      <div className="summary-media-series">
         <div className="summary-label">Médias e séries</div>
-        <div style={{display:"flex", gap:"22px", alignItems:"baseline", marginTop:"2px"}}>
+        <div className="summary-media-kpis">
           <div>
-            <div style={{fontFamily:"var(--ff-display)", fontSize:"28px", lineHeight:1}}>{(resumo.gp/Math.max(1,resumo.total)).toFixed(2)}</div>
+            <div className="summary-media-value">{(resumo.gp/Math.max(1,resumo.total)).toFixed(2)}</div>
             <div className="summary-sub" style={{marginTop:2}}>gols pró/jogo</div>
           </div>
           <div>
-            <div style={{fontFamily:"var(--ff-display)", fontSize:"28px", lineHeight:1}}>{(resumo.gc/Math.max(1,resumo.total)).toFixed(2)}</div>
+            <div className="summary-media-value">{(resumo.gc/Math.max(1,resumo.total)).toFixed(2)}</div>
             <div className="summary-sub" style={{marginTop:2}}>gols contra/jogo</div>
           </div>
         </div>
-        <div style={{marginTop:8, display:"flex", gap:"14px"}}>
+        <div className="summary-series-row">
           <div className="summary-sub" style={{margin:0}}><strong style={{color:"var(--r-v)"}}>{season.resumo.maior_invicta}j</strong> invicto · <strong style={{color:"var(--r-d)"}}>{season.resumo.maior_jejum}j</strong> sem vencer</div>
         </div>
       </div>
