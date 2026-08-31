@@ -949,22 +949,34 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* Eventos tab */
 .timeline {
-  display: grid;
-  grid-template-columns: 1fr 80px 1fr;
-  gap: 0;
+  display: block;
 }
-.timeline-mid {
+.timeline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+  align-items: stretch;
+}
+.timeline-min {
   border-left: 1px solid var(--rule);
   border-right: 1px solid var(--rule);
   background: var(--paper-light);
-  display: flex; flex-direction: column;
-}
-.timeline-min {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--ff-mono); font-size: 11px;
   text-align: center;
   padding: 12px 0;
   color: var(--ink-mute);
   border-bottom: 1px dotted var(--rule);
+  box-sizing: border-box;
+}
+.timeline-min.header {
+  min-height: 30px;
+  padding: 6px 0;
+  font-family: var(--ff-sans);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 .timeline-min.half {
   background: var(--paper-deep);
@@ -975,6 +987,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .timeline-side {
   padding: 0;
+  min-width: 0;
 }
 .timeline-side .evt {
   padding: 12px 18px;
@@ -982,6 +995,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-bottom: 1px dotted var(--rule);
   display: flex; align-items: center; gap: 10px;
   min-height: 49px;
+  height: 100%;
+  box-sizing: border-box;
 }
 .timeline-side .evt .icon {
   width: 18px; height: 18px;

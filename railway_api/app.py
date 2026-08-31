@@ -209,6 +209,29 @@ def validate_state_payload(raw: Any) -> dict[str, Any]:
     }
 
 
+def validate_partial_state_payload(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise ValueError("Payload de atualização parcial precisa ser um objeto JSON.")
+    state = raw.get("state") if isinstance(raw.get("state"), dict) else raw
+    allowed = ("future_matches", "current_squad", "historic_players")
+    present = [key for key in allowed if key in state]
+    if not present:
+        raise ValueError(
+            "Informe ao menos um de: future_matches, current_squad ou historic_players."
+        )
+    updates: dict[str, Any] = {}
+    if "future_matches" in state:
+        future_matches = state["future_matches"]
+        if not isinstance(future_matches, list):
+            raise ValueError("future_matches precisa ser lista.")
+        updates["future_matches"] = [validate_future_match(item) for item in future_matches]
+    if "current_squad" in state:
+        updates["current_squad"] = validate_current_squad(state["current_squad"])
+    if "historic_players" in state:
+        updates["historic_players"] = validate_historic_players(state["historic_players"])
+    return updates
+
+
 def match_key(match: dict[str, Any]) -> tuple[str, str, str]:
     return (
         str(match.get("data") or "").strip().casefold(),
@@ -382,6 +405,48 @@ async def sync_state(
             "future_matches": len(state["future_matches"]),
             "current_squad": len(state["current_squad"].get("jogadores", [])),
             "historic_players": len(state["historic_players"].get("jogadores", [])),
+        }
+    )
+
+
+@app.get("/admin/state")
+def admin_state(
+    authorization: str | None = Header(default=None),
+    x_admin_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    require_admin(authorization, x_admin_token)
+    return load_state()
+
+
+@app.post("/admin/update-state")
+async def update_state(
+    request: Request,
+    authorization: str | None = Header(default=None),
+    x_admin_token: str | None = Header(default=None),
+) -> JSONResponse:
+    """Atualiza agenda/elenco/histórico sem substituir o acervo de partidas."""
+    require_admin(authorization, x_admin_token)
+    payload = await request.json()
+    try:
+        updates = validate_partial_state_payload(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    for key, value in updates.items():
+        save_state_key(key, value)
+    return JSONResponse(
+        {
+            "ok": True,
+            "updated_keys": list(updates),
+            "future_matches": len(updates["future_matches"])
+            if "future_matches" in updates
+            else None,
+            "current_squad": len(updates["current_squad"].get("jogadores", []))
+            if "current_squad" in updates
+            else None,
+            "historic_players": len(updates["historic_players"].get("jogadores", []))
+            if "historic_players" in updates
+            else None,
         }
     )
 

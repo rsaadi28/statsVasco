@@ -746,48 +746,58 @@ function TabEventos({ p }) {
   const secondHalf = events.filter(e => e.periodo==="2T");
   const unknown = events.filter(e => e.minuto==null);
 
+  const eventRow = (event, key) => (
+    <div className="timeline-row" key={key}>
+      <div className="timeline-side left">
+        {event.side === "vasco" ? <EventRow {...event} /> : <EventRow empty />}
+      </div>
+      <div className="timeline-min">{event.minuto}'</div>
+      <div className="timeline-side right">
+        {event.side === "adv" ? <EventRow {...event} /> : <EventRow empty />}
+      </div>
+    </div>
+  );
+
   return (
     <div className="timeline">
-      <div className="timeline-side left">
-        <EventRow label={<span style={{fontFamily:"var(--ff-sans)", fontSize:10, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>Vasco</span>} kind="header" />
-        {firstHalf.map((e, i) => e.side==="vasco" ? <EventRow key={"f"+i} {...e} /> : <EventRow key={"fe"+i} empty />)}
-        <EventRow kind="halfTime" />
-        {secondHalf.map((e, i) => e.side==="vasco" ? <EventRow key={"s"+i} {...e} /> : <EventRow key={"se"+i} empty />)}
-        {unknown.length > 0 && (
-          <>
-            <EventRow kind="indet" />
-            {unknown.map((e, i) => e.side==="vasco" ? <EventRow key={"u"+i} {...e} /> : <EventRow key={"ue"+i} empty />)}
-          </>
-        )}
+      <div className="timeline-row timeline-header">
+        <div className="timeline-side left">
+          <EventRow label={<span style={{fontFamily:"var(--ff-sans)", fontSize:10, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>Vasco</span>} kind="header" />
+        </div>
+        <div className="timeline-min header">Min.</div>
+        <div className="timeline-side right">
+          <EventRow label={<span style={{fontFamily:"var(--ff-sans)", fontSize:10, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>{p.adversario}</span>} kind="header" />
+        </div>
       </div>
-      <div className="timeline-mid">
-        <div className="timeline-min" style={{fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>Min.</div>
-        {firstHalf.map((e, i) => (
-          <div key={"m"+i} className="timeline-min">{e.minuto}'</div>
-        ))}
+      {firstHalf.map((event, index) => eventRow(event, `first-${index}`))}
+      <div className="timeline-row timeline-marker">
+        <div className="timeline-side left"><EventRow kind="halfTime" /></div>
         <div className="timeline-min half">Intervalo</div>
-        {secondHalf.map((e, i) => (
-          <div key={"sm"+i} className="timeline-min">{e.minuto}'</div>
-        ))}
-        {unknown.length > 0 && (
-          <>
+        <div className="timeline-side right"><EventRow kind="halfTime" /></div>
+      </div>
+      {secondHalf.map((event, index) => eventRow(event, `second-${index}`))}
+      {unknown.length > 0 && (
+        <>
+          <div className="timeline-row timeline-marker">
+            <div className="timeline-side left"><EventRow kind="indet" /></div>
             <div className="timeline-min half">—</div>
-            {unknown.map((_, i) => <div key={"um"+i} className="timeline-min">?</div>)}
-          </>
-        )}
-      </div>
-      <div className="timeline-side right">
-        <EventRow label={<span style={{fontFamily:"var(--ff-sans)", fontSize:10, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)"}}>{p.adversario}</span>} kind="header" />
-        {firstHalf.map((e, i) => e.side==="adv" ? <EventRow key={"af"+i} {...e} /> : <EventRow key={"afe"+i} empty />)}
-        <EventRow kind="halfTime" />
-        {secondHalf.map((e, i) => e.side==="adv" ? <EventRow key={"as"+i} {...e} /> : <EventRow key={"ase"+i} empty />)}
-        {unknown.length > 0 && (
-          <>
+            <div className="timeline-side right">
             <EventRow kind="indet" />
-            {unknown.map((e, i) => e.side==="adv" ? <EventRow key={"au"+i} {...e} /> : <EventRow key={"aue"+i} empty />)}
-          </>
-        )}
-      </div>
+            </div>
+          </div>
+          {unknown.map((event, index) => (
+            <div className="timeline-row" key={`unknown-${index}`}>
+              <div className="timeline-side left">
+                {event.side === "vasco" ? <EventRow {...event} /> : <EventRow empty />}
+              </div>
+              <div className="timeline-min">?</div>
+              <div className="timeline-side right">
+                {event.side === "adv" ? <EventRow {...event} /> : <EventRow empty />}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }

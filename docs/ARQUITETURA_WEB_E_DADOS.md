@@ -139,6 +139,20 @@ curl -X POST https://acervo-api-production.up.railway.app/admin/import-match \
 
 A API valida o JSON, evita duplicidade usando `data + adversario + competicao`, salva no Postgres e recalcula o runtime entregue para o site.
 
+## Manutenção automatizada de agenda e elenco
+
+Para automações administrativas, a API também oferece duas rotas protegidas pelo
+mesmo `ACERVO_ADMIN_TOKEN`:
+
+- `GET /admin/state`: lê o estado completo atual antes de calcular alterações.
+- `POST /admin/update-state`: atualiza somente `future_matches`, `current_squad`
+  e/ou `historic_players`; a rota não aceita substituir `matches`.
+
+Use `POST /admin/import-match` para inserir ou enriquecer partidas e
+`POST /admin/update-state` para agenda, elenco e histórico. Não use
+`POST /admin/sync-state` com uma cópia parcial do banco, pois essa rota espelha o
+estado completo recebido.
+
 ## Fluxo simples sem banco online
 
 Este é o menor fluxo operacional:
