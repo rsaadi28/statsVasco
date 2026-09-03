@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from scripts.export_acervo_web import POS_ORDER, build_runtime_from_state, parse_date
+from web_sync import validate_no_remote_regression
 
 from .state import init_db, load_state, save_state_key
 
@@ -393,8 +394,11 @@ async def sync_state(
     payload = await request.json()
     try:
         state = validate_state_payload(payload)
+        validate_no_remote_regression(state, load_state())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     for key, value in state.items():
         save_state_key(key, value)
