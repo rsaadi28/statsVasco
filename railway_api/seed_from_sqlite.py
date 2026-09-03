@@ -15,8 +15,9 @@ from storage_sqlite import (  # noqa: E402
     load_historic_players,
     load_matches,
 )
+from web_sync import state_summary, validate_no_remote_regression  # noqa: E402
 
-from railway_api.state import replace_state  # noqa: E402
+from railway_api.state import load_state, replace_state  # noqa: E402
 
 
 def main() -> None:
@@ -28,6 +29,8 @@ def main() -> None:
         "current_squad": load_current_squad(str(db_path)),
         "historic_players": load_historic_players(str(db_path)),
     }
+    remote_state = load_state()
+    validate_no_remote_regression(state, remote_state)
     replace_state(state)
     print(
         "Seed concluído: "
@@ -35,6 +38,7 @@ def main() -> None:
         f"{len(state['future_matches'])} futuros, "
         f"{len(state['current_squad'].get('jogadores', []))} jogadores no elenco."
     )
+    print(f"Trava anti-regressao: OK {state_summary(state)}")
 
 
 if __name__ == "__main__":

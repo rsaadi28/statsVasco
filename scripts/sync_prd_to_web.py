@@ -9,7 +9,6 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,8 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.export_acervo_web import parse_date  # noqa: E402
-from web_sync import DEFAULT_API_URL, build_state  # noqa: E402
+from web_sync import (  # noqa: E402
+    DEFAULT_API_URL,
+    build_state,
+    fetch_remote_state,
+    state_summary,
+    validate_no_remote_regression,
+)
 
 DEFAULT_PRD_DB = Path.home() / "Library/Application Support/StatsVasco/stats_vasco.sqlite3"
 
@@ -107,34 +111,6 @@ def request_json(
     return data
 
 
-def latest_match(matches: list[dict[str, Any]]) -> dict[str, Any]:
-    if not matches:
-        return {}
-    return max(matches, key=lambda item: parse_date(item.get("data")) or datetime.min)
-
-
-def state_summary(state: dict[str, Any]) -> dict[str, Any]:
-    matches = state.get("matches", []) if isinstance(state.get("matches"), list) else []
-    future = state.get("future_matches", []) if isinstance(state.get("future_matches"), list) else []
-    current = state.get("current_squad", {}) if isinstance(state.get("current_squad"), dict) else {}
-    historic = state.get("historic_players", {}) if isinstance(state.get("historic_players"), dict) else {}
-    latest = latest_match(matches)
-    return {
-        "matches": len(matches),
-        "future_matches": len(future),
-        "current_squad": len(current.get("jogadores", [])) if isinstance(current.get("jogadores"), list) else 0,
-        "historic_players": len(historic.get("jogadores", [])) if isinstance(historic.get("jogadores"), list) else 0,
-        "latest_match": {
-            "data": latest.get("data"),
-            "adversario": latest.get("adversario"),
-            "competicao": latest.get("competicao"),
-            "placar": latest.get("placar"),
-        }
-        if latest
-        else None,
-    }
-
-
 def chunks(items: list[Any], size: int) -> list[list[Any]]:
     return [items[pos : pos + size] for pos in range(0, len(items), size)]
 
@@ -187,7 +163,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-remote-status",
         action="store_true",
-        help="Nao consulta /admin/status antes/depois. Util se a API estiver indisponivel.",
+        help="Nao imprime /admin/status antes/depois. A trava anti-regressao continua consultando /admin/state.",
     )
     return parser.parse_args()
 
@@ -210,6 +186,10 @@ def main() -> None:
     if not args.skip_remote_status:
         before = request_json("GET", f"{api_url}/admin/status", token, timeout=args.timeout)
         print(f"Web antes: {json.dumps(before, ensure_ascii=False)}")
+
+    remote_state = fetch_remote_state(api_url, token, timeout=args.timeout)
+    validate_no_remote_regression(state, remote_state)
+    print("Trava anti-regressao: OK, o banco local nao esta atrasado em relacao ao Railway.")
 
     if args.dry_run:
         print("Dry-run ativo: nenhuma alteracao enviada para o banco web.")
