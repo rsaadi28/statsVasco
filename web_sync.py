@@ -111,6 +111,19 @@ def _match_key(match: dict[str, Any]) -> tuple[str, str, str]:
     )
 
 
+def _future_match_key(match: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(match.get("data") or "").strip(),
+        str(match.get("jogo") or "").strip().casefold(),
+        str(match.get("campeonato") or "").strip().casefold(),
+        str(match.get("hora") or "").strip(),
+    )
+
+
+def _squad_player_key(player: dict[str, Any]) -> str:
+    return str(player.get("nome") or player.get("name") or "").strip().casefold()
+
+
 def _latest_match(matches: list[dict[str, Any]]) -> dict[str, Any]:
     if not matches:
         return {}
@@ -150,6 +163,10 @@ def validate_no_remote_regression(local_state: dict[str, Any], remote_state: dic
     """Bloqueia publicação quando o estado local está atrás do estado remoto."""
     local_matches = local_state.get("matches", []) if isinstance(local_state.get("matches"), list) else []
     remote_matches = remote_state.get("matches", []) if isinstance(remote_state.get("matches"), list) else []
+    local_future = local_state.get("future_matches", []) if isinstance(local_state.get("future_matches"), list) else []
+    remote_future = remote_state.get("future_matches", []) if isinstance(remote_state.get("future_matches"), list) else []
+    local_squad = local_state.get("current_squad", {}) if isinstance(local_state.get("current_squad"), dict) else {}
+    remote_squad = remote_state.get("current_squad", {}) if isinstance(remote_state.get("current_squad"), dict) else {}
     if not remote_matches:
         return
 
@@ -179,6 +196,33 @@ def validate_no_remote_regression(local_state: dict[str, Any], remote_state: dic
             "Sync bloqueado: o ultimo jogo remoto nao existe no banco local "
             f"({remote_latest.get('data')} {remote_latest.get('adversario')}). "
             "Isso indica risco de sobrescrever uma atualização feita em outra máquina."
+        )
+
+    local_future_keys = {_future_match_key(match) for match in local_future if isinstance(match, dict)}
+    remote_future_keys = {_future_match_key(match) for match in remote_future if isinstance(match, dict)}
+    missing_future = remote_future_keys - local_future_keys
+    if missing_future:
+        sample = sorted(missing_future)[0]
+        raise RuntimeError(
+            "Sync bloqueado: a agenda futura local nao contem todos os jogos/datas publicados no Railway "
+            f"(exemplo remoto ausente localmente: {sample})."
+        )
+
+    local_players = {
+        _squad_player_key(player)
+        for player in local_squad.get("jogadores", [])
+        if isinstance(player, dict) and _squad_player_key(player)
+    }
+    remote_players = {
+        _squad_player_key(player)
+        for player in remote_squad.get("jogadores", [])
+        if isinstance(player, dict) and _squad_player_key(player)
+    }
+    missing_players = remote_players - local_players
+    if missing_players:
+        raise RuntimeError(
+            "Sync bloqueado: o elenco local nao contem todos os jogadores publicados no Railway "
+            f"(ausentes localmente: {', '.join(sorted(missing_players)[:8])})."
         )
 
 
