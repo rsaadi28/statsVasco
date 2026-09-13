@@ -600,16 +600,7 @@ function PaginacaoLinhas({ page, totalPages, pageSize, setPage, total }) {
 }
 
 function shortCompEA(c) {
-  return {
-    "Campeonato Brasileiro Série A": "Brasileiro A",
-    "Campeonato Brasileiro Série B": "Brasileiro B",
-    "Campeonato Carioca": "Carioca",
-    "Copa do Brasil": "Copa do Brasil",
-    "Copa Sul-Americana": "Sul-Americana",
-    "Copa Libertadores": "Libertadores",
-    "Copa Mercosul": "Mercosul",
-    "—": "—",
-  }[c] || c;
+  return c === "—" ? c : competitionDisplayName(c);
 }
 
 function extractAdv(placar) {

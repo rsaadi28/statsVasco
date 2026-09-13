@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
+from copy import deepcopy
 from contextlib import contextmanager
 from typing import Any
 
@@ -73,6 +75,29 @@ def save_state_key(key: str, value: Any) -> None:
             """,
             (key, psycopg.types.json.Jsonb(value)),
         )
+
+
+def mutate_state_key(key: str, mutator: Callable[[Any], Any]) -> Any:
+    """Atualiza uma chave com lock de linha e devolve o valor persistido."""
+    if key not in STATE_KEYS:
+        raise ValueError(f"Chave de estado inválida: {key}")
+    init_db()
+    with connection() as conn:
+        row = conn.execute(
+            "SELECT value FROM acervo_state WHERE key = %s FOR UPDATE",
+            (key,),
+        ).fetchone()
+        current = row["value"] if row else deepcopy(STATE_KEYS[key])
+        updated = mutator(current)
+        conn.execute(
+            """
+            UPDATE acervo_state
+            SET value = %s::jsonb, updated_at = now()
+            WHERE key = %s
+            """,
+            (psycopg.types.json.Jsonb(updated), key),
+        )
+    return updated
 
 
 def replace_state(state: dict[str, Any]) -> None:

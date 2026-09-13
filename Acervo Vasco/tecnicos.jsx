@@ -47,14 +47,19 @@ function tecnicoCurrentContext() {
   const porCompeticao = new Map();
   jogosDoTecnico.forEach((jogo) => {
     tecnicoAddGame(resumo, jogo);
-    const comp = jogo.competicao || "Sem competição";
-    if (!porCompeticao.has(comp)) porCompeticao.set(comp, tecnicoEmptyStats());
-    tecnicoAddGame(porCompeticao.get(comp), jogo);
+    const key = competitionNameKey(jogo.competicao) || "sem-competicao";
+    if (!porCompeticao.has(key)) {
+      porCompeticao.set(key, {
+        competicao: competitionDisplayName(jogo.competicao),
+        stats: tecnicoEmptyStats(),
+      });
+    }
+    tecnicoAddGame(porCompeticao.get(key).stats, jogo);
   });
 
   const ranking = window.TECNICOS || [];
   const geral = ranking.find((tecnico) => tecnico.nome === nome) || resumo;
-  const competicoes = Array.from(porCompeticao, ([competicao, stats]) => ({ competicao, ...stats }))
+  const competicoes = Array.from(porCompeticao.values(), ({ competicao, stats }) => ({ competicao, ...stats }))
     .sort((a, b) => b.jogos - a.jogos || a.competicao.localeCompare(b.competicao, "pt-BR"));
 
   return {

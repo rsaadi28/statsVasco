@@ -7,19 +7,12 @@ function JogosFuturos({ onOpenRetro }) {
   const [probMatch, setProbMatch] = useState(null);
   const [forecastAuditOpen, setForecastAuditOpen] = useState(false);
 
-  const competicoes = useMemo(() => {
-    const set = new Set();
-    all.forEach(j => set.add(j.competicao));
-    return Array.from(set).sort();
-  }, [all]);
+  const competitionGroups = useMemo(() => groupMatchesByCompetition(all), [all]);
 
-  const compCounts = useMemo(() => {
-    const m = {};
-    all.forEach(j => { m[j.competicao] = (m[j.competicao]||0) + 1; });
-    return m;
-  }, [all]);
-
-  const filtered = useMemo(() => all.filter(j => comp==="todas" || j.competicao===comp), [all, comp]);
+  const filtered = useMemo(
+    () => all.filter(j => comp === "todas" || competitionNameKey(j.competicao) === comp),
+    [all, comp]
+  );
 
   // próxima partida — primeira da lista
   const proxima = filtered[0];
@@ -32,9 +25,9 @@ function JogosFuturos({ onOpenRetro }) {
           <button className={"chip" + (comp==="todas"?" active":"")} onClick={()=>setComp("todas")}>
             Todas <span className="count">{all.length}</span>
           </button>
-          {competicoes.map(c => (
-            <button key={c} className={"chip" + (comp===c?" active":"")} onClick={()=>setComp(c)}>
-              {shortCompJF(c)} <span className="count">{compCounts[c]}</span>
+          {competitionGroups.map(({ key, label, count }) => (
+            <button key={key} className={"chip" + (comp===key?" active":"")} onClick={()=>setComp(key)}>
+              {label} <span className="count">{count}</span>
             </button>
           ))}
         </div>
@@ -463,13 +456,7 @@ function JFForecastAuditModal({ onClose }) {
 }
 
 function shortCompJF(c) {
-  return {
-    "Campeonato Brasileiro Série A": "Brasileiro A",
-    "Campeonato Carioca": "Carioca",
-    "Copa do Brasil": "Copa do Brasil",
-    "Copa Sul-Americana": "Sul-Americana",
-    "Copa Libertadores": "Libertadores",
-  }[c] || c;
+  return competitionDisplayName(c);
 }
 
 function diasAte(data) {

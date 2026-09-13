@@ -147,9 +147,31 @@ mesmo `ACERVO_ADMIN_TOKEN`:
 - `GET /admin/state`: lê o estado completo atual antes de calcular alterações.
 - `POST /admin/update-state`: atualiza somente `future_matches`, `current_squad`
   e/ou `historic_players`; a rota não aceita substituir `matches`.
+- `POST /admin/update-current-squad`: inclui, altera ou remove jogadores
+  pontualmente, sob lock transacional, sem o cliente reenviar o elenco completo.
+
+Exemplo idempotente para incluir ou atualizar apenas um jogador:
+
+```json
+{
+  "upsert_players": [
+    {
+      "nome": "Paulinho",
+      "posicao": "Lateral-Esquerdo",
+      "condicao": "Reserva",
+      "capitao": false
+    }
+  ]
+}
+```
+
+Para mudar apenas um atributo de quem já existe, basta enviar `nome` e o
+campo alterado. A rota preserva os outros jogadores, os demais campos do jogador
+e quaisquer campos adicionais já armazenados no objeto do elenco.
 
 Use `POST /admin/import-match` para inserir ou enriquecer partidas e
-`POST /admin/update-state` para agenda, elenco e histórico. Não use
+`POST /admin/update-current-squad` para alterações pontuais no elenco.
+Mantenha `POST /admin/update-state` para agenda e histórico. Não use
 `POST /admin/sync-state` com uma cópia parcial do banco, pois essa rota espelha o
 estado completo recebido.
 

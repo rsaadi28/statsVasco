@@ -1,14 +1,6 @@
 // Acervo Vasco — aba Temporadas
 
-const COMP_SHORT = {
-  "Campeonato Brasileiro Série A": "Brasileiro A",
-  "Campeonato Carioca": "Carioca",
-  "Copa do Brasil": "Copa do Brasil",
-  "Copa Sul-Americana": "Sul-Americana",
-  "Copa Libertadores": "Libertadores",
-};
-
-function shortComp(c) { return COMP_SHORT[c] || c; }
+function shortComp(c) { return competitionDisplayName(c); }
 
 // Derivados da temporada
 function computeRollingStats(jogos) {
@@ -342,7 +334,7 @@ function Temporadas({ season, onOpenMatch }) {
     return allJogos.filter((j) => {
       if (recorte === "casa" && j.local !== "casa") return false;
       if (recorte === "fora" && j.local !== "fora") return false;
-      if (comp !== "todas" && j.competicao !== comp) return false;
+      if (comp !== "todas" && competitionNameKey(j.competicao) !== comp) return false;
       if (search.trim()) {
         const s = search.trim().toLowerCase();
         const hay = `${j.adversario} ${j.competicao} ${j.placar[0]} ${j.placar[1]} ${j.resultado}`.toLowerCase();
@@ -373,17 +365,15 @@ function Temporadas({ season, onOpenMatch }) {
   const allResults = filtered.map(j => j.resultado);
 
   // contagem por competição (do recorte todos/casa/fora, antes do filtro de comp)
-  const compCounts = useMemo(() => {
-    const map = {};
-    allJogos.forEach((j) => {
-      if (recorte === "casa" && j.local !== "casa") return;
-      if (recorte === "fora" && j.local !== "fora") return;
-      map[j.competicao] = (map[j.competicao] || 0) + 1;
+  const competitionGroups = useMemo(() => {
+    const matches = allJogos.filter((j) => {
+      if (recorte === "casa" && j.local !== "casa") return false;
+      if (recorte === "fora" && j.local !== "fora") return false;
+      return true;
     });
-    return map;
+    return groupMatchesByCompetition(matches);
   }, [allJogos, recorte]);
 
-  const comps = Object.keys(compCounts).sort();
   const displayJogos = useMemo(() => [...filtered].reverse(), [filtered]);
 
   return (
@@ -399,8 +389,7 @@ function Temporadas({ season, onOpenMatch }) {
       />
       <ScoutSummaryStrip scouts={scouts} onOpenScouts={() => setShowScouts(true)} />
       <Toolbar
-        comps={comps}
-        compCounts={compCounts}
+        competitions={competitionGroups}
         comp={comp} setComp={setComp}
         view={view} setView={setView}
         search={search} setSearch={setSearch}
@@ -638,16 +627,16 @@ function SeasonScoutsModal({ scouts, onClose }) {
 }
 
 // ============ Toolbar ============
-function Toolbar({ comps, compCounts, comp, setComp, view, setView, search, setSearch, total }) {
+function Toolbar({ competitions, comp, setComp, view, setView, search, setSearch }) {
   return (
     <div className="toolbar">
       <div className="chips">
         <button className={"chip" + (comp==="todas"?" active":"")} onClick={()=>setComp("todas")}>
-          Todas <span className="count">{Object.values(compCounts).reduce((a,b)=>a+b,0)}</span>
+          Todas <span className="count">{competitions.reduce((sum, item) => sum + item.count, 0)}</span>
         </button>
-        {comps.map(c => (
-          <button key={c} className={"chip" + (comp===c?" active":"")} onClick={()=>setComp(c)}>
-            {shortComp(c)} <span className="count">{compCounts[c]}</span>
+        {competitions.map(({ key, label, count }) => (
+          <button key={key} className={"chip" + (comp===key?" active":"")} onClick={()=>setComp(key)}>
+            {label} <span className="count">{count}</span>
           </button>
         ))}
       </div>

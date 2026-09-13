@@ -8,30 +8,6 @@ const COMP_TABS = [
   { id: "sulam",       label: "Sul-Americana",                  competicao: "Copa Sul-Americana" },
 ];
 
-function normalizeCompeticaoName(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function competicaoKey(value) {
-  const norm = normalizeCompeticaoName(value);
-  if (!norm) return "";
-  if (norm.includes("campeonato brasileiro") && norm.includes("serie a")) return "brasileiro-a";
-  if (norm.includes("campeonato brasileiro") && norm.includes("serie b")) return "brasileiro-b";
-  if (norm.includes("campeonato carioca")) return "carioca";
-  if (norm.includes("copa do brasil")) return "copa-do-brasil";
-  if (norm.includes("sul americana")) return "sul-americana";
-  return norm;
-}
-
-function sameCompeticao(value, target) {
-  return !target || competicaoKey(value) === competicaoKey(target);
-}
-
 function Comparativo() {
   const [tab, setTab] = useState("totais");
   const [anoComp, setAnoComp] = useState(2025);
@@ -73,8 +49,8 @@ function normalizeComparableMatch(j) {
 // Constrói as séries acumulativas filtradas por competição
 function buildSeries(season26, competicao, anoComparacao) {
   // 2026 — pega do SEASON_2026.jogos (ordem cronológica) e normaliza o campo de resultado
-  const jogos26 = season26.jogos
-    .filter(j => sameCompeticao(j.competicao, competicao))
+  const jogos26Available = season26.jogos
+    .filter(j => sameCompetitionName(j.competicao, competicao))
     .map(normalizeComparableMatch);
 
   // Ano comparado — prioriza a base consolidada do runtime; data-2025 é apenas fallback legado.
@@ -82,7 +58,7 @@ function buildSeries(season26, competicao, anoComparacao) {
   const prevSource = seasonForComparisonYear(anoComparacao);
   if (prevSource.season?.jogos) {
     jogosPrev = prevSource.season.jogos
-      .filter(j => sameCompeticao(j.competicao, competicao))
+      .filter(j => sameCompetitionName(j.competicao, competicao))
       .map(normalizeComparableMatch);
   } else if (window.gameSeriesForYear) {
     // gera série sintética a partir de YEARLY
@@ -97,17 +73,19 @@ function buildSeries(season26, competicao, anoComparacao) {
     if (competicao) jogosPrev = []; // sem dados por competição em anos antigos
   }
 
-  // recorte do mesmo número de jogos
-  const n = jogos26.length;
-  const jogosPrevCut = jogosPrev.slice(0, n);
-  const nComparado = jogosPrevCut.length;
+  // Ambos os lados precisam usar exatamente o mesmo número de jogos.
+  const comparable = comparableMatchSlices(jogos26Available, jogosPrev);
+  const jogos26 = comparable.current;
+  const jogosPrevCut = comparable.previous;
 
   return {
     competicao,
     anoComparacao,
-    n_atual: n,
-    n_comparado: nComparado,
-    comparacaoCompleta: nComparado >= n,
+    n_atual: comparable.count,
+    n_comparado: comparable.count,
+    n_atual_disponivel: comparable.currentAvailable,
+    n_comparado_disponivel: comparable.previousAvailable,
+    comparacaoCompleta: comparable.previousAvailable >= comparable.currentAvailable,
     fonteComparacao: prevSource.source,
     jogos26,
     jogos25: jogosPrevCut,
@@ -180,12 +158,12 @@ function CmpHero({ ativo, series, anoComp, setAnoComp }) {
             {ativo.id === "totais"
               ? series.comparacaoCompleta
                 ? <><strong>{series.n_atual}</strong> jogos comparados aos primeiros <strong>{series.n_atual}</strong> de {anoComp}</>
-                : <><strong>{series.n_atual}</strong> jogos em 2026 · {anoComp} tem <strong>{series.n_comparado}</strong> no recorte disponível</>
+                : <><strong>{series.n_atual}</strong> jogos comparados em cada ano · 2026 tem <strong>{series.n_atual_disponivel}</strong> disponíveis</>
               : ativo.isLeague
                 ? <>Rodada <strong>{series.n_atual}</strong> registrada no Brasileirão · mesma rodada em {anoComp}</>
                 : series.comparacaoCompleta
                   ? <><strong>{series.n_atual}</strong> jogo(s) em <strong>{ativo.label}</strong> · mesmo recorte em {anoComp}</>
-                  : <><strong>{series.n_atual}</strong> jogo(s) em <strong>{ativo.label}</strong> · {anoComp} tem <strong>{series.n_comparado}</strong> disponível(is)</>
+                  : <><strong>{series.n_atual}</strong> jogo(s) comparados em cada ano · 2026 tem <strong>{series.n_atual_disponivel}</strong> em {ativo.label}</>
             }
           </div>
           {ativo.isLeague && <PosicaoBadges series={series} anoComp={anoComp} />}
@@ -239,10 +217,17 @@ function CmpSubtabs({ tab, setTab }) {
 function CmpBody({ ativo, series, anoComp }) {
   const t26 = series.totals26;
   const t25 = series.totals25;
-  if (series.n_atual === 0) {
+  if (series.n_atual_disponivel === 0) {
     return (
       <div style={{padding:"60px 0", textAlign:"center", border:"1px dashed var(--rule)", background:"var(--paper-card)", fontFamily:"var(--ff-serif)", fontSize:17, fontStyle:"italic", color:"var(--ink-mute)"}}>
         Sem jogos registrados em <strong style={{color:"var(--ink)", fontStyle:"normal"}}>{ativo.label}</strong> em 2026 ainda.
+      </div>
+    );
+  }
+  if (series.n_comparado_disponivel === 0) {
+    return (
+      <div style={{padding:"60px 0", textAlign:"center", border:"1px dashed var(--rule)", background:"var(--paper-card)", fontFamily:"var(--ff-serif)", fontSize:17, fontStyle:"italic", color:"var(--ink-mute)"}}>
+        Sem jogos de <strong style={{color:"var(--ink)", fontStyle:"normal"}}>{ativo.label}</strong> disponíveis em {anoComp} para comparar.
       </div>
     );
   }

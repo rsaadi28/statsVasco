@@ -53,7 +53,11 @@ if importlib.util.find_spec("psycopg") is None:
     rows.dict_row = object()
     sys.modules.update({"psycopg": psycopg, "psycopg.rows": rows})
 
-from railway_api.app import validate_partial_state_payload
+from railway_api.app import (
+    apply_current_squad_patch,
+    validate_current_squad_patch,
+    validate_partial_state_payload,
+)
 
 
 class PartialStateValidationTests(unittest.TestCase):
@@ -111,6 +115,99 @@ class PartialStateValidationTests(unittest.TestCase):
     def test_rejects_non_list_future_matches(self) -> None:
         with self.assertRaisesRegex(ValueError, "future_matches precisa ser lista"):
             validate_partial_state_payload({"future_matches": {}})
+
+
+class CurrentSquadPatchTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.current = {
+            "jogadores": [
+                {
+                    "nome": "Jogador A",
+                    "posicao": "Atacante",
+                    "condicao": "Titular",
+                    "capitao": False,
+                    "campo_legado": "preservar",
+                },
+                {
+                    "nome": "Jogador B",
+                    "posicao": "Goleiro",
+                    "condicao": "Reserva",
+                    "capitao": True,
+                },
+            ],
+            "tecnico": "Técnico",
+            "fonte": "produção",
+        }
+
+    def test_upsert_preserves_unmentioned_data_and_unknown_fields(self) -> None:
+        patch = validate_current_squad_patch(
+            {
+                "upsert_players": [
+                    {"nome": "Jogador A", "condicao": "Reserva"},
+                    {
+                        "nome": "Paulinho",
+                        "posicao": "Lateral-Esquerdo",
+                        "condicao": "Reserva",
+                        "capitao": False,
+                    },
+                ]
+            }
+        )
+
+        result, stats = apply_current_squad_patch(self.current, patch)
+
+        self.assertEqual(result["fonte"], "produção")
+        self.assertEqual(result["tecnico"], "Técnico")
+        self.assertEqual(result["jogadores"][0]["posicao"], "Atacante")
+        self.assertEqual(result["jogadores"][0]["condicao"], "Reserva")
+        self.assertEqual(result["jogadores"][0]["campo_legado"], "preservar")
+        self.assertEqual(result["jogadores"][1], self.current["jogadores"][1])
+        self.assertEqual(result["jogadores"][2]["nome"], "Paulinho")
+        self.assertEqual(stats["inserted"], 1)
+        self.assertEqual(stats["updated"], 1)
+        self.assertEqual(self.current["jogadores"][0]["condicao"], "Titular")
+
+    def test_repeating_same_upsert_is_idempotent(self) -> None:
+        patch = validate_current_squad_patch(
+            {
+                "upsert_players": [
+                    {
+                        "nome": "Jogador B",
+                        "posicao": "Goleiro",
+                        "condicao": "Reserva",
+                        "capitao": True,
+                    }
+                ]
+            }
+        )
+
+        result, stats = apply_current_squad_patch(self.current, patch)
+
+        self.assertEqual(result, self.current)
+        self.assertEqual(stats["unchanged"], 1)
+        self.assertEqual(stats["inserted"], 0)
+        self.assertEqual(stats["updated"], 0)
+
+    def test_removal_is_case_insensitive_and_preserves_other_players(self) -> None:
+        patch = validate_current_squad_patch({"remove_players": ["jogador a"]})
+
+        result, stats = apply_current_squad_patch(self.current, patch)
+
+        self.assertEqual(result["jogadores"], [self.current["jogadores"][1]])
+        self.assertEqual(result["fonte"], "produção")
+        self.assertEqual(stats["removed"], 1)
+        self.assertEqual(stats["remove_missing"], 0)
+
+    def test_rejects_conflicting_or_unknown_operations(self) -> None:
+        with self.assertRaisesRegex(ValueError, "atualizado e removido"):
+            validate_current_squad_patch(
+                {
+                    "upsert_players": [{"nome": "Jogador A"}],
+                    "remove_players": ["jogador a"],
+                }
+            )
+        with self.assertRaisesRegex(ValueError, "Campos inválidos"):
+            validate_current_squad_patch({"substituir_tudo": True})
 
 
 if __name__ == "__main__":

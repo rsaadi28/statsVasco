@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from scripts.export_acervo_web import POS_ORDER, build_runtime_from_state, parse_date
 from web_sync import validate_no_remote_regression
 
-from .state import init_db, load_state, save_state_key
+from .state import init_db, load_state, mutate_state_key, save_state_key
 
 APP_NAME = "Acervo Vasco API"
 
@@ -165,6 +165,156 @@ def validate_current_squad(raw: Any) -> dict[str, Any]:
             }
         )
     return {"jogadores": out, "tecnico": str(raw.get("tecnico") or "").strip()}
+
+
+def validate_current_squad_player(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise ValueError("Cada jogador precisa ser um objeto JSON.")
+    allowed = {"nome", "posicao", "condicao", "capitao"}
+    unknown = sorted(set(raw) - allowed)
+    if unknown:
+        raise ValueError(f"Campos inválidos no jogador: {', '.join(unknown)}.")
+    nome = str(raw.get("nome") or "").strip()
+    if not nome:
+        raise ValueError("nome é obrigatório para atualizar um jogador.")
+
+    player: dict[str, Any] = {"nome": nome}
+    for key in ("posicao", "condicao"):
+        if key in raw:
+            player[key] = str(raw.get(key) or "").strip()
+    if "capitao" in raw:
+        if not isinstance(raw["capitao"], bool):
+            raise ValueError("capitao precisa ser booleano.")
+        player["capitao"] = raw["capitao"]
+    return player
+
+
+def validate_current_squad_patch(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise ValueError("A alteração do elenco precisa ser um objeto JSON.")
+    allowed = {"upsert_players", "remove_players", "tecnico"}
+    unknown = sorted(set(raw) - allowed)
+    if unknown:
+        raise ValueError(f"Campos inválidos na alteração do elenco: {', '.join(unknown)}.")
+    if not any(key in raw for key in allowed):
+        raise ValueError("Informe upsert_players, remove_players e/ou tecnico.")
+
+    upserts_raw = raw.get("upsert_players", [])
+    removes_raw = raw.get("remove_players", [])
+    if not isinstance(upserts_raw, list):
+        raise ValueError("upsert_players precisa ser lista.")
+    if not isinstance(removes_raw, list):
+        raise ValueError("remove_players precisa ser lista.")
+
+    upserts = [validate_current_squad_player(player) for player in upserts_raw]
+    remove_players = [str(name or "").strip() for name in removes_raw]
+    if any(not name for name in remove_players):
+        raise ValueError("remove_players não pode conter nomes vazios.")
+
+    upsert_names = [player["nome"].casefold() for player in upserts]
+    remove_names = [name.casefold() for name in remove_players]
+    if len(upsert_names) != len(set(upsert_names)):
+        raise ValueError("upsert_players contém nomes duplicados.")
+    if len(remove_names) != len(set(remove_names)):
+        raise ValueError("remove_players contém nomes duplicados.")
+    overlap = sorted(set(upsert_names) & set(remove_names))
+    if overlap:
+        raise ValueError("O mesmo jogador não pode ser atualizado e removido.")
+
+    patch: dict[str, Any] = {
+        "upsert_players": upserts,
+        "remove_players": remove_players,
+    }
+    if "tecnico" in raw:
+        if not isinstance(raw["tecnico"], str):
+            raise ValueError("tecnico precisa ser texto.")
+        patch["tecnico"] = raw["tecnico"].strip()
+    return patch
+
+
+def apply_current_squad_patch(
+    current: Any,
+    patch: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, int]]:
+    if not isinstance(current, dict):
+        raise ValueError("O elenco atual armazenado não é um objeto JSON.")
+    players = current.get("jogadores", [])
+    if not isinstance(players, list):
+        raise ValueError("O elenco atual armazenado não contém uma lista de jogadores.")
+
+    squad = dict(current)
+    items = [dict(player) if isinstance(player, dict) else player for player in players]
+    index: dict[str, int] = {}
+    for position, player in enumerate(items):
+        if not isinstance(player, dict):
+            continue
+        name = str(player.get("nome") or "").strip()
+        if not name:
+            continue
+        key = name.casefold()
+        if key in index:
+            raise ValueError(f"O elenco atual contém jogador duplicado: {name}.")
+        index[key] = position
+
+    remove_names = {name.casefold() for name in patch["remove_players"]}
+    removed = sum(
+        1
+        for player in items
+        if isinstance(player, dict)
+        and str(player.get("nome") or "").strip().casefold() in remove_names
+    )
+    if remove_names:
+        items = [
+            player
+            for player in items
+            if not (
+                isinstance(player, dict)
+                and str(player.get("nome") or "").strip().casefold() in remove_names
+            )
+        ]
+    remove_missing = len(remove_names) - removed
+
+    index = {
+        str(player.get("nome") or "").strip().casefold(): position
+        for position, player in enumerate(items)
+        if isinstance(player, dict) and str(player.get("nome") or "").strip()
+    }
+    inserted = updated = unchanged = 0
+    for player_patch in patch["upsert_players"]:
+        key = player_patch["nome"].casefold()
+        if key in index:
+            position = index[key]
+            existing = items[position]
+            merged = dict(existing)
+            merged.update(player_patch)
+            if merged == existing:
+                unchanged += 1
+            else:
+                items[position] = merged
+                updated += 1
+        else:
+            new_player = {
+                "nome": player_patch["nome"],
+                "posicao": "",
+                "condicao": "",
+                "capitao": False,
+            }
+            new_player.update(player_patch)
+            index[key] = len(items)
+            items.append(new_player)
+            inserted += 1
+
+    squad["jogadores"] = items
+    if "tecnico" in patch:
+        squad["tecnico"] = patch["tecnico"]
+    return squad, {
+        "inserted": inserted,
+        "updated": updated,
+        "unchanged": unchanged,
+        "removed": removed,
+        "remove_missing": remove_missing,
+        "total_players": len(items),
+    }
 
 
 def validate_historic_players(raw: Any) -> dict[str, Any]:
@@ -451,6 +601,37 @@ async def update_state(
             "historic_players": len(updates["historic_players"].get("jogadores", []))
             if "historic_players" in updates
             else None,
+        }
+    )
+
+
+@app.post("/admin/update-current-squad")
+async def update_current_squad(
+    request: Request,
+    authorization: str | None = Header(default=None),
+    x_admin_token: str | None = Header(default=None),
+) -> JSONResponse:
+    """Inclui, altera ou remove jogadores sem reenviar o elenco completo."""
+    require_admin(authorization, x_admin_token)
+    payload = await request.json()
+    try:
+        patch = validate_current_squad_patch(payload)
+        result: dict[str, int] = {}
+
+        def apply_patch(current: Any) -> dict[str, Any]:
+            updated_squad, stats = apply_current_squad_patch(current, patch)
+            result.update(stats)
+            return updated_squad
+
+        squad = mutate_state_key("current_squad", apply_patch)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return JSONResponse(
+        {
+            "ok": True,
+            **result,
+            "tecnico": squad.get("tecnico", ""),
         }
     )
 
