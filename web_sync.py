@@ -120,6 +120,27 @@ def _future_match_key(match: dict[str, Any]) -> tuple[str, str, str, str]:
     )
 
 
+def _future_match_has_been_played(match: dict[str, Any], local_matches: list[dict[str, Any]]) -> bool:
+    future_date = str(match.get("data") or "").strip()
+    future_competition = str(match.get("campeonato") or "").strip().casefold()
+    future_game = str(match.get("jogo") or "").strip().casefold()
+    if not future_date or not future_game:
+        return False
+    if _parse_match_date(future_date) is None:
+        return False
+    if "vasco" not in future_game:
+        return False
+    for played in local_matches:
+        if str(played.get("data") or "").strip() != future_date:
+            continue
+        if future_competition and str(played.get("competicao") or "").strip().casefold() != future_competition:
+            continue
+        opponent = str(played.get("adversario") or "").strip().casefold()
+        if opponent and opponent in future_game:
+            return True
+    return False
+
+
 def _squad_player_key(player: dict[str, Any]) -> str:
     return str(player.get("nome") or player.get("name") or "").strip().casefold()
 
@@ -199,7 +220,11 @@ def validate_no_remote_regression(local_state: dict[str, Any], remote_state: dic
         )
 
     local_future_keys = {_future_match_key(match) for match in local_future if isinstance(match, dict)}
-    remote_future_keys = {_future_match_key(match) for match in remote_future if isinstance(match, dict)}
+    remote_future_keys = {
+        _future_match_key(match)
+        for match in remote_future
+        if isinstance(match, dict) and not _future_match_has_been_played(match, local_matches)
+    }
     missing_future = remote_future_keys - local_future_keys
     if missing_future:
         sample = sorted(missing_future)[0]
