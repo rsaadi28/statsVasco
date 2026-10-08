@@ -225,6 +225,7 @@ function buildStubPartida(j) {
     agregado: null,
     gols_vasco: [],
     gols_adversario: [],
+    gols_anulados: { vasco: [], adversario: [] },
     cartoes_amarelos_vasco: [],
     cartoes_vermelhos_vasco: [],
     estatisticas_vasco: {},

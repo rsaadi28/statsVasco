@@ -458,6 +458,18 @@ def match_detail(match: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         "agregado": None,
         "gols_vasco": expanded_goal_events(match.get("gols_vasco")),
         "gols_adversario": expanded_goal_events(match.get("gols_adversario")),
+        "gols_anulados": {
+            "vasco": expanded_goal_events(
+                (match.get("gols_anulados") or {}).get("vasco")
+                if isinstance(match.get("gols_anulados"), dict)
+                else []
+            ),
+            "adversario": expanded_goal_events(
+                (match.get("gols_anulados") or {}).get("adversario")
+                if isinstance(match.get("gols_anulados"), dict)
+                else []
+            ),
+        },
         "cartoes_amarelos_vasco": card_names(match.get("cartoes_amarelos_vasco")),
         "cartoes_vermelhos_vasco": red_cards(match.get("cartoes_vermelhos_vasco")),
         "publico_pagante": match.get("publico_pagante") or 0,

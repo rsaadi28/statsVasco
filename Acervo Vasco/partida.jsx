@@ -727,6 +727,14 @@ function TabEventos({ p }) {
     detail: g.assistencia ? `assistência ${g.assistencia}` : "",
     minuto: g.minuto, periodo: g.periodo, abs: absMin(g.minuto, g.periodo),
   }));
+  (p.gols_anulados?.vasco || []).forEach(g => events.push({
+    side: "vasco", kind: "disallowed", name: g.nome, label: "Gol anulado",
+    minuto: g.minuto, periodo: g.periodo, abs: absMin(g.minuto, g.periodo),
+  }));
+  (p.gols_anulados?.adversario || []).forEach(g => events.push({
+    side: "adv", kind: "disallowed", name: g.nome, label: "Gol anulado",
+    minuto: g.minuto, periodo: g.periodo, abs: absMin(g.minuto, g.periodo),
+  }));
   p.cartoes_amarelos_vasco.forEach(n => events.push({
     side: "vasco", kind: "yellow", name: n, label: "Amarelo",
     minuto: null, periodo: null, abs: 9999, // sem minuto conhecido → ao final
@@ -807,7 +815,7 @@ function EventRow({ kind, name, label, detail, minuto, periodo, empty }) {
   if (kind === "halfTime") return <div className="evt" style={{minHeight:35, background:"var(--paper-deep)", fontFamily:"var(--ff-sans)", fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink)", fontWeight:600, padding:"8px 18px"}}>Intervalo</div>;
   if (kind === "indet") return <div className="evt" style={{minHeight:35, background:"var(--paper-deep)", fontFamily:"var(--ff-sans)", fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:"var(--ink-mute)", padding:"8px 18px"}}>Sem minuto registrado</div>;
   if (kind === "header") return <div className="evt" style={{minHeight:30, background:"var(--paper-deep)", padding:"6px 18px"}}>{label}</div>;
-  const iconChar = kind==="goal" ? "⚽" : kind==="pen" ? "P" : kind==="og" ? "OG" : kind==="sub" ? "⇄" : "";
+  const iconChar = kind==="goal" ? "⚽" : kind==="pen" ? "P" : kind==="og" ? "OG" : kind==="disallowed" ? "×" : kind==="sub" ? "⇄" : "";
   return (
     <div className="evt">
       <span className={"icon " + kind}>{iconChar}</span>
