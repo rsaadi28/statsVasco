@@ -675,6 +675,38 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
         jogos = []
     with _open(db_path) as conn:
         _create_schema(conn)
+        stored_fields = {
+            "data", "adversario", "competicao", "local", "estadio", "horario",
+            "placar", "gols_vasco", "gols_adversario", "gols_anulados",
+            "cartoes_amarelos_vasco", "cartoes_vermelhos_vasco", "observacao",
+            "capitao", "publico_pagante", "publico_presente", "renda", "tecnico",
+            "db_match_id", "db_tecnico_id", "posicao_tabela", "escalacao_partida",
+            "escalacao", "estatisticas_vasco", "estatisticas_jogadores_vasco", "arbitragem",
+        }
+        metadata_row = conn.execute(
+            "SELECT value FROM settings WHERE key = 'match_extra_metadata_json'"
+        ).fetchone()
+        try:
+            extra_metadata = json.loads(metadata_row["value"]) if metadata_row else {}
+        except (TypeError, ValueError):
+            extra_metadata = {}
+        if not isinstance(extra_metadata, dict):
+            extra_metadata = {}
+        for jogo in jogos:
+            if not isinstance(jogo, dict):
+                continue
+            metadata_key = json.dumps(
+                [str(jogo.get(field, "")).strip() for field in ("data", "adversario", "competicao")],
+                ensure_ascii=False,
+            )
+            extras = {key: value for key, value in jogo.items() if key not in stored_fields}
+            if extras:
+                extra_metadata[metadata_key] = {**extra_metadata.get(metadata_key, {}), **extras}
+        conn.execute(
+            "INSERT INTO settings(key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            ("match_extra_metadata_json", json.dumps(extra_metadata, ensure_ascii=False)),
+        )
         conn.execute("DELETE FROM match_goals")
         conn.execute("DELETE FROM match_cards")
         conn.execute("DELETE FROM matches")
@@ -877,6 +909,15 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
 def load_matches(db_path: str) -> list[dict[str, Any]]:
     with _open(db_path) as conn:
         _create_schema(conn)
+        metadata_row = conn.execute(
+            "SELECT value FROM settings WHERE key = 'match_extra_metadata_json'"
+        ).fetchone()
+        try:
+            extra_metadata = json.loads(metadata_row["value"]) if metadata_row else {}
+        except (TypeError, ValueError):
+            extra_metadata = {}
+        if not isinstance(extra_metadata, dict):
+            extra_metadata = {}
         rows = conn.execute(
             """
             SELECT m.id, m.date_text, t.name AS adversario, c.name AS competicao,
@@ -1041,6 +1082,13 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                 "estatisticas_jogadores_vasco": vasco_player_stats if isinstance(vasco_player_stats, list) else [],
             }
         )
+    for jogo in jogos:
+        metadata_key = json.dumps(
+            [jogo["data"], jogo["adversario"], jogo["competicao"]], ensure_ascii=False
+        )
+        extras = extra_metadata.get(metadata_key, {})
+        if isinstance(extras, dict):
+            jogo.update({key: value for key, value in extras.items() if key not in jogo})
     return jogos
 
 
