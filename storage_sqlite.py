@@ -700,6 +700,13 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
                 ensure_ascii=False,
             )
             extras = {key: value for key, value in jogo.items() if key not in stored_fields}
+            for card_field in ("cartoes_amarelos_vasco", "cartoes_vermelhos_vasco"):
+                cards = jogo.get(card_field)
+                if isinstance(cards, list) and any(
+                    isinstance(card, dict) and ("minuto" in card or "periodo" in card)
+                    for card in cards
+                ):
+                    extras[card_field] = cards
             if extras:
                 extra_metadata[metadata_key] = {**extra_metadata.get(metadata_key, {}), **extras}
         conn.execute(
@@ -1089,6 +1096,13 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
         extras = extra_metadata.get(metadata_key, {})
         if isinstance(extras, dict):
             jogo.update({key: value for key, value in extras.items() if key not in jogo})
+            for card_field in ("cartoes_amarelos_vasco", "cartoes_vermelhos_vasco"):
+                cards = extras.get(card_field)
+                if isinstance(cards, list):
+                    for card in jogo[card_field]:
+                        source = next((item for item in cards if isinstance(item, dict)
+                                       and item.get("nome") == card.get("nome")), {})
+                        card.update({key: source[key] for key in ("minuto", "periodo") if key in source})
     return jogos
 
 
