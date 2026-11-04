@@ -703,7 +703,7 @@ def save_matches(db_path: str, jogos: list[dict[str, Any]]) -> None:
             for card_field in ("cartoes_amarelos_vasco", "cartoes_vermelhos_vasco"):
                 cards = jogo.get(card_field)
                 if isinstance(cards, list) and any(
-                    isinstance(card, dict) and ("minuto" in card or "periodo" in card)
+                    isinstance(card, dict) and any(key in card for key in ("minuto", "periodo", "motivo"))
                     for card in cards
                 ):
                     extras[card_field] = cards
@@ -1102,7 +1102,7 @@ def load_matches(db_path: str) -> list[dict[str, Any]]:
                     for card in jogo[card_field]:
                         source = next((item for item in cards if isinstance(item, dict)
                                        and item.get("nome") == card.get("nome")), {})
-                        card.update({key: source[key] for key in ("minuto", "periodo") if key in source})
+                        card.update({key: source[key] for key in ("minuto", "periodo", "motivo") if key in source})
     return jogos
 
 
