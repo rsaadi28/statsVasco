@@ -895,6 +895,17 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--ink-mute); margin-top: 12px;
 }
 .detail-aggregate strong { color: var(--red); font-weight: 600; }
+.penalty-shootout { margin-top: 28px; border-top: 1px solid var(--rule); padding-top: 20px; }
+.penalty-shootout h3 { font-size: 20px; margin-bottom: 16px; }
+.penalty-teams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; font-family: var(--ff-sans); font-size: 12px; }
+.penalty-teams h4 { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+.penalty-teams ol { padding-left: 20px; margin: 0; }
+.penalty-teams li { padding: 9px 0; border-bottom: 1px dotted var(--rule); }
+.penalty-teams li > span { display: block; overflow-wrap: anywhere; }
+.penalty-scored { color: #267245; margin-top: 4px; }
+.penalty-missed { color: var(--red); margin-top: 4px; }
+.detail-aggregate { letter-spacing: 0; line-height: 1.6; }
+@media (max-width: 420px) { .penalty-teams { gap: 16px; } }
 
 .detail-tabs {
   display: flex; gap: 0;

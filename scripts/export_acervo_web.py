@@ -455,7 +455,10 @@ def match_detail(match: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         "tecnico": match.get("tecnico") or "—",
         "capitao": match.get("capitao") or "—",
         "placar": {"vasco": v, "adversario": a},
-        "agregado": None,
+        "agregado": match.get("agregado") if isinstance(match.get("agregado"), dict) else None,
+        "penaltis": match.get("penaltis") if isinstance(match.get("penaltis"), dict) else None,
+        "classificado": match.get("classificado"),
+        "disputa_penaltis": match.get("disputa_penaltis") if isinstance(match.get("disputa_penaltis"), list) else [],
         "gols_vasco": expanded_goal_events(match.get("gols_vasco")),
         "gols_adversario": expanded_goal_events(match.get("gols_adversario")),
         "gols_anulados": {

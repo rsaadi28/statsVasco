@@ -531,9 +531,11 @@ function DetailHero({ p }) {
       </div>
       {p.agregado && (
         <div className="detail-aggregate">
-          Agregado <strong>{p.agregado.vasco} × {p.agregado.adversario}</strong> · <strong>{p.agregado.classificado}</strong> classificado para as oitavas
+          Agregado <strong>{p.agregado.vasco} × {p.agregado.adversario}</strong>
         </div>
       )}
+      {p.penaltis && <div className="detail-aggregate">Pênaltis <strong>{p.penaltis.vasco} × {p.penaltis.adversario}</strong></div>}
+      {(p.classificado || p.agregado?.classificado) && <div className="detail-aggregate"><strong>{p.classificado || p.agregado.classificado}</strong> classificado</div>}
     </section>
   );
 }
@@ -546,6 +548,7 @@ function TabResumo({ p }) {
     <div className="resumo-grid">
       <div>
         <p className="resumo-text">{p.observacao}</p>
+        <PenaltyShootout p={p}/>
       </div>
       <div className="resumo-side">
         <div className="kv"><span className="k">Resultado</span><span className="v">{result}</span></div>
@@ -565,6 +568,22 @@ function TabResumo({ p }) {
       </div>
     </div>
   );
+}
+
+function PenaltyShootout({ p }) {
+  const kicks = (p.disputa_penaltis || []).filter(k => typeof k.convertido === "boolean");
+  if (!kicks.length) return null;
+  return <section className="penalty-shootout" aria-label="Disputa de pênaltis">
+    <h3>Disputa de pênaltis</h3>
+    <div className="penalty-teams">
+      {["vasco", "adversario"].map(side => <div key={side}>
+        <h4>{side === "vasco" ? "Vasco" : p.adversario}{p.penaltis && <strong>{p.penaltis[side]}</strong>}</h4>
+        <ol>{kicks.filter(k => k.lado === side).sort((a,b) => a.ordem - b.ordem).map(k => <li key={k.ordem}>
+          <span>{k.nome}</span><span className={k.convertido ? "penalty-scored" : "penalty-missed"}>{k.convertido ? "✓ Acertou" : "× Errou"}</span>
+        </li>)}</ol>
+      </div>)}
+    </div>
+  </section>;
 }
 
 // ============ Escalação ============
