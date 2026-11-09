@@ -905,7 +905,15 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .penalty-scored { color: #267245; margin-top: 4px; }
 .penalty-missed { color: var(--red); margin-top: 4px; }
 .detail-aggregate { letter-spacing: 0; line-height: 1.6; }
-@media (max-width: 420px) { .penalty-teams { gap: 16px; } }
+@media (max-width: 600px) {
+  .detail-scoreline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+  .detail-score { grid-column: 1 / -1; grid-row: 1; font-size: 80px; }
+  .team-header { flex-wrap: wrap; gap: 8px; }
+  .team-block .name { font-size: 22px; white-space: normal; overflow-wrap: anywhere; letter-spacing: 0; }
+  .team-block .scorers div { flex-wrap: wrap; white-space: normal; }
+  .team-block .scorers .min { white-space: normal; }
+  .penalty-teams { gap: 16px; }
+}
 
 .detail-tabs {
   display: flex; gap: 0;
